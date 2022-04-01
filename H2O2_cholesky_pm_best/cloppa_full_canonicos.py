@@ -1,8 +1,14 @@
+import os
 import sys
-# insert at 1, 0 is the script path (or '' in REPL)
-sys.path.append("/home/bajac/pyPPE/src")
-from help_functions import extra_functions
-from cloppa import full_M_two_elec
+module_path = os.path.abspath(os.path.join('..'))
+
+if module_path not in sys.path:
+    sys.path.append(module_path)
+
+
+from src.help_functions import extra_functions
+from src.cloppa import full_M_two_elec
+
 from pyscf import gto, scf
 import plotly.express as px
 import pandas as pd
@@ -28,7 +34,6 @@ for ang in range(1,18,1):
 
     M_list.append([ang*10, np.sum(m),  "Propagador Pol"])
     M_diag_list.append([ang*10, np.sum(np.diag(m)),  "Propagador Pol"])
-    
     inv_M_diag_list.append([ang*10, np.sum(np.diag(np.linalg.inv(m))),  "Propagador Pol"])
 
 

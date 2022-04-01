@@ -3,7 +3,7 @@ from pyscf import gto, scf
 from pyscf.gto import Mole
 import numpy as np
 import attr
-from help_functions import extra_functions
+from src.help_functions import extra_functions
 from pyscf import ao2mo
 
 
@@ -150,18 +150,18 @@ class full_M_two_elec:
         mol_loc = attr.ib(default=None)
         mo_occ_loc = attr.ib(default=None)
         #for testing
-        occ = attr.ib(default=None, type=list)
-        vir = attr.ib(default=None, type=list)
+#        occ = attr.ib(default=None, type=list)
+#        vir = attr.ib(default=None, type=list)
 
         def __attrs_post_init__(self):
-                #self.occidx = np.where(self.mo_occ_loc==2)[0]
-                #self.viridx = np.where(self.mo_occ_loc==0)[0]
+                self.occidx = np.where(self.mo_occ_loc==2)[0]
+                self.viridx = np.where(self.mo_occ_loc==0)[0]
                 
-                #self.orbv = self.mo_coeff_loc[:,self.viridx]
-                #self.orbo = self.mo_coeff_loc[:,self.occidx]
+                self.orbv = self.mo_coeff_loc[:,self.viridx]
+                self.orbo = self.mo_coeff_loc[:,self.occidx]
                 #for test
-                self.orbv = self.mo_coeff_loc[:,self.vir]
-                self.orbo = self.mo_coeff_loc[:,self.occ]
+                #self.orbv = self.mo_coeff_loc[:,self.vir]
+                #self.orbo = self.mo_coeff_loc[:,self.occ]
 
                 self.nvir = self.orbv.shape[1]
                 self.nocc = self.orbo.shape[1]
