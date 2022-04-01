@@ -150,18 +150,18 @@ class full_M_two_elec:
         mol_loc = attr.ib(default=None)
         mo_occ_loc = attr.ib(default=None)
         #for testing
-#        occ = attr.ib(default=None, type=list)
-#        vir = attr.ib(default=None, type=list)
+        occ = attr.ib(default=None)
+        vir = attr.ib(default=None)
 
         def __attrs_post_init__(self):
-                self.occidx = np.where(self.mo_occ_loc==2)[0]
-                self.viridx = np.where(self.mo_occ_loc==0)[0]
-                
-                self.orbv = self.mo_coeff_loc[:,self.viridx]
-                self.orbo = self.mo_coeff_loc[:,self.occidx]
-                #for test
-                #self.orbv = self.mo_coeff_loc[:,self.vir]
-                #self.orbo = self.mo_coeff_loc[:,self.occ]
+                if self.occ != None:
+                        self.orbv = self.mo_coeff_loc[:,self.vir]
+                        self.orbo = self.mo_coeff_loc[:,self.occ]
+                else:
+                        self.occidx = np.where(self.mo_occ_loc==2)[0]
+                        self.viridx = np.where(self.mo_occ_loc==0)[0]
+                        self.orbv = self.mo_coeff_loc[:,self.viridx]
+                        self.orbo = self.mo_coeff_loc[:,self.occidx]
 
                 self.nvir = self.orbv.shape[1]
                 self.nocc = self.orbo.shape[1]
@@ -171,11 +171,13 @@ class full_M_two_elec:
         @property
         def M(self):
                 self.m = np.zeros((self.nocc,self.nvir,self.nocc,self.nvir))
-                eri_mo = ao2mo.general(self.mol_loc, [self.orbo,self.mo,self.mo,self.mo], compact=False)
-                eri_mo = eri_mo.reshape(self.nocc,self.nmo,self.nmo,self.nmo)
+                eri_mo = ao2mo.general(self.mol_loc, 
+                [self.mo,self.mo,self.mo,self.mo], compact=False)
+                eri_mo = eri_mo.reshape(self.nmo,self.nmo,self.nmo,self.nmo)
                 self.m -= np.einsum('ijba->iajb', eri_mo[:self.nocc,:self.nocc,self.nocc:,self.nocc:])
                 self.m -= np.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
                 self.m = self.m.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
                 return self.m
+
 
         

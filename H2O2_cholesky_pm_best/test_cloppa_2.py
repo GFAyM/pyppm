@@ -1,9 +1,12 @@
+import os
 import sys
-# insert at 1, 0 is the script path (or '' in REPL)
-sys.path.append("/home/bajac/pyPPE/src")
-from help_functions import extra_functions
-from cloppa import full_M_two_elec
-from cloppa import Cloppa_test
+module_path = os.path.abspath(os.path.join('..'))
+
+if module_path not in sys.path:
+    sys.path.append(module_path)
+from src.help_functions import extra_functions
+from src.cloppa import full_M_two_elec
+from src.cloppa import Cloppa_test
 import plotly.express as px
 import pandas as pd
 import numpy as np

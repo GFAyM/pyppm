@@ -1,56 +1,46 @@
 import os
 import sys
 module_path = os.path.abspath(os.path.join('..'))
-
 if module_path not in sys.path:
     sys.path.append(module_path)
+
 from src.help_functions import extra_functions
 from src.cloppa import full_M_two_elec
 import plotly.express as px
 import pandas as pd
 import numpy as np
-from pyscf import ao2mo
+from pyscf import gto, scf, ao2mo
 
 
-ang=10
+ang=100
+mol_H2O2 = '''
+    O1   1
+    O2   1 1.45643942
+    H3   2 0.97055295  1 99.79601616
+    H4   1 0.97055295  2 99.79601616  3 {}
+'''.format(ang)
+mol = gto.M(atom=str(mol_H2O2), basis='cc-pvdz', verbose=0)
+mf = scf.RHF(mol).run()
+
+mol_loc, mo_coeff_loc, mo_occ_loc = extra_functions(molden_file=f"H2O2_mezcla_{ang}.molden").extraer_coeff
+
+fock_canonical = mf.get_fock()
+#Fock_matrix_loc = mo_coeff_loc.T @ mf.get_fock() @ mo_coeff_loc
+
+#print(Fock_matrix_loc)
+occidx = np.where(mo_occ_loc==2)[0]
+viridx = np.where(mo_occ_loc==0)[0]
+
+orbo = mo_coeff_loc[:,occidx]
+orbv = mo_coeff_loc[:,viridx]
+nocc = orbo.shape[1]
+nvir = orbv.shape[1]
+
+mo_coeff_loc_occ = mo_coeff_loc[:,:nocc]
+mo_coeff_loc_vir = mo_coeff_loc[:,nocc:]
 
 
+fock_loc_occ = mo_coeff_loc_occ.T @ fock_canonical @ mo_coeff_loc_occ
+fock_loc_vir = mo_coeff_loc_vir.T @ fock_canonical @ mo_coeff_loc_vir
 
-mol_loc, mo_coeff_loc, mo_occ_loc = extra_functions(molden_file=f"H2O2_mezcla_{ang*10}.molden").extraer_coeff
-
-o1 = mo_coeff_loc[:,[1]]
-o2 = mo_coeff_loc[:,[2]]
-v1 = mo_coeff_loc[:,[10]]
-v2 = mo_coeff_loc[:,[11]]
-#
-
-occ = mo_coeff_loc[:,[1,2]]
-vir = mo_coeff_loc[:,[10,11]]
-
-nocc = occ.shape[1] 
-nvic = vir.shape[1]
-mo = np.hstack((occ,vir))
-
-nmo = nocc + nvic
-
-#a_0 = np.zeros((occ.shape[1],vir.shape[1],occ.shape[1],vir.shape[1]))
-
-#eri_mo = ao2mo.general(mol_loc, [occ,mo,mo,mo], compact=False)
-#eri_mo = eri_mo.reshape(nocc,nmo,nmo,nmo)
-
-
-#eri_reduce = np.einsum('iajb->ijab', eri_mo[:nocc,:nocc,nocc:,nocc:])
-#print( eri_mo, eri_mo.shape, a_0.shape)
-#print(eri_reduce, eri_reduce.shape)
-
-#ndarray with shape (2,2,2,2)
-
-a = np.array([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]).reshape((2,2,2,2))
-
-print(a.shape)
-
-#permutation
-
-b = np.einsum('ijab->ijba', a)
-print(b)
-
+#F = np.array([[fock_loc_occ],[fock_loc_vir]],[[fock_loc_occ],[fock_loc_vir]])
