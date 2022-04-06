@@ -7,7 +7,7 @@ if module_path not in sys.path:
 
 
 from src.help_functions import extra_functions
-from src.cloppa import full_M_two_elec
+from src.cloppa import Cloppa_full
 import plotly.express as px
 import pandas as pd
 import numpy as np
@@ -20,7 +20,16 @@ inv_M_diag_list = []
 
 for ang in range(1,18,1):
     mol_loc, mo_coeff_loc, mo_occ_loc = extra_functions(molden_file=f"H2O2_mezcla_{ang*10}.molden").extraer_coeff
-    full_M_obj = full_M_two_elec(mo_coeff_loc=mo_coeff_loc, mol_loc=mol_loc, mo_occ_loc=mo_occ_loc)
+    mol_H2O2 = '''
+    O1   1
+    O2   1 1.45643942
+    H3   2 0.97055295  1 99.79601616
+    H4   1 0.97055295  2 99.79601616  3 {}
+    '''.format(ang)
+    
+    full_M_obj = Cloppa_full(
+        mol_input=mol_H2O2,basis='6-31G**',
+        mo_coeff_loc=mo_coeff_loc, mol_loc=mol_loc, mo_occ_loc=mo_occ_loc)
     m = full_M_obj.M
     
 
@@ -35,7 +44,7 @@ fig = px.line(df, x="angulo", y="Propagator",  color='Polarization Propagator',
       )
 fig.update_layout(    yaxis_title=r'Propagator' )
 
-fig.write_html("M_full_loc.html", include_mathjax='cdn')
+fig.write_html("M_full_loc_fock.html", include_mathjax='cdn')
 
 
 df = pd.DataFrame(M_diag_list, columns=['angulo', 'Propagator',   'Polarization Propagator'])
@@ -44,7 +53,7 @@ fig = px.line(df, x="angulo", y="Propagator",  color='Polarization Propagator',
       )
 fig.update_layout(    yaxis_title=r'Propagator' )
 
-fig.write_html("M_full_loc_diag.html", include_mathjax='cdn')
+fig.write_html("M_full_loc_diag_fock.html", include_mathjax='cdn')
 
 df = pd.DataFrame(inv_M_diag_list, columns=['angulo', 'Propagator',   'Polarization Propagator'])
 fig = px.line(df, x="angulo", y="Propagator",  color='Polarization Propagator',
@@ -52,7 +61,7 @@ fig = px.line(df, x="angulo", y="Propagator",  color='Polarization Propagator',
       )
 fig.update_layout(    yaxis_title=r'Propagator' )
 
-fig.write_html("inv_M_full_loc_diag.html", include_mathjax='cdn')
+fig.write_html("inv_M_full_loc_diag_fock.html", include_mathjax='cdn')
 
 
 
