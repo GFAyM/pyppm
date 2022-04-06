@@ -22,7 +22,7 @@ mol_loc, mo_coeff_loc, mo_occ_loc = extra_functions(
 
 
 
-occ = mo_coeff_loc[:,[8,9,1]]
+occ = mo_coeff_loc[:,[7,8,9]]
 
 vir = mo_coeff_loc[:,[14,15]]
 
@@ -41,110 +41,21 @@ mf = scf.RHF(mol).run()
 fock_can = mf.get_fock()
 
 
-M = np.zeros((occ,vir,occ,vir))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
+M = np.zeros((occ.shape[1],vir.shape[1],occ.shape[1],vir.shape[1]))
+
+for i in range(occ.shape[1]):
+    for j in range(occ.shape[1]):
+        for a in range(vir.shape[1]):
+            for b in range(vir.shape[1]):
+                if a==b:
+                    M[i,a,j,b] -= occ[:,i].T @ fock_can @ occ[:,j]
+                if i==j:
+                    M[i,a,j,b] += vir[:,a].T @ fock_can @ vir[:,b]
+
+M = M.reshape((occ.shape[1]*vir.shape[1],occ.shape[1]*vir.shape[1]))
 print(M)
 
 
+print(vir[:,0].T @ fock_can @ vir[:,1]) #- occ[:,1].T @ fock_can @ occ[:,1])
+    
+#print(vir[:,1].T @ fock_can @ vir[:,1] - occ[:,1].T @ fock_can @ occ[:,1])
