@@ -48,7 +48,43 @@ class Prop_pol:
         a -= numpy.einsum('ijba->iajb', eri_mo[:nocc,:nocc,nocc:,nocc:])
         b -= numpy.einsum('jaib->iajb', eri_mo[:nocc,nocc:,:nocc,nocc:])
 
-        m = a+b
-        m = m.reshape(nocc*nvir,nocc*nvir)
+        m = a + b
+        m = m.reshape(nocc*nvir,nocc*nvir, order='C')
         
         return m
+
+    @property
+    def m_matrix_triplet_otherway(self):
+        r'''A and B matrices for TDDFT response function.
+
+        A[i,a,j,b] = \delta_{ab}\delta_{ij}(E_a - E_i) + (ia||bj)
+        B[i,a,j,b] = (ia||jb)
+        '''
+
+        mol = self.mf.mol
+        mo_energy = self.mf.mo_energy
+        mo_coeff = self.mf.mo_coeff
+        nao, nmo = mo_coeff.shape
+        mo_occ = self.mf.mo_occ
+        occidx = numpy.where(mo_occ==2)[0]
+        viridx = numpy.where(mo_occ==0)[0]
+        orbv = mo_coeff[:,viridx]
+        orbo = mo_coeff[:,occidx]
+        nvir = orbv.shape[1]
+        nocc = orbo.shape[1]
+        mo = numpy.hstack((orbo,orbv))
+        nmo = nocc + nvir
+
+
+        #e_ia = lib.direct_sum('a-i->ia', mo_energy[viridx], mo_energy[occidx])
+        #a = numpy.diag(e_ia.ravel()).reshape(nocc,nvir,nocc,nvir)
+        #b = numpy.zeros_like(a)
+
+        a = numpy.zeros((nocc,nvir,nocc,nvir))
+        for i in range(nocc):
+            for j in range(nocc):
+                for a in range(nvir):
+                    for b in range(nvir):
+                        a[i,a,j,b] -= ao2mo.general(mol,[orbv[:,[a]],orbv[:,[b]],orbo[:,[j]],orbo[:,[i]]]) 
+
+        return a
