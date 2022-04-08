@@ -159,11 +159,11 @@ class Cloppa_full:
                                                 if i==j:
                                                         self.m[i,a,j,b] += self.orbv[:,a].T @ fock @ self.orbv[:,b]
                 #here, the 2e part of the M matrix 
-                #eri_mo = ao2mo.general(self.mol_loc, 
-                #[self.mo,self.mo,self.mo,self.mo], compact=False)
-                #eri_mo = eri_mo.reshape(self.nmo,self.nmo,self.nmo,self.nmo)
-                #self.m -= np.einsum('ijba->iajb', eri_mo[:self.nocc,:self.nocc,self.nocc:,self.nocc:])
-                #self.m -= np.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
+                eri_mo = ao2mo.general(self.mol_loc, 
+                [self.mo,self.mo,self.mo,self.mo], compact=False)
+                eri_mo = eri_mo.reshape(self.nmo,self.nmo,self.nmo,self.nmo)
+                self.m -= np.einsum('ijba->iajb', eri_mo[:self.nocc,:self.nocc,self.nocc:,self.nocc:])
+                self.m -= np.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
                 self.m = self.m.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
                 
                 return self.m
