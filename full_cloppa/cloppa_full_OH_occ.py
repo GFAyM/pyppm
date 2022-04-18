@@ -29,11 +29,12 @@ for ang in range(1,18,1):
     '''.format(10*ang)
 
     viridx = np.where(mo_occ_loc==0)[0]
-    #occidx = np.where(mo_occ_loc==2)[0]
+    occidx = extra_functions(
+        molden_file=f"H2O2_mezcla_{ang*10}.molden").mo_hibridization_for_list_several('H', 0.1, 0.4)
     full_M_obj = Cloppa_full(
         mol_input=mol_H2O2,basis='6-31G**',
-        mo_coeff_loc=mo_coeff_loc, mol_loc=mol_loc, vir=viridx, occ=[0,1,2,3,4,5,6,7,8],
-        mo_occ_loc=mo_occ_loc)
+        mo_coeff_loc=mo_coeff_loc, mol_loc=mol_loc, vir=viridx, occ=occidx)#,
+        #mo_occ_loc=mo_occ_loc)
     
     m = full_M_obj.M
     
