@@ -7,11 +7,7 @@ mol = gto.M(atom='''
             basis='ccpvdz')
 
 mf = scf.RHF(mol).run()
-sc = ssc.RHF(mf)
 
+ssc = mf.SSC()
 
-print(sc)
-
-fc = ssc.rhf.make_fc(sc)
-
-print(fc)
+print(ssc.nuc_pair)
