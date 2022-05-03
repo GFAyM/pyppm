@@ -123,15 +123,18 @@ class Cloppa_full:
         vir = attr.ib(default=None)
 
         def __attrs_post_init__(self):
-                if self.occ != None:
+                if self.occ != None: 
                         self.orbv = self.mo_coeff_loc[:,self.vir]
                         self.orbo = self.mo_coeff_loc[:,self.occ]
                 else:
                         self.occidx = np.where(self.mo_occ_loc==2)[0]
                         self.viridx = np.where(self.mo_occ_loc==0)[0]
+                        #Only know something about the occupied orbitals 
+                        
                         self.orbv = self.mo_coeff_loc[:,self.viridx]
                         self.orbo = self.mo_coeff_loc[:,self.occidx]
-
+                        
+                        
                 self.nvir = self.orbv.shape[1]
                 self.nocc = self.orbo.shape[1]
                 self.mo = np.hstack((self.orbo,self.orbv))
@@ -168,6 +171,18 @@ class Cloppa_full:
                 
                 return self.m
 
+        @property
+        def pathways(self):
+                """
+                This function extract each value of the m matrix in order of 
+                the two pairs of excitations (ia,jb)
+                """
+                self.m = self.M
+                m_reshaped = self.m.reshape((self.nocc,self.nvir,self.nocc,self.nvir))
+                for i in range(self.nocc):
+                        for a in range(self.nvir):
+                                print(i, a+self.nocc, m_reshaped[i,a,i,a])
+                #return m_reshaped
 
 
 @attr.s

@@ -19,9 +19,7 @@ def _uniq_atoms(nuc_pair):
     atm2dic = dict([(ia,k) for k,ia in enumerate(atm2lst)])
     return atm1dic, atm2dic
 
-nuc_pa = sc.nuc_pair
 
-atm1dic, atm2dic = _uniq_atoms(nuc_pa)
 
 def make_h1_fc(mol, mo_coeff, mo_occ, atmlst):
     coords = mol.atom_coords()
@@ -35,10 +33,20 @@ def make_h1_fc(mol, mo_coeff, mo_occ, atmlst):
         h1.append(fac * numpy.einsum('p,i->pi', orbv[ia], orbo[ia]))
     return h1
 
+atm1dic, atm2dic = _uniq_atoms(sc.nuc_pair)
+h1 = make_h1_fc(mol, mf.mo_coeff, mf.mo_occ, atm2dic)
 
 from pyscf.lib import logger
 from pyscf import lib
 from pyscf.ao2mo import _ao2mo
+
+sscobj = sc
+
+
+vresp = mf.gen_response(singlet=False, hermi=1)
+
+print(vresp)
+
 
 def solve_mo1_fc(sscobj, h1):
     cput1 = (logger.process_clock(), logger.perf_counter())
@@ -72,6 +80,12 @@ def solve_mo1_fc(sscobj, h1):
                      max_cycle=sscobj.max_cycle_cphf, verbose=log)
     log.timer('solving FC CPHF eqn', *cput1)
     return mo1.reshape(nset,nvir,nocc)
+
+
+
+
+
+
 
 def _dm1_mo2ao(dm1, ket, bra):
     nao, nket = ket.shape

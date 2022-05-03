@@ -4,6 +4,7 @@ import numpy
 from pyscf import lib
 import attr
 from pyscf import ao2mo
+import numpy as np
 from pyscf.dft import numint
 from pyscf.data import nist
 
@@ -55,8 +56,7 @@ class Prop_pol:
         
         return m
 
-    def h1_fc(self,atmlst):
-
+    def h1_fc_pyscf(self,atmlst):
         mo_coeff = self.mf.mo_coeff
         mo_occ = self.mf.mo_occ
         mol = self.mf.mol
@@ -69,7 +69,23 @@ class Prop_pol:
         h1 = []
         for ia in atmlst:
             h1.append(fac * numpy.einsum('p,i->pi', orbv[ia], orbo[ia]))
+        return mo
+
+
+    def h1_fc(self,num_atom):
+        mo_coeff = self.mf.mo_coeff
+        mo_occ = self.mf.mo_occ
+        mol = self.mf.mol
+        coords = mol.atom_coords()
+        ao = numint.eval_ao(mol, coords)
+        ao = ao[num_atom]
+        mo = ao.dot(mo_coeff)
+        orbo = mo[mo_occ> 0]
+        orbv = mo[mo_occ==0]
+        #fac = 8*numpy.pi/3 *.5  # *.5 due to s = 1/2 * pauli-matrix
+        h1 = numpy.einsum('p,i->pi', orbv, orbo).ravel()
         return h1
+
 
     def uniq_atoms(self, nuc_pair):
         atm1lst = sorted(set([i for i,j in nuc_pair]))
@@ -80,30 +96,21 @@ class Prop_pol:
 
 
     @property
-    def pol_prop(self):
-        mo_coeff = self.mf.mo_coeff
-        mo_occ = self.mf.mo_occ
-        mol = self.mf.mol
-        nuc_pair = [(i,j) for i in range(mol.natm) for j in range(i)]
-        atm1dic, atm2dic = self.uniq_atoms(nuc_pair=nuc_pair)
+    def polarization_propagator(self):
 
-        h2 = self.h1_fc(sorted(atm2dic.keys()))
-        h1 = self.h1_fc(sorted(atm1dic.keys()))    
+        h1 = self.h1_fc(0)
+        h2 = self.h1_fc(1)    
         m = self.m_matrix_triplet
-        half_prop = h1*m
-        para = []
-        for i,j in nuc_pair:
-            at1 = atm1dic[i]
-            at2 = atm2dic[j]
-            e = numpy.einsum('ij,ij', h2[at2], half_prop[at1])
-            para.append(e*4)  # *4 for +c.c. and for double occupancy
-        return numpy.einsum(',k,xy->kxy', nist.ALPHA**4, para, numpy.eye(3))
+        p = np.linalg.inv(m)
+        prop = h1@p@h2
+        return prop
 
     @property
     def kernel(self):
         mol = self.mf.mol
         nuc_pair = [(i,j) for i in range(mol.natm) for j in range(i)]
         atm1dic, atm2dic = self.uniq_atoms(nuc_pair=nuc_pair)
-
-        h2 = self.h1_fc(sorted(atm2dic.keys()))
+        h2 = self.h1_fc(sorted(atm1dic.keys()))
+        #return nuc_pair, atm1dic, atm2dic
         return h2
+        
