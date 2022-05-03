@@ -82,8 +82,8 @@ class Prop_pol:
         mo = ao.dot(mo_coeff)
         orbo = mo[mo_occ> 0]
         orbv = mo[mo_occ==0]
-        #fac = 8*numpy.pi/3 *.5  # *.5 due to s = 1/2 * pauli-matrix
-        h1 = numpy.einsum('p,i->pi', orbv, orbo).ravel()
+        fac = 8*numpy.pi/3 *.5  # *.5 due to s = 1/2 * pauli-matrix
+        h1 = fac*numpy.einsum('p,i->pi', orbv, orbo).ravel()
         return h1
 
 
@@ -95,11 +95,11 @@ class Prop_pol:
         return atm1dic, atm2dic
 
 
-    @property
-    def polarization_propagator(self):
+#    @property
+    def polarization_propagator(self, nuc1, nuc2):
 
-        h1 = self.h1_fc(0)
-        h2 = self.h1_fc(1)    
+        h1 = self.h1_fc(nuc1)
+        h2 = self.h1_fc(nuc2)    
         m = self.m_matrix_triplet
         p = np.linalg.inv(m)
         prop = h1@p@h2
