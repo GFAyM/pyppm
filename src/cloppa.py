@@ -17,10 +17,10 @@ class Cloppa_specific_pathways:
     basis = attr.ib(default='cc-pvdz', type=str, validator=attr.validators.instance_of(str))
     mo_coeff_loc = attr.ib(default=None, type=np.array)
     mol_loc = attr.ib(default=None)
-    o1 = attr.ib(default=None, type=list)
-    o2 = attr.ib(default=None, type=list)
-    v1 = attr.ib(default=None, type=list)
-    v2 = attr.ib(default=None, type=list)
+    o1 = attr.ib(default=None, type=list, validator=attr.validators.instance_of(list))
+    o2 = attr.ib(default=None, type=list, validator=attr.validators.instance_of(list))
+    v1 = attr.ib(default=None, type=list, validator=attr.validators.instance_of(list))
+    v2 = attr.ib(default=None, type=list, validator=attr.validators.instance_of(list))
 
     def __attrs_post_init__(self):
         self.mol = gto.M(atom=str(self.mol_input), basis=self.basis, verbose=0)
@@ -32,7 +32,7 @@ class Cloppa_specific_pathways:
         return self.fock_canonical
 
     @property
-    def inverse_prop_pol(self):
+    def M(self):
         self.i = self.mo_coeff_loc[:, self.o1]
         self.a = self.mo_coeff_loc[:, self.v1]
         self.j = self.mo_coeff_loc[:, self.o2]
@@ -43,7 +43,7 @@ class Cloppa_specific_pathways:
 
         
         block11 = np.zeros((len(self.v1 + self.v2),len(self.v1 + self.v2)))
-        #now, we sum the F_{ab}\delta_{ab} localized Fock matrix 
+        #now, we sum the F_{ab}\delta_{ij} localized Fock matrix 
         block11 += self.virt.T @ self.fock_canonical @ self.virt
 
         # this is the F_{ij}\delta_{ab} localized Fock matrix
@@ -99,6 +99,49 @@ class Cloppa_specific_pathways:
         #M_diag = np.zeros(M.shape)
         #np.fill_diagonal(M_diag, np.diag(M))
 
+
+        return M
+
+    @property
+    def M_cruzada(self):
+        self.i = self.mo_coeff_loc[:, self.o1]
+        self.a = self.mo_coeff_loc[:, self.v1]
+        self.j = self.mo_coeff_loc[:, self.o2]
+        self.b = self.mo_coeff_loc[:, self.v2]
+
+        self.virt = self.mo_coeff_loc[:,self.v1+self.v2]
+        self.fock_matrix_canonical
+
+        
+        block11 = np.zeros((len(self.v1 + self.v2),len(self.v1 + self.v2)))
+
+        block12 = np.zeros((len(self.v1 + self.v2),len(self.v1 + self.v2)))
+        #now, the block12 matrix only contain the F_{ij} element in all the diagonal
+        F_ij = self.i.T @ self.fock_canonical @ self.j
+        np.fill_diagonal(block12, -F_ij)
+        block12 -= ao2mo.general(self.mol_loc, [self.virt,self.virt,self.j,self.i],
+         compact=False).reshape(len(self.v1 + self.v2),len(self.v1 + self.v2))
+        block12 -= ao2mo.general(self.mol_loc, 
+                [self.virt,self.j,self.virt,self.i],
+                compact=False).reshape(len(self.v1 +self.v2),len(self.v1 + self.v2))    
+
+
+        block21 = np.zeros((len(self.v1 + self.v2),len(self.v1 + self.v2)))
+        #now, the block21 matrix only contain the F_{ij} element in all the diagonal
+        F_ji = self.j.T @ self.fock_canonical @ self.i
+        np.fill_diagonal(block21, -F_ji)
+        block21 -= ao2mo.general(self.mol_loc, [self.virt,self.virt,self.i,self.j],
+            compact=False).reshape(len(self.v1 + self.v2),len(self.v1 + self.v2))
+        block21 -= ao2mo.general(self.mol_loc, 
+                [self.virt,self.i,self.virt,self.j],
+                compact=False).reshape(len(self.v1 +self.v2),len(self.v1 + self.v2))    
+
+
+        block22 = np.zeros((len(self.v1 + self.v2),len(self.v1 + self.v2)))
+        
+        superblock1 = np.concatenate((block11, block12), axis=1)
+        superblock2 = np.concatenate((block21, block22), axis=1)
+        M = np.concatenate((superblock1, superblock2), axis=0)
 
         return M
 

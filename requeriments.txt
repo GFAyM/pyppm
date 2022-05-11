@@ -9,7 +9,7 @@ packaging==21.3
 pandas==1.4.2
 Pillow==9.1.0
 pyparsing==3.0.8
-pyscf==2.0.1
+#pyscf==2.0.1
 python-dateutil==2.8.2
 pytz==2022.1
 scipy==1.8.0
