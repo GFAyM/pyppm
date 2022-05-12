@@ -76,10 +76,10 @@ for ang in range(1,18,1):
             v1=[i[0], j[0],k[0]],
             v2=[i[1], j[1],k[1]])        
     
-        m = path_OH.M_cruzada
+        m = path_OH.M
         
-        diag_m = np.sum(m)
-        #diag_m = np.sum((np.linalg.inv(m)))
+#        diag_m = np.sum(m)
+        diag_m = np.sum(np.diag((np.linalg.inv(m))))
 
 #    diag_princ_prop = np.sum(np.diag(np.linalg.inv(m)))
     
@@ -89,9 +89,9 @@ df = pd.DataFrame(M_diag_list, columns=['angulo', 'M', 'Virtuals'])
 
 
 fig = px.line(df, x="angulo", y="M", animation_frame='Virtuals', 
-       title="Diag of M matrix using combinations of occupied MO",
+       title="Diag of M^-1 matrix using combinations of Virtuals MO",
       )
-fig.update_layout(    yaxis_title=r'M matrix' )
+
 
 fig.write_html("Princ_prop_cruz_comb3.html", include_mathjax='cdn')
         

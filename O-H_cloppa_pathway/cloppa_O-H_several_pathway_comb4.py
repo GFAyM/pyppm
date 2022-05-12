@@ -83,12 +83,8 @@ for ang in range(1,18,1):
 
 df = pd.DataFrame(M_diag_list, columns=['angulo', 'M', 'Virtuals'])
 
-
 fig = px.line(df, x="angulo", y="M", animation_frame='Virtuals', 
-       title="Diag of M matrix using combinations of occupied MO",
+       title="Diag of M^-1 matrix using combinations of virtuals MO",
       )
-fig.update_layout(    yaxis_title=r'M matrix' )
 
 fig.write_html("Princ_prop_comb4.html", include_mathjax='cdn')
-        
-

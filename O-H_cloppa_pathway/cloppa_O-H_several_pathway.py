@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 M_diag_list = []
 
 
-for ang in range(10,11,1):
+for ang in range(1,18,1):
     mol_loc, mo_coeff_loc, mo_occ_loc = extra_functions(molden_file=f"H2O2_mezcla_{ang*10}.molden").extraer_coeff
     mol_H2O2 = '''
     O1   1
@@ -76,21 +76,21 @@ for ang in range(10,11,1):
             v1=[i[0][0]], #, j[0]],
             v2=[i[0][1]]) #, j[1]])        
     
-        m = path_OH.M_cruzada
+        m = path_OH.M
         
-        #diag_m = np.sum(np.linalg.inv(m))
+        diag_m = np.sum(np.diag(np.linalg.inv(m)))
         #diag_m = np.sum(m)
 #    diag_princ_prop = np.sum(np.diag(np.linalg.inv(m)))
-        print(m)
-        #M_diag_list.append([ang*10, diag_m,f'{i[0][2]}'])#_{j[2]}'])
+        #print(m)
+        M_diag_list.append([ang*10, diag_m,f'{i[0][2]}'])#_{j[2]}'])
 
-#df = pd.DataFrame(M_diag_list, columns=['angulo', 'M', 'Virtuals'])
+df = pd.DataFrame(M_diag_list, columns=['angulo', 'M', 'Virtuals'])
 
-#fig = px.line(df, x="angulo", y="M", animation_frame='Virtuals', 
-#       title="Diag of M matrix using combinations of occupied MO",
-#      )
-#fig.update_layout(    yaxis_title=r'M matrix' )
+fig = px.line(df, x="angulo", y="M", animation_frame='Virtuals', 
+       title="Sum of diagonal Principal Propagator using combinations of virtuals MO",
+      )
+fig.update_layout(    yaxis_title=r'M matrix' )
 
-#fig.write_html("prop_pol_cruz.html", include_mathjax='cdn')
+fig.write_html("prop_pol.html", include_mathjax='cdn')
         
 

@@ -33,11 +33,6 @@ class Cloppa_specific_pathways:
 
     @property
     def M(self):
-        self.i = self.mo_coeff_loc[:, self.o1]
-        self.a = self.mo_coeff_loc[:, self.v1]
-        self.j = self.mo_coeff_loc[:, self.o2]
-        self.b = self.mo_coeff_loc[:, self.v2]
-
         self.virt = self.mo_coeff_loc[:,self.v1+self.v2]
         self.fock_matrix_canonical
 
@@ -125,7 +120,6 @@ class Cloppa_specific_pathways:
                 [self.virt,self.j,self.virt,self.i],
                 compact=False).reshape(len(self.v1 +self.v2),len(self.v1 + self.v2))    
 
-
         block21 = np.zeros((len(self.v1 + self.v2),len(self.v1 + self.v2)))
         #now, the block21 matrix only contain the F_{ij} element in all the diagonal
         F_ji = self.j.T @ self.fock_canonical @ self.i
@@ -135,7 +129,6 @@ class Cloppa_specific_pathways:
         block21 -= ao2mo.general(self.mol_loc, 
                 [self.virt,self.i,self.virt,self.j],
                 compact=False).reshape(len(self.v1 +self.v2),len(self.v1 + self.v2))    
-
 
         block22 = np.zeros((len(self.v1 + self.v2),len(self.v1 + self.v2)))
         
@@ -165,6 +158,7 @@ class Cloppa_full:
         occ = attr.ib(default=None)
         vir = attr.ib(default=None)
 
+
         def __attrs_post_init__(self):
                 if self.occ != None: 
                         self.orbv = self.mo_coeff_loc[:,self.vir]
@@ -172,11 +166,9 @@ class Cloppa_full:
                 else:
                         self.occidx = np.where(self.mo_occ_loc==2)[0]
                         self.viridx = np.where(self.mo_occ_loc==0)[0]
-                        #Only know something about the occupied orbitals 
                         
                         self.orbv = self.mo_coeff_loc[:,self.viridx]
                         self.orbo = self.mo_coeff_loc[:,self.occidx]
-                        
                         
                 self.nvir = self.orbv.shape[1]
                 self.nocc = self.orbo.shape[1]
@@ -206,7 +198,7 @@ class Cloppa_full:
                                                         self.m[i,a,j,b] += self.orbv[:,a].T @ fock @ self.orbv[:,b]
                 #here, the 2e part of the M matrix 
                 eri_mo = ao2mo.general(self.mol_loc, 
-                [self.mo,self.mo,self.mo,self.mo], compact=False)
+                        [self.mo,self.mo,self.mo,self.mo], compact=False)
                 eri_mo = eri_mo.reshape(self.nmo,self.nmo,self.nmo,self.nmo)
                 self.m -= np.einsum('ijba->iajb', eri_mo[:self.nocc,:self.nocc,self.nocc:,self.nocc:])
                 self.m -= np.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
@@ -227,81 +219,71 @@ class Cloppa_full:
                                 print(i, a+self.nocc, m_reshaped[i,a,i,a])
                 #return m_reshaped
 
-
 @attr.s
-class Cloppa_test:
-    """
-    Cloppa method for the calculation of NMR J-coupling using localized molecular orbitals of any kind
-    e.g Foster-Boys, Pipek-Mezey, etc. 
-    This method follows the Giribet et. al article: Molecular Physics 91: 1, 105-112
-
-        USED FOR TEST THE TWO ELECTRON PART OF PRINCIPAL PROPAGATOR
-
-    """
-    mo_coeff_loc = attr.ib(default=None, type=np.array)
-    mol_loc = attr.ib(default=None)
-    o1 = attr.ib(default=None, type=list)
-    o2 = attr.ib(default=None, type=list)
-    v1 = attr.ib(default=None, type=list)
-    v2 = attr.ib(default=None, type=list)
-
-    @property
-    def inverse_prop_pol(self):
+class Cloppa_pathways:
+        """
+        Cloppa method for the calculation of NMR J-coupling using localized molecular orbitals of any kind
+        e.g Foster-Boys, Pipek-Mezey, etc. 
+        This method follows the Giribet et. al article: Molecular Physics 91: 1, 105-112
         
-        self.orbv = self.mo_coeff_loc[:,self.v1+self.v2]
-        self.orbo = self.mo_coeff_loc[:,self.o1+self.o2]
-
-        self.nvir = self.orbv.shape[1]
-        self.nocc = self.orbo.shape[1]
-        self.mo = np.hstack((self.orbo,self.orbv))
-        self.nmo = self.nocc + self.nvir
-
-        self.m = np.zeros((self.nocc,self.nvir,self.nocc,self.nvir))
-        eri_mo = ao2mo.general(self.mol_loc, [self.orbo,self.mo,self.mo,self.mo], compact=False)
-        eri_mo = eri_mo.reshape(self.nocc,self.nmo,self.nmo,self.nmo)
-        self.m -= np.einsum('ijba->iajb', eri_mo[:self.nocc,:self.nocc,self.nocc:,self.nocc:])
-        self.m -= np.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
-        self.m = self.m.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
-        return self.m
-        
-
-
-@attr.s
-class full_M_two_elec:
-        #mol_input = attr.ib(default=None, type=str, validator=attr.validators.instance_of(str))
-        #basis = attr.ib(default='cc-pvdz', type=str, validator=attr.validators.instance_of(str))
+        This class pretends calculate the full M matrix, i.e, using all the occupied LMO and all virtuals LMO
+        """
+        mol_input = attr.ib(default=None, type=str, validator=attr.validators.instance_of(str))
+        basis = attr.ib(default='cc-pvdz', type=str, validator=attr.validators.instance_of(str))
         mo_coeff_loc = attr.ib(default=None, type=np.array)
         mol_loc = attr.ib(default=None)
-        mo_occ_loc = attr.ib(default=None)
-        #for testing
-        occ = attr.ib(default=None)
-        vir = attr.ib(default=None)
+        o1 = attr.ib(default=None, type=list, validator=attr.validators.instance_of(list))
+        o2 = attr.ib(default=None, type=list, validator=attr.validators.instance_of(list))
+        v1 = attr.ib(default=None, type=list, validator=attr.validators.instance_of(list))
+        v2 = attr.ib(default=None, type=list, validator=attr.validators.instance_of(list))
 
         def __attrs_post_init__(self):
-                if self.occ != None:
-                        self.orbv = self.mo_coeff_loc[:,self.vir]
-                        self.orbo = self.mo_coeff_loc[:,self.occ]
-                else:
-                        self.occidx = np.where(self.mo_occ_loc==2)[0]
-                        self.viridx = np.where(self.mo_occ_loc==0)[0]
-                        self.orbv = self.mo_coeff_loc[:,self.viridx]
-                        self.orbo = self.mo_coeff_loc[:,self.occidx]
+                self.vir = self.v1+self.v2
+                self.occ = self.o1+self.o2
+
+                self.orbv = self.mo_coeff_loc[:,self.vir]
+                self.orbo = self.mo_coeff_loc[:,self.occ]
+
 
                 self.nvir = self.orbv.shape[1]
                 self.nocc = self.orbo.shape[1]
                 self.mo = np.hstack((self.orbo,self.orbv))
                 self.nmo = self.nocc + self.nvir
+                #here we made a SCF calculation of the molecule
+                self.mol = gto.M(atom=str(self.mol_input), basis=self.basis, verbose=0)
+                self.mf = scf.RHF(self.mol).run()
+
+        @property
+        def fock_matrix_canonical(self):
+                self.fock_canonical = self.mf.get_fock()
+                return self.fock_canonical
 
         @property
         def M(self):
                 self.m = np.zeros((self.nocc,self.nvir,self.nocc,self.nvir))
+                #here we calculate the fock matrix in the localized molecular basis set
+                fock = self.fock_matrix_canonical
+                for i in range(self.nocc):
+                        for j in range(self.nocc):
+                                for a in range(self.nvir):
+                                        for b in range(self.nvir):
+                                                if a==b:
+                                                        self.m[i,a,j,b] -= self.orbo[:,i].T @ fock @ self.orbo[:,j]
+                                                if i==j:
+                                                        self.m[i,a,j,b] += self.orbv[:,a].T @ fock @ self.orbv[:,b]
+                #here, the 2e part of the M matrix 
                 eri_mo = ao2mo.general(self.mol_loc, 
-                [self.mo,self.mo,self.mo,self.mo], compact=False)
+                        [self.mo,self.mo,self.mo,self.mo], compact=False)
                 eri_mo = eri_mo.reshape(self.nmo,self.nmo,self.nmo,self.nmo)
                 self.m -= np.einsum('ijba->iajb', eri_mo[:self.nocc,:self.nocc,self.nocc:,self.nocc:])
                 self.m -= np.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
                 self.m = self.m.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
+                
                 return self.m
 
-
-        
+        @property
+        def elements(self):
+                m = self.M
+                m_resheped = m.reshape((self.nocc,self.nvir,self.nocc,self.nvir))
+                #m_resheped = m_resheped.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
+                return m_resheped
