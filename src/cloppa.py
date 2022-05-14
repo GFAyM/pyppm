@@ -206,18 +206,27 @@ class Cloppa_full:
                 
                 return self.m
 
-        @property
-        def pathways(self):
+        def  P(self):
                 """
-                This function extract each value of the m matrix in order of 
-                the two pairs of excitations (ia,jb)
+                This function calculate the P matrix, i.e, the inverse of the M matrix
                 """
-                self.m = self.M
-                m_reshaped = self.m.reshape((self.nocc,self.nvir,self.nocc,self.nvir))
-                for i in range(self.nocc):
-                        for a in range(self.nvir):
-                                print(i, a+self.nocc, m_reshaped[i,a,i,a])
-                #return m_reshaped
+                m = self.M
+                self.P = np.linalg.inv(m)
+                return self.P                
+
+        def elements_m(self, i,a,j,b):
+                m = self.M
+                m_resheped = m.reshape((self.nocc,self.nvir,self.nocc,self.nvir))
+                #m_resheped = m_resheped.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
+                return m_resheped[i,a-self.nocc,j,b-self.nocc]
+
+        def elements_p(self, i,a,j,b):
+                m = self.M
+                p = np.linalg.inv(m)
+                p_resheped = p.reshape((self.nocc,self.nvir,self.nocc,self.nvir))
+                #m_resheped = m_resheped.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
+                return p_resheped[i,a-self.nocc,j,b-self.nocc]
+
 
 @attr.s
 class Cloppa_pathways:
@@ -243,7 +252,6 @@ class Cloppa_pathways:
 
                 self.orbv = self.mo_coeff_loc[:,self.vir]
                 self.orbo = self.mo_coeff_loc[:,self.occ]
-
 
                 self.nvir = self.orbv.shape[1]
                 self.nocc = self.orbo.shape[1]
@@ -282,8 +290,8 @@ class Cloppa_pathways:
                 return self.m
 
         @property
-        def elements(self):
+        def elements(self, i,a,j,b):
                 m = self.M
                 m_resheped = m.reshape((self.nocc,self.nvir,self.nocc,self.nvir))
                 #m_resheped = m_resheped.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
-                return m_resheped
+                return m_resheped[i,a-self.nocc,j,b-self.nocc]
