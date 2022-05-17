@@ -132,8 +132,8 @@ class inverse_principal_propagator:
         zero_matrix = np.zeros((len(self.a[0]), len(self.a[0])))
         bloq1_a = np.concatenate((zero_matrix, self.block12), axis=1)
         bloq2_a = np.concatenate((self.block21, zero_matrix), axis=1)
-        self.M = np.concatenate((bloq1_a, bloq2_a), axis=0)
-        eigenvalues = np.linalg.eigvals(self.M)
+        M = np.concatenate((bloq1_a, bloq2_a), axis=0)
+        eigenvalues = np.linalg.eigvals(M)
         totalent = []
         global ent
         Z=0
@@ -144,6 +144,25 @@ class inverse_principal_propagator:
             ent = [-a/Z*np.log(a/Z) for a in val]
         totalent.append(sum(ent))
         return totalent[0]
+
+    @property
+    def m_iajb_mixedstate(self):
+        """Entanglement between LMOs on diferents places of the molecule using
+        the Inverse of the PP like:
+        M = (0         M_{ia,jb} )
+            (M_{jb,ia}          0)
+        Returns
+        -------
+        [real]
+            [value of entanglement]
+        """
+        zero_matrix = np.zeros((len(self.a[0]), len(self.a[0])))
+        bloq1_a = np.concatenate((zero_matrix, self.block12), axis=1)
+        bloq2_a = np.concatenate((self.block21, zero_matrix), axis=1)
+        M = np.concatenate((bloq1_a, bloq2_a), axis=0)
+        eigenvalues = np.linalg.eigvals(M)
+        return eigenvalues
+
 
     @property
     def entropy_iajb_purestate(self):
