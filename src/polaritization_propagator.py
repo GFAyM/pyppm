@@ -53,7 +53,7 @@ class Prop_pol:
 
         m = a + b
         m = m.reshape(nocc*nvir,nocc*nvir, order='C')
-        
+        #m = np.diag((np.diag(m)))
         return m
 
     def h1_fc_pyscf(self,atmlst):
@@ -71,7 +71,6 @@ class Prop_pol:
             h1.append(fac * numpy.einsum('p,i->pi', orbv[ia], orbo[ia]))
         return mo
 
-
     def h1_fc(self,num_atom):
         mo_coeff = self.mf.mo_coeff
         mo_occ = self.mf.mo_occ
@@ -86,14 +85,12 @@ class Prop_pol:
         h1 = fac*numpy.einsum('p,i->pi', orbv, orbo).ravel()
         return h1
 
-
     def uniq_atoms(self, nuc_pair):
         atm1lst = sorted(set([i for i,j in nuc_pair]))
         atm2lst = sorted(set([j for i,j in nuc_pair]))
         atm1dic = dict([(ia,k) for k,ia in enumerate(atm1lst)])
         atm2dic = dict([(ia,k) for k,ia in enumerate(atm2lst)])
         return atm1dic, atm2dic
-
 
 #    @property
     def polarization_propagator(self, nuc1, nuc2):
