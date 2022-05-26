@@ -7,7 +7,7 @@ if module_path not in sys.path:
 
 
 from src.help_functions import extra_functions
-from src.cloppa import Cloppa_full
+from src.ppe import inverse_principal_propagator
 import plotly.express as px
 import pandas as pd
 import numpy as np
@@ -20,43 +20,25 @@ M_list = []
 
 for ang in range(1,18,1):
     mol_loc, mo_coeff_loc, mo_occ_loc = extra_functions(molden_file=f"H2O2_mezcla_{ang*10}.molden").extraer_coeff
-    mol_H2O2 = '''
-    O1   1
-    O2   1 1.45643942
-    H3   2 0.97055295  1 99.79601616
-    H4   1 0.97055295  2 99.79601616  3 {}
-    '''.format(10*ang)
-
-    viridx = np.where(mo_occ_loc==0)[0]
-    occidx = np.where(mo_occ_loc==2)[0]
 
 
-    full_M_obj = Cloppa_full(
-        mol_input=mol_H2O2,basis='6-31G**',
-        mo_coeff_loc=mo_coeff_loc, mol_loc=mol_loc, vir=viridx,
-        mo_occ_loc=mo_occ_loc)
+    occidx_OH2 = extra_functions(
+        molden_file=f"H2O2_mezcla_{ang*10}.molden").mo_hibridization_for_list(
+            'H4', .3, .5)
 
-    m = full_M_obj.M
-    m = m.reshape(9,29,9,29)
-    #p = np.linalg.inv(m)
-    #p = p.reshape(9,29,9,29)
+    occidx_OH1 = extra_functions(
+        molden_file=f"H2O2_mezcla_{ang*10}.molden").mo_hibridization_for_list(
+            'H3', .3, .5)
 
 
     viridx_OH2_1s = extra_functions(
         molden_file=f"H2O2_mezcla_{ang*10}.molden").mo_hibridization_for_list(
             'H4', .5, .7)
 
-    occidx_OH2 = extra_functions(
-        molden_file=f"H2O2_mezcla_{ang*10}.molden").mo_hibridization_for_list(
-            'H4', .3, .5)
-
     viridx_OH1_1s = extra_functions(
         molden_file=f"H2O2_mezcla_{ang*10}.molden").mo_hibridization_for_list(
             'H3', .5, .7)
 
-    occidx_OH1 = extra_functions(
-        molden_file=f"H2O2_mezcla_{ang*10}.molden").mo_hibridization_for_list(
-            'H3', .3, .5)
 
     viridx_OH2 = extra_functions(
         molden_file=f"H2O2_mezcla_{ang*10}.molden").mo_hibridization_for_list_several(
@@ -77,16 +59,40 @@ for ang in range(1,18,1):
     viridx_OH1_2py = viridx_OH1[2]
     viridx_OH1_2px = viridx_OH1[3]
 
-    
-    V = [(viridx_OH1_1s,viridx_OH2_1s, "1s"), (viridx_OH1_2py, viridx_OH2_2py, "2py"), (viridx_OH1_2px, viridx_OH2_2px, "2px"),
-         (viridx_OH1_2pz, viridx_OH2_2pz, "2pz"), (viridx_OH1_2s, viridx_OH2_2s, "2s")]
-    
-    for i,j,k,l in itertools.combinations(V, 4):
-
-        oh_pathway = np.sum(m[occidx_OH1, [i[0]-9,j[0]-9,k[0]-9,l[0]-9], 
-                        occidx_OH1, [i[0]-9,j[0]-9,k[0]-9,l[0]-9]])        
+    viridx_OH2_O3s = extra_functions(
+        molden_file=f"H2O2_mezcla_{ang*10}.molden").mo_hibridization_for_list(
+            'O1 3s', .45, 1)
         
-        M_list.append([ang*10, oh_pathway,f'{i[2]}_{j[2]}_{k[2]}_{l[2]}'])
+    viridx_OH1_O3s = extra_functions(
+        molden_file=f"H2O2_mezcla_{ang*10}.molden").mo_hibridization_for_list(
+            'O2 3s', .45, 1)
+
+    viridx_OH2_O3dz = extra_functions(
+        molden_file=f"H2O2_mezcla_{ang*10}.molden").mo_hibridization_for_list(
+            'O1 3dz', .45, 1)
+        
+    viridx_OH1_O3dz = extra_functions(
+        molden_file=f"H2O2_mezcla_{ang*10}.molden").mo_hibridization_for_list(
+            'O2 3dz', .45, 1)
+    
+
+    V = [(viridx_OH1_1s,viridx_OH2_1s, "1s"), (viridx_OH1_2py, viridx_OH2_2py, "2py"), (viridx_OH1_2px, viridx_OH2_2px, "2px"),
+         (viridx_OH1_2pz, viridx_OH2_2pz, "2pz"), (viridx_OH1_2s, viridx_OH2_2s, "2s")]#,(viridx_OH1_O3s, viridx_OH2_O3s, "O3s"),
+         #(viridx_OH1_O3dz, viridx_OH2_O3dz, "O3dz")]
+
+
+    for I,J,K,L in itertools.combinations(V, 4):
+            i = [I[0],J[0],K[0],L[0]]
+            j = [I[1],J[1],K[1],L[1]]
+            m_obj = inverse_principal_propagator(o1=[occidx_OH1], o2=[occidx_OH2], v1=i, v2=j, mo_coeff=mo_coeff_loc, mol=mol_loc,
+            spin_dependence='triplet')
+            m = m_obj.entropy_ia
+            
+            #m = np.linalg.eigvals(m)
+            #print(np.real(np.exp(m).sum()))
+            #m = m.sum()
+
+            M_list.append([ang*10, m ,f'{I[2]}_{J[2]}_{K[2]}_{L[2]}'])
 
 
 
@@ -99,4 +105,4 @@ fig = px.line(df, x="angulo", y="M", animation_frame='Virtuals',
 fig.show()
 fig.update_layout(    yaxis_title=r'M matrix' )
 
-fig.write_html("M_OH1OH1_comb4.html", include_mathjax='cdn')
+fig.write_html("m_iajb_OH1OH1_triplet_comb4.html", include_mathjax='cdn')

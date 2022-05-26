@@ -60,13 +60,13 @@ for ang in range(1,18,1):
          (viridx_OH1_2pz, viridx_OH2_2pz, "2pz"), (viridx_OH1_2s, viridx_OH2_2s, "2s")]
 
 
-    for I,J,K,L in itertools.combinations(V, 4):
-            i = [I[0],J[0],K[0],L[0]]
-            j = [I[1],J[1],K[1],L[1]]
+    for I,J in itertools.combinations(V,2):
+            i = [I[0],J[0]]
+            j = [I[1],J[1]]
             m_obj = inverse_principal_propagator(o1=[occidx_OH1], o2=[occidx_OH2], v1=i, v2=j, mo_coeff=mo_coeff_loc, mol=mol_loc)
-            m = m_obj.m_iajb
-            m = np.diag(m).sum()
-            M_list.append([ang*10, m ,f'{I[2]}_{J[2]}_{K[2]}_{L[2]}'])
+            ent = m_obj.entropy_iajb
+            #eig = eigvals.sum()
+            M_list.append([ang*10, ent ,f'{I[2]}_{J[2]}'])
 
 
 
@@ -79,7 +79,7 @@ fig = px.line(df, x="angulo", y="M", animation_frame='Virtuals',
 fig.show()
 fig.update_layout(    yaxis_title=r'M matrix' )
 
-fig.write_html("m_iajb_OH1OH2_triplet_comb4.html", include_mathjax='cdn')
+#fig.write_html("eigvals_OH1OH2_comb4.html", include_mathjax='cdn')
         
 
 
