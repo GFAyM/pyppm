@@ -17,7 +17,7 @@ class Prop_pol:
     #mo_coeff = attr.ib(default=None, type=numpy.ndarray, validator=attr.validators.instance_of(numpy.ndarray))
     #mo_occ = attr.ib(default=None, type=numpy.ndarray, validator=attr.validators.instance_of(numpy.ndarray))
 
-        
+    
         
     @property
     def m_matrix_triplet(self):

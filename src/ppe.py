@@ -292,5 +292,9 @@ class inverse_principal_propagator:
         I = self.entropy_ia + self.entropy_jb - self.entropy_iajb_mixedstate
         return I
 
+    @property
+    def mutual_information_2(self):
+        I = self.entropy_ia + self.entropy_jb - self.entropy_iajb_mixedstate_2
+        return I
 
 

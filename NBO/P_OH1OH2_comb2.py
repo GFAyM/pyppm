@@ -33,6 +33,8 @@ for ang in range(1,17,1):
     viridx = np.where(mo_occ_loc==0)[0]
     occidx = np.where(mo_occ_loc==2)[0]
 
+    print(viridx)
+    print(occidx)
     occidx_OH1 = 7
     viridx_OH1_1s = 10
     viridx_OH1_2s = 32
@@ -61,12 +63,12 @@ for ang in range(1,17,1):
     full_M_obj = Cloppa_full(
         mol_input=mol_H2O2,basis='6-31G**',
         mo_coeff_loc=mo_coeff_loc, mol_loc=mol_loc, vir=viridx,
-        mo_occ_loc=mo_occ_loc)
+        mo_occ_loc=mo_occ_loc, cart=True)
     
     for i,j in itertools.combinations(V, 2):
         m = 0
-        m += full_M_obj.elements_p(occidx_OH1, i[0], occidx_OH2, i[1])
-        m += full_M_obj.elements_p(occidx_OH1, j[0], occidx_OH2, j[1])
+        m += full_M_obj.elements_m(occidx_OH1, i[0], occidx_OH2, i[1])
+        m += full_M_obj.elements_m(occidx_OH1, j[0], occidx_OH2, j[1])
 
 #        print(m)
 #        oh_pathway = np.sum(p[occidx_OH1, [i[0]-9,j[0]-9,k[0]-9,l[0]-9], 

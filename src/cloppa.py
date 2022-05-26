@@ -21,9 +21,10 @@ class Cloppa_specific_pathways:
     o2 = attr.ib(default=None, type=list, validator=attr.validators.instance_of(list))
     v1 = attr.ib(default=None, type=list, validator=attr.validators.instance_of(list))
     v2 = attr.ib(default=None, type=list, validator=attr.validators.instance_of(list))
+    cart = attr.ib(default='False', type=str, validator=attr.validators.instance_of(str))
 
     def __attrs_post_init__(self):
-        self.mol = gto.M(atom=str(self.mol_input), basis=self.basis, verbose=0)
+        self.mol = gto.M(atom=str(self.mol_input), basis=self.basis, verbose=0, cart=self.cart)
         self.mf = scf.RHF(self.mol).run()
 
     @property
@@ -157,6 +158,7 @@ class Cloppa_full:
         #for testing
         occ = attr.ib(default=None)
         vir = attr.ib(default=None)
+        cart = attr.ib(default=False, type=bool, validator=attr.validators.instance_of(bool))
 
 
         def __attrs_post_init__(self):
@@ -175,7 +177,7 @@ class Cloppa_full:
                 self.mo = np.hstack((self.orbo,self.orbv))
                 self.nmo = self.nocc + self.nvir
                 #here we made a SCF calculation of the molecule
-                self.mol = gto.M(atom=str(self.mol_input), basis=self.basis, verbose=0)
+                self.mol = gto.M(atom=str(self.mol_input), basis=self.basis, verbose=0, cart=self.cart)
                 self.mf = scf.RHF(self.mol).run()
 
         @property
