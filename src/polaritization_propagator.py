@@ -8,6 +8,7 @@ import numpy as np
 from pyscf.dft import numint
 from pyscf.data import nist
 
+
 @attr.s
 class Prop_pol:
     """_summary_
@@ -16,8 +17,11 @@ class Prop_pol:
     #mo_energy = attr.ib(default=None, type=numpy.ndarray, validator=attr.validators.instance_of(numpy.ndarray))
     #mo_coeff = attr.ib(default=None, type=numpy.ndarray, validator=attr.validators.instance_of(numpy.ndarray))
     #mo_occ = attr.ib(default=None, type=numpy.ndarray, validator=attr.validators.instance_of(numpy.ndarray))
-
-    
+    def __attrs_post_init__(self):
+        self.mo_occ = self.mf.mo_occ
+        self.mo_energy = self.mf.mo_energy
+        self.mo_coeff = self.mf.mo_coeff
+        self.mol = self.mf.mol    
         
     @property
     def m_matrix_triplet(self):
@@ -26,23 +30,20 @@ class Prop_pol:
         A[i,a,j,b] = \delta_{ab}\delta_{ij}(E_a - E_i) + (ia||bj)
         B[i,a,j,b] = (ia||jb)
         '''
-
         mol = self.mf.mol
-        mo_energy = self.mf.mo_energy
-        mo_coeff = self.mf.mo_coeff
-        nao, nmo = mo_coeff.shape
+        nao, nmo = self.mo_coeff.shape
         mo_occ = self.mf.mo_occ
         occidx = numpy.where(mo_occ==2)[0]
         viridx = numpy.where(mo_occ==0)[0]
-        orbv = mo_coeff[:,viridx]
-        orbo = mo_coeff[:,occidx]
+        orbv = self.mo_coeff[:,viridx]
+        orbo = self.mo_coeff[:,occidx]
         nvir = orbv.shape[1]
         nocc = orbo.shape[1]
         mo = numpy.hstack((orbo,orbv))
         nmo = nocc + nvir
 
 
-        e_ia = lib.direct_sum('a-i->ia', mo_energy[viridx], mo_energy[occidx])
+        e_ia = lib.direct_sum('a-i->ia', self.mo_energy[viridx], self.mo_energy[occidx])
         a = numpy.diag(e_ia.ravel()).reshape(nocc,nvir,nocc,nvir)
         b = numpy.zeros_like(a)
 
@@ -56,10 +57,7 @@ class Prop_pol:
         #m = np.diag((np.diag(m)))
         return m
 
-    def h1_fc_pyscf(self,atmlst):
-        mo_coeff = self.mf.mo_coeff
-        mo_occ = self.mf.mo_occ
-        mol = self.mf.mol
+    def make_h1_fc(mol, mo_coeff, mo_occ, atmlst):
         coords = mol.atom_coords()
         ao = numint.eval_ao(mol, coords)
         mo = ao.dot(mo_coeff)
@@ -69,20 +67,6 @@ class Prop_pol:
         h1 = []
         for ia in atmlst:
             h1.append(fac * numpy.einsum('p,i->pi', orbv[ia], orbo[ia]))
-        return mo
-
-    def h1_fc(self,num_atom):
-        mo_coeff = self.mf.mo_coeff
-        mo_occ = self.mf.mo_occ
-        mol = self.mf.mol
-        coords = mol.atom_coords()
-        ao = numint.eval_ao(mol, coords)
-        ao = ao[num_atom]
-        mo = ao.dot(mo_coeff)
-        orbo = mo[mo_occ> 0]
-        orbv = mo[mo_occ==0]
-        fac = 8*numpy.pi/3 *.5  # *.5 due to s = 1/2 * pauli-matrix
-        h1 = fac*numpy.einsum('p,i->pi', orbv, orbo).ravel()
         return h1
 
     def uniq_atoms(self, nuc_pair):
@@ -93,7 +77,7 @@ class Prop_pol:
         return atm1dic, atm2dic
 
 #    @property
-    def polarization_propagator(self, nuc1, nuc2):
+    def polarization_propagator(self):
 
         h1 = self.h1_fc(nuc1)
         h2 = self.h1_fc(nuc2)    
@@ -107,7 +91,7 @@ class Prop_pol:
         mol = self.mf.mol
         nuc_pair = [(i,j) for i in range(mol.natm) for j in range(i)]
         atm1dic, atm2dic = self.uniq_atoms(nuc_pair=nuc_pair)
-        h2 = self.h1_fc(sorted(atm1dic.keys()))
+        h2 = self.h1_fc_pyscf(sorted(atm1dic.keys()))
         #return nuc_pair, atm1dic, atm2dic
         return h2
         
