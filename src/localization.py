@@ -10,7 +10,7 @@ from pyscf.lo.cholesky import cholesky_mos
 from pyscf.tools import molden, mo_mapping
 import numpy as np
 import attr
-from help_functions import extra_functions
+from src.help_functions import extra_functions
 
 @attr.s
 class localization:
@@ -99,7 +99,9 @@ class localization:
         #for ang in range(ang_init, ang_second, 10):
         if self.no_second_loc == True:
             lmo_merged = self.localiza_first
-            self.filename = str('{}_{}_{}_{}.molden').format(self.molecule_name, self.basis, self.dihedral_angle, self.first_loc)
+            #self.filename = str('{}_{}_{}_{}.molden').format(self.molecule_name, self.basis, self.dihedral_angle, self.first_loc)
+            self.filename = str('{}_{}_{}.molden').format(self.molecule_name, self.basis,  self.first_loc)
+            
             print('Dumping the orbitals in file:', self.filename)
             molden.from_mo(self.mol, self.filename, lmo_merged)
             orbitals = extra_functions(molden_file=self.filename).mo_hibridization(self.atom_for_searching, 0.1,1)
@@ -107,7 +109,9 @@ class localization:
 
         elif self.no_second_loc == False:
             lmo_merged = self.localiza_second
-            self.filename = str('{}_{}_{}_{}_{}.molden').format(self.molecule_name, self.basis, self.dihedral_angle, self.first_loc, self.second_loc)
+            #self.filename = str('{}_{}_{}_{}_{}.molden').format(self.molecule_name, self.basis, self.dihedral_angle, self.first_loc, self.second_loc)
+            self.filename = str('{}_{}_{}_{}.molden').format(self.molecule_name, self.basis, self.first_loc, self.second_loc)
+            
             print('Dumping the orbitals in file:', self.filename)
             molden.from_mo(self.mol, self.filename, lmo_merged)
             orbitals = extra_functions(molden_file=self.filename).mo_hibridization(self.atom_for_searching, 0.1,1)
