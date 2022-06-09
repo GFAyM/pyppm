@@ -1,8 +1,9 @@
 import pandas as pd
-import numpy as np
+import numpy 
 import matplotlib.pyplot as plt
-from pyscf import scf, gto, tdscf
+from pyscf import scf, gto, tdscf, lib
 from pyscf.dft import numint
+from pyscf.data import nist
 
 import os
 import sys
@@ -13,33 +14,34 @@ if module_path not in sys.path:
 
 
 from src.polaritization_propagator import Prop_pol as pp
+from functools import reduce
+import numpy
+from pyscf import lib
+from pyscf import gto
+from pyscf import tools
+from pyscf.lib import logger
+from pyscf.scf import cphf
+from pyscf.scf import _response_functions  # noqa
+from pyscf.ao2mo import _ao2mo
+from pyscf.dft import numint
+from pyscf.data import nist
+from pyscf.data.gyro import get_nuc_g_factor
 
 
-M_list = [[],[]]
 
-for ang in range(1,18):
-    mol = gto.M(atom='''
-            O1   1
-            O2   1 1.45643942
-            H3   2 0.97055295  1 99.79601616
-            H4   1 0.97055295  2 99.79601616  3 {}
-            '''.format(ang*10), basis='ccpvdz', verbose=0)
+mol = gto.M(atom='''
+        O1   1
+        O2   1 1.45643942
+        H3   2 0.97055295  1 99.79601616
+        H4   1 0.97055295  2 99.79601616  3 100
+        ''', basis='6-31G**', verbose=0)
 
-    mf = scf.RHF(mol).run()
-
-    ppobj = pp(mf)
-    pol_prop = ppobj.polarization_propagator(2,3)
-#    pol_prop = np.sum(np.diag(np.linalg.inv(ppobj.m_matrix_triplet)))
-    M_list[0].append(ang*10)#, np.sum(m)])#,  "Propagador Pol"])
-    M_list[1].append(pol_prop)
+mf = scf.RHF(mol).run()
 
 
-fig = plt.figure(figsize=(8, 8))
-x = M_list[0]
-y = M_list[1]
-plt.plot(x,y)
-plt.title("J(H-H) coupling without any constant, in the canonical MO basis")
+ppobj = pp(mf)
 
-#plt.savefig('J_H2O2.png')
-plt.show()
+ssc = ppobj.kernel(FC=False, FCSD=True, PSO=False)
 
+#pso = ppobj.pp_ssc_pso
+#print(pso)

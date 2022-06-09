@@ -19,8 +19,9 @@ H6      -0.8890296464           -0.5132749495           -1.1687343145;
 H7      -0.8890218879            0.5132759420            1.1687443491;
 H8       0.8890202024           -0.5132783004           -1.1687402745;
 ''', 
-
-basis='ccpvdz',unit='amstrong')
+basis='ccpvdz',unit='amstrong', verbose=0)
 mf = scf.RHF(mol).run()
 ppobj = pp(mf)
-ssc = ppobj.kernel
+print('SSC in Hz with canonical orbitals')
+ssc = ppobj.kernel(FC=False, FCSD=False, PSO=True)
+#print(ppobj.pp_ssc_fcsd)
