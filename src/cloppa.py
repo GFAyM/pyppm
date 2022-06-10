@@ -87,26 +87,7 @@ class Cloppa:
                 
                 return self.m
 
-        def P(self):
-                """
-                This function calculate the P matrix, i.e, the inverse of the M matrix
-                """
-                m = self.M
-                self.P = np.linalg.inv(m)
-                return self.P                
 
-        def elements_m(self, i,a,j,b):
-                m = self.M
-                m_resheped = m.reshape((self.nocc,self.nvir,self.nocc,self.nvir))
-                #m_resheped = m_resheped.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
-                return m_resheped[i,a-self.nocc,j,b-self.nocc]
-
-        def elements_p(self, i,a,j,b):
-                m = self.M
-                p = np.linalg.inv(m)
-                p_resheped = p.reshape((self.nocc,self.nvir,self.nocc,self.nvir))
-                #m_resheped = m_resheped.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
-                return p_resheped[i,a-self.nocc,j,b-self.nocc]
 
         def pert_fc(self,atmlst):
                 mo_coeff = self.mo_coeff_loc
@@ -269,9 +250,37 @@ class Cloppa:
             jtensor = np.einsum('ij,i,j->ij', ktensor, gyro, gyro)
             label = ['%2d %-2s'%(ia, self.mol_loc.atom_symbol(ia)) for ia in range(natm)]
             ssc = tools.dump_mat.dump_tri(self.mol_loc.stdout, jtensor, label)
-            #return ssc
-        
-        def pp_ssc_fcsd_occ_pathways(self, n_atom1,occ_atom1,n_atom2,occ_atom2):
+            
+        def pp_ssc_pso_pathways(self, princ_prop,n_atom1,occ_atom1,vir_atom1,n_atom2,occ_atom2,vir_atom2):
+            nvir = self.nvir
+            nocc = self.nocc
+
+            if princ_prop.all() == None:
+                m = self.M(triplet=False)
+                p = np.linalg.inv(m)
+                p = -p.reshape(nocc,nvir,nocc,nvir)
+            else:
+                p=princ_prop
+                p = -p.reshape(nocc,nvir,nocc,nvir)
+
+            h1 = self.pert_pso(n_atom1)
+            h1 = np.asarray(h1).reshape(1,3,nvir,nocc)
+            h1_pathway = np.zeros(h1.shape)
+            h2 = self.pert_pso(n_atom2)
+            h2 = np.asarray(h2).reshape(1,3,nvir,nocc)
+            h2_pathway = np.zeros(h2.shape)
+
+            h1_pathway[0,:,vir_atom1-nocc,occ_atom1] += h1[0,:,vir_atom1-nocc,occ_atom1]
+            h2_pathway[0,:,vir_atom2-nocc,occ_atom2] += h2[0,:,vir_atom2-nocc,occ_atom2]
+
+
+            para = []
+            e = np.einsum('iax,iajb,jby->xy', h1_pathway[0].T, p, h2_pathway[0].T)
+            para.append(e*4)  # *4 for +c.c. and double occupnacy
+            pso = np.asarray(para) * nist.ALPHA**4
+            return pso
+
+        def pp_ssc_fcsd_pathways(self, princ_prop,n_atom1,occ_atom1,vir_atom1,n_atom2,occ_atom2,vir_atom2):
             nvir = self.nvir
             nocc = self.nocc
 
@@ -282,16 +291,15 @@ class Cloppa:
             h2  = np.asarray(h2).reshape(-1,3,3,nvir,nocc)
             h2_pathway = np.zeros((1,3,3,nvir,nocc))
             
-            if occ_atom1==None:
-                if occ_atom2==None:
-                    h1_pathway[0,:,:,:,:] += h1[0,:,:,:,:]
-                    h2_pathway[0,:,:,:,:] += h2[0,:,:,:,:]                    
-            else:                 
-                h1_pathway[0,:,:,:,occ_atom1] += h1[0,:,:,:,occ_atom1]
-                h2_pathway[0,:,:,:,occ_atom2] += h2[0,:,:,:,occ_atom2]    
-            m = self.M(triplet=True)
-            p = np.linalg.inv(m)
-            p = -p.reshape(nocc,nvir,nocc,nvir)
+            h1_pathway[0,:,:,vir_atom1-self.nocc,occ_atom1] += h1[0,:,:,vir_atom1-self.nocc,occ_atom1]
+            h2_pathway[0,:,:,vir_atom2-self.nocc,occ_atom2] += h2[0,:,:,vir_atom2-self.nocc,occ_atom2]    
+            if princ_prop.all() == None:
+                m = self.M(triplet=True)
+                p = np.linalg.inv(m)
+                p = -p.reshape(nocc,nvir,nocc,nvir)
+            else:
+                p=princ_prop
+                p = -p.reshape(nocc,nvir,nocc,nvir)
             para = []
             e = np.einsum('iawx,iajb,jbwy->xy', h1_pathway[0].T, p , h2_pathway[0].T)
             para.append(e*4)            
@@ -305,28 +313,27 @@ class Cloppa:
             gyro.append(get_nuc_g_factor(symb))
             return np.array(gyro)
 
-        def kernel_pathway_occ(self, FC=False, FCSD=True, PSO=False, n_atom1=None, occ_atom1=None, n_atom2=None, occ_atom2=None):
+        def kernel_pathway(self, FC=False, FCSD=True, PSO=False, princ_prop=None,
+                                n_atom1=None, occ_atom1=None, vir_atom1=None, 
+                                n_atom2=None, occ_atom2=None, vir_atom2=None):
 
             if FC:
                 prop = self.pp_ssc_fc
             if PSO:
-                prop = self.pp_ssc_pso
+                prop = self.pp_ssc_pso_pathways(princ_prop=princ_prop,
+                                                     n_atom1=n_atom1,occ_atom1=occ_atom1, vir_atom1=vir_atom1,
+                                                     n_atom2=n_atom2,occ_atom2=occ_atom2, vir_atom2=vir_atom2)
             elif FCSD:
-                prop = self.pp_ssc_fcsd_occ_pathways(n_atom1=n_atom1,occ_atom1=occ_atom1,n_atom2=n_atom2,occ_atom2=occ_atom2)
+                prop = self.pp_ssc_fcsd_pathways(princ_prop=princ_prop,
+                                                     n_atom1=n_atom1,occ_atom1=occ_atom1, vir_atom1=vir_atom1,
+                                                     n_atom2=n_atom2,occ_atom2=occ_atom2, vir_atom2=vir_atom2)
             
             nuc_magneton = .5 * (nist.E_MASS/nist.PROTON_MASS)  # e*hbar/2m
             au2Hz = nist.HARTREE2J / nist.PLANCK
             unit = au2Hz * nuc_magneton ** 2
             iso_ssc = unit * np.einsum('kii->k', prop) / 3 
-            #print(iso_ssc)
             natm = self.mol_loc.natm
-            #ktensor = np.zeros((natm,natm))
-            #for k, (i, j) in enumerate(self.nuc_pair):
-            #    ktensor[i,j] = ktensor[j,i] = iso_ssc[k]
-
             gyro1 = self._atom_gyro_list_2(n_atom1[0])
             gyro2 = self._atom_gyro_list_2(n_atom2[0])
             jtensor = np.einsum('i,i,j->i', iso_ssc, gyro1, gyro2)
-            #label = ['%2d %-2s'%(ia, self.mol_loc.atom_symbol(ia)) for ia in range(natm)]
-            #ssc = tools.dump_mat.dump_tri(self.mol_loc.stdout, jtensor, label)
             return jtensor

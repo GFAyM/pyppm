@@ -26,17 +26,23 @@ n_atom2=[3]
 
 #j = full_M_obj.kernel_pathway_occ(n_atom1=n_atom1, occ_atom1=5, n_atom2=n_atom2, occ_atom2=3)
 ssc_tot = 0
-      
-for i in range(9):
-    for j in range(9):
-        ssc = full_M_obj.kernel_pathway_occ(n_atom1=n_atom1,occ_atom1=i, n_atom2=n_atom2,occ_atom2=j)
-        ssc_tot += ssc
-        if abs(ssc) > 0.1:
-            print('i  j  J_SD+FC    Total' '\n', i, j, ' ',np.around(ssc[0], decimals=3),' ', np.around(ssc_tot[0], decimals=3))
-            
+m = obj.M(triplet=False)
+p = np.linalg.inv(m)
+print('i  j   ssc_pso ssc_pso_total')
 
-#            print('', ssc_tot[0])
-            
+for i in range(9,38,1):
+	for j in range(9,38,1):
+#		for a in range(9,38,1):
+#			for b in range(9,38,1):
+		ssc = full_M_obj.kernel_pathway(FC=False, FCSD=False, PSO=True,
+										princ_prop=p,
+										n_atom1=n_atom1, occ_atom1=4 , vir_atom1=i, 
+										n_atom2=n_atom2, occ_atom2=4, vir_atom2=j)
+		ssc_tot += ssc
+		if abs(ssc) > 0.1: 
+			print(i, j, ssc, ssc_tot)    
+print(ssc_tot)
+					
 
 
 
