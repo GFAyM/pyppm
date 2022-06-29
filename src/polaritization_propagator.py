@@ -115,6 +115,24 @@ class Prop_pol:
         fc = numpy.einsum(',k,xy->kxy', nist.ALPHA**4, para, numpy.eye(3))    
         return fc
 
+    def pp_ssc_fc_select(self,atom1,atom2):
+        
+        nvir = self.nvir
+        nocc = self.nocc
+
+        h1 = self.pert_fc(atom1)
+        h2 = self.pert_fc(atom2)    
+        m = self.M(triplet=True)
+        p = np.linalg.inv(m)
+        p = -p.reshape(nocc,nvir,nocc,nvir)
+        para = []
+        e = numpy.einsum('ia,iajb,jb', h1[0].T, p , h2[0].T)
+        #print(e)
+        para.append(e*4)  # *4 for +c.c. and for double occupancy
+            
+        fc = numpy.einsum(',k,xy->kxy', nist.ALPHA**4, para, numpy.eye(3))    
+        return fc
+
     def pert_fcsd(self, atmlst):
         '''MO integrals for FC + SD'''
         orbo = self.mo_coeff[:,self.mo_occ> 0]
@@ -185,6 +203,26 @@ class Prop_pol:
         return pso
         #return h1[0].T.shape
     
+    def pp_ssc_pso_select(self, atom1, atom2):
+        para = []
+        nvir = self.nvir
+        nocc = self.nocc
+        #mo1 = mo1.reshape(len(atm1lst),3,nvir,nocc)
+        m = self.M(triplet=False)
+        p = np.linalg.inv(m)
+        
+        p = -p.reshape(nocc,nvir,nocc,nvir)
+        h1 = self.pert_pso(atom1)
+        h1 = numpy.asarray(h1).reshape(1,3,nvir,nocc)
+        h2 = self.pert_pso(atom2)
+        h2 = numpy.asarray(h2).reshape(1,3,nvir,nocc)
+        
+            # PSO = -Tr(Im[h1_ov], Im[mo1_vo]) + cc = 2 * Tr(Im[h1_vo], Im[mo1_vo])
+        e = numpy.einsum('iax,iajb,jby->xy', h1[0].T, p, h2[0].T)
+        para.append(e*4)  # *4 for +c.c. and double occupnacy
+        pso = numpy.asarray(para) * nist.ALPHA**4
+        return pso
+
     @property
     def pp_ssc_fcsd(self):
         nvir = self.nvir
@@ -206,6 +244,23 @@ class Prop_pol:
         fcsd = numpy.asarray(para) * nist.ALPHA**4
         return fcsd
 
+    def pp_ssc_fcsd_select(self,atom1,atom2):
+        nvir = self.nvir
+        nocc = self.nocc
+
+        h1 = self.pert_fcsd(atom1)
+        h1  = numpy.asarray(h1).reshape(-1,3,3,nvir,nocc)
+        h2 = self.pert_fcsd(atom2)
+        h2  = numpy.asarray(h2).reshape(-1,3,3,nvir,nocc)    
+        m = self.M(triplet=True)
+        p = np.linalg.inv(m)
+        p = -p.reshape(nocc,nvir,nocc,nvir)
+        para = []
+        e = numpy.einsum('iawx,iajb,jbwy->xy', h1[0].T, p , h2[0].T)
+        para.append(e*4)
+        fcsd = numpy.asarray(para) * nist.ALPHA**4
+        return fcsd
+
 
 
 
@@ -223,7 +278,12 @@ class Prop_pol:
                 gyro.append(get_nuc_g_factor(symb))
         return numpy.array(gyro)
 
-
+    def _atom_gyro_list_2(self, num_atom):
+        gyro = []
+        symb = self.mol.atom_symbol(num_atom)
+                # Get default isotope
+        gyro.append(get_nuc_g_factor(symb))
+        return np.array(gyro)
 
 
     #@property
@@ -257,4 +317,22 @@ class Prop_pol:
         tools.dump_mat.dump_tri(self.mol.stdout, jtensor, label)
         #return ssc
 
-    
+    def kernel_select(self, FC=True, FCSD=False, PSO=False, atom1=None, atom2=None):
+        
+        if FC:
+            prop = self.pp_ssc_fc_select(atom1,atom2)
+        if PSO:
+            prop = self.pp_ssc_pso_select(atom1, atom2)
+        elif FCSD:
+            prop = self.pp_ssc_fcsd_select(atom1, atom2)
+        
+            
+        nuc_magneton = .5 * (nist.E_MASS/nist.PROTON_MASS)  # e*hbar/2m
+        au2Hz = nist.HARTREE2J / nist.PLANCK
+        unit = au2Hz * nuc_magneton ** 2
+        iso_ssc = unit * np.einsum('kii->k', prop) / 3 
+        natm = self.mol.natm
+        gyro1 = self._atom_gyro_list_2(atom1[0])
+        gyro2 = self._atom_gyro_list_2(atom2[0])
+        jtensor = np.einsum('i,i,j->i', iso_ssc, gyro1, gyro2)
+        return jtensor

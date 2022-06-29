@@ -33,7 +33,8 @@ class localization:
     dihedral_angle = attr.ib(default=None, type=int)
     basis = attr.ib(default='cc-pvdz', type=str)
     molecule_name = attr.ib(default=None, type=str)
-    atom_for_searching = attr.ib(default=None, type=str)
+    atom_for_searching1 = attr.ib(default=None, type=str)
+    atom_for_searching2 = attr.ib(default=None, type=str)
 
 
     def __attrs_post_init__(self):
@@ -100,19 +101,23 @@ class localization:
         if self.no_second_loc == True:
             lmo_merged = self.localiza_first
             #self.filename = str('{}_{}_{}_{}.molden').format(self.molecule_name, self.basis, self.dihedral_angle, self.first_loc)
-            self.filename = str('{}_{}_{}.molden').format(self.molecule_name, self.basis,  self.first_loc)
+            self.filename = f'{self.molecule_name}_{self.dihedral_angle}_{self.basis}_{self.first_loc}.molden'
             
             print('Dumping the orbitals in file:', self.filename)
             molden.from_mo(self.mol, self.filename, lmo_merged)
-            orbitals = extra_functions(molden_file=self.filename).mo_hibridization(self.atom_for_searching, 0.1,1)
-            print(orbitals)
+            orbitals1 = extra_functions(molden_file=self.filename).mo_hibridization(self.atom_for_searching1, 0.1,1)
+            orbitals2 = extra_functions(molden_file=self.filename).mo_hibridization(self.atom_for_searching2, 0.1,1)
+            print(orbitals1)
+            print(orbitals2)
 
         elif self.no_second_loc == False:
             lmo_merged = self.localiza_second
             #self.filename = str('{}_{}_{}_{}_{}.molden').format(self.molecule_name, self.basis, self.dihedral_angle, self.first_loc, self.second_loc)
-            self.filename = str('{}_{}_{}_{}.molden').format(self.molecule_name, self.basis, self.first_loc, self.second_loc)
+            self.filename = f'{self.molecule_name}_{self.dihedral_angle}_{self.basis}_{self.first_loc}_{self.second_loc}.molden'
             
             print('Dumping the orbitals in file:', self.filename)
-            molden.from_mo(self.mol, self.filename, lmo_merged)
-            orbitals = extra_functions(molden_file=self.filename).mo_hibridization(self.atom_for_searching, 0.1,1)
-            print(orbitals)
+            molden.from_mo(self.mol, self.filename, lmo_merged)            
+            orbitals1 = extra_functions(molden_file=self.filename).mo_hibridization(self.atom_for_searching1, 0.1,1)
+            orbitals2 = extra_functions(molden_file=self.filename).mo_hibridization(self.atom_for_searching2, 0.1,1)           
+            print(orbitals1)
+            print(orbitals2)

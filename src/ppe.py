@@ -250,7 +250,7 @@ class inverse_principal_propagator:
     def m_iaia(self):
         """Entanglement between LMOs on diferents places of the molecule using
         the Inverse of the PP like:
-        M = M_{ia,jb}
+        M = M_{ia,ia}
         Returns
         -------
         [real]
