@@ -41,7 +41,5 @@ mf = scf.RHF(mol).run()
 
 ppobj = pp(mf)
 
-ssc = ppobj.kernel(FC=False, FCSD=True, PSO=False)
+ssc = ppobj.kernel(FC=False, FCSD=True, PSO=True)
 
-#pso = ppobj.pp_ssc_pso
-#print(pso)

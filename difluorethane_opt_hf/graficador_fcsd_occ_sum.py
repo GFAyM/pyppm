@@ -14,16 +14,17 @@ data_J.columns = ['ang', 'fc_ab', 'a', 'b', 'fc']
 #orb = ['F3_2pz']
 #for a in []
 
-occ_lmo = ['H3_1s', 'H7_1s']
 
 occ_lmo = ['F3_1s','F7_1s','F3_2s','F7_2s','F3_2pz','F7_2pz','F3_2p1','F7_2p1',
 'F3_2p2','F7_2p2','C1_1s','C2_1s','C_C']
 
-occ_lmo = ['F3_2s','F7_2s','F3_2pz','F7_2pz','F3_2p1','F7_2p1']
+occ_lmo = ['F3_2s','F7_2s','F3_2pz','F7_2pz',
+'F3_2p2','F7_2p2','F3_2p1','F7_2p1']
 
-occ_lmo1 = ['F3_2s','F3_2pz']
 
-occ_lmo2 = ['F7_2s','F7_2pz']
+occ_lmo1 = ['F3_2s','F3_2pz', 'F3_2p1']
+
+occ_lmo2 = ['F7_2s','F7_2pz', 'F7_2p1']
 
 df_F_C = data_J[(data_J.a.str.contains('F3_1s') == True) & (data_J.b.str.contains('F7_1s') == True)].reset_index()
 df_F_C.fc_ab = 0
@@ -48,8 +49,8 @@ plt.legend()
 plt.ylabel('Hz')
 plt.xlabel('Ángulo diedro')
 plt.suptitle('FC+SD contribution to $^3J(H-H)_{i,j}$ en C$_2$F$_2$H$_4$, cc-pVDZ')
-plt.title('i=C-H$_1$, j=C-H$_2$, a = b = all')# f'a={orb1}, b={orb2}')
-#plt.savefig(f'FC_occ_C2H6.png', dpi=200)
+plt.title('i=C-F$_1$(2s,2p$_z$, 2p$_x$), j=C-F$_2$(2s,2p$_z$,2p$_x$), a = b = all')# f'a={orb1}, b={orb2}')
+#plt.savefig(f'FC_occ_C2F2H4_sum_2.png', dpi=200)
 plt.show()                #
 
 

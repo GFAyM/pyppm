@@ -28,8 +28,8 @@ occ_lmo2 = ['F7_2s','F7_2pz']
 df_F_C = data_J[(data_J.a.str.contains('F3_1s') == True) & (data_J.b.str.contains('F7_1s') == True)].reset_index()
 df_F_C.fc_ab = 0
 
-for orb1 in occ_lmo1:
-    for orb2 in occ_lmo2:
+for orb1 in occ_lmo:
+    for orb2 in occ_lmo:
         
 #        df_F_C = data_J[(data_J.a.str.contains('F3_2pz') == True) & (data_J.b.str.contains('F7_2pz') == True)]
 
@@ -47,7 +47,7 @@ for orb1 in occ_lmo1:
             plt.xlabel('Ángulo diedro')
             plt.suptitle('FC+SD contribution to $^3J(H-H)_{i,j}$ en C$_2$F$_2$H$_4$, cc-pVDZ')
             plt.title(f'i={orb1}, j={orb2}, a = b = all')# f'a={orb1}, b={orb2}')
-            #plt.savefig(f'FC_occ_C2H6.png', dpi=200)
+            plt.savefig(f'FC_occ_C2F2H4_{orb1}_{orb2}.png', dpi=200)
             plt.show()                #
 
 

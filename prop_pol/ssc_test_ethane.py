@@ -22,6 +22,12 @@ H8       0.8890202024           -0.5132783004           -1.1687402745;
 basis='ccpvdz',unit='amstrong', verbose=0)
 mf = scf.RHF(mol).run()
 ppobj = pp(mf)
-print('SSC in Hz with canonical orbitals')
-ssc = ppobj.kernel(FC=False, FCSD=False, PSO=True)
-#print(ppobj.pp_ssc_fcsd)
+
+print('SSC FC in Hz with canonical orbitals')
+ssc = ppobj.kernel_select(FC=True, FCSD=False, PSO=False, atom1=[2], atom2=[6])
+print(ssc)
+
+
+print('SSC PSO in Hz with canonical orbitals')
+ssc = ppobj.kernel_select(FC=False, FCSD=False, PSO=True, atom1=[2], atom2=[6])
+print(ssc)
