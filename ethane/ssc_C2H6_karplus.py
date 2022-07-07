@@ -28,6 +28,6 @@ for ang in range(0,190,10):
     #print(fcsd, fc)
     m = cloppa_obj.M(triplet=False)
     p = np.linalg.inv(m)
-    pso = cloppa_obj.kernel_pathway(FC=False, FCSD=True, PSO=True,n_atom1=[2], n_atom2=[6], princ_prop=p,all_pathways=True)
+    pso = cloppa_obj.kernel_pathway(FC=False, FCSD=False, PSO=True,n_atom1=[2], n_atom2=[6], princ_prop=p,all_pathways=True)
     with open('ssc_mechanism_C2H6_ccpvdz.txt', 'a') as f:
         f.write(f'{ang} {fcsd[0]} {fc[0]} {pso[0]} \n')

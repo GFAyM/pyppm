@@ -1,0 +1,478 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% fphw Assignment
+% LaTeX Template
+% Version 1.0 (27/04/2019)
+%
+% This template originates from:
+% https://www.LaTeXTemplates.com
+%
+% Authors:
+% Class by Felipe Portales-Oliva (f.portales.oliva@gmail.com) with template 
+% content and modifications by Vel (vel@LaTeXTemplates.com)
+%
+% Template (this file) License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[
+	12pt, % Default font size, values between 10pt-12pt are allowed
+	%letterpaper, % Uncomment for US letter paper size
+	%spanish, % Uncomment for Spanish
+]{fphw}
+
+% Template-specific packages
+\usepackage[utf8]{inputenc} % Required for inputting international characters
+\usepackage[T1]{fontenc} % Output font encoding for international characters
+\usepackage{mathpazo} % Use the Palatino font
+
+\usepackage{graphicx} % Required for including images
+
+\usepackage{booktabs} % Required for better horizontal rules in tables
+
+\usepackage{listings} % Required for insertion of code
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{enumitem}
+\usepackage{physics}
+\usepackage{bm}
+\usepackage{enumerate} % To modify the enumerate environment
+\usepackage{hyperref}
+\usepackage[backend=biber,style=numeric,sorting=none]{biblatex}
+\addbibresource{refs.bib}
+%----------------------------------------------------------------------------------------
+%	ASSIGNMENT INFORMATION
+%----------------------------------------------------------------------------------------
+
+\title{Matriz densidadd Reeducida} % Assignment title
+
+\author{Daniel F. E. Bajac} % Student name
+
+\date{9 de diciembre, 2021} % Due date
+
+\institute{Universidad Nacional del Nordeste \\ Dep artamento de Física} % Institute or school name
+
+\class{Propagadores de Polarización} % Course or class name
+
+\professor{Dr. G. A. Aucar y A. F. Maldonado} % Professor or teacher in charge of the assignment
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle % Output the assignment title, created automatically using the information in the custom commands above
+
+%----------------------------------------------------------------------------------------
+%	ASSIGNMENT CONTENT
+%----------------------------------------------------------------------------------------
+
+\section*{Definición del problema}
+
+En el año 2014, se definió por primera vez una funcional generatriz para el formalismo
+de Propagadores de Polarización utilizando formalismo de superoperadores\cite{QFT}. Ésta funcional 
+está escrita en función del Propagador Principal, uno de los principales componentes del Propagador
+de Polarización, que contiene toda la información física que surge debido a la transmisión
+de los efectos de dos perturbaciones externas a través del marco electrónico del sistema cuántico
+
+\begin{equation}\label{Z}
+	Z = \int D| \bm{\widetilde{h}} ) D (\bm{h}|  e^{| \bm{\widetilde{h}} ) (\bm{h}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}} )   (\bm{h}|}
+\end{equation}
+
+donde $E$ es la energía del sistema y $H_0$ es el Hamiltoniano del sistema sin perturbar, $\bm{h}$ es un conjunto de operadores 
+completo con el cual se puede generar todos los estados excitados de un sistema molecular N-electrónico, 
+$\bm{h} | \bm{0} \rangle = |\bm{n}\rangle$  y el estado de referencia
+es un campo autoconsistente SCF.
+
+
+
+
+En la función de partición \ref{Z} 
+la integral significa que la exponencial tomará todos los caminos posibles, lo cual se representa con una sumatoria 
+sobre todos los caminos posibles, es decir, los ${i,j}$ pueden tomar el lugar de cualquier estado ocupado del sistema, 
+y los ${a,b}$, el lugar de cualquier estado desocupado   
+
+\begin{equation}\label{Z_sum}
+	Z = \sum_{ia,jb}  e^{| \bm{\widetilde{h}}_2 ) (\bm{h}_2| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_2 )   (\bm{h}_2|}
+\end{equation}
+Ésta función generatriz es análiga a la función de partición de la termodinámica estadística \cite{functional} 
+($Z = Tr (e^{\beta \hat{H}})$),con la cual el operador densidad  del sistema se puede escribir
+
+
+\begin{equation}\label{rho}
+	\rho = \frac{e^{| \bm{\widetilde{h}} ) (\bm{h}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}} )   (\bm{h}|}}
+	{Z}
+\end{equation}
+
+
+ 
+En el formalismo de superoperadores, es importante definir el conjunto de operadores completo:
+
+\begin{equation}
+	\bm{h} =    \left\{ \bm{h}_2, \bm{h}_4, \cdots \right\} 
+\end{equation}
+
+A los fines del presente trabajo, se considera tratar la matriz densidad a nivel de teoría RPA, 
+que implica considerar al estado de referencia un SCF 
+y truncar el conjunto de operadores en excitaciones simples \cite{Revieww} $ \bm{h} = \bm{h}_2 $ 
+
+
+\begin{equation}
+	\bm{h}_2 = \left\{a^\dagger_a a_i, a^\dagger_i a_a, \cdots\right\}
+\end{equation}
+
+donde $a^\dagger_i$ es un operador creación en el orbital ocupado $i$ y 
+$a_a$ es un operador aniquilación en el orbitales virtual $a$. 
+Considerar el siguiente nivel del conjunto de operadores significa considerar excitaciones dobles $\bm{h}_4$, 
+además de utilizar un estado de referencia con estados doblemente excitados.
+  
+
+
+
+
+Los operadores $ \bm{h}_2 $ y $ \bm{\widetilde{h}}_2 $ son operadores 
+fila y columna respectivamente. Además, el producto interno entre dos operadores está definido como 
+
+\begin{equation}
+	(\hat{P}|\hat{Q}) = \langle 0 | [\hat{P}^\dagger ,\hat{Q}] |0 \rangle
+\end{equation}
+
+
+\textit{Se desea verificar la matriz densidad reducida a ciertas excitaciones, por ejemplo, $i\rightarrow a,j\rightarrow b$.}
+Es decir, obtener el operador densidad que corresponde a dichas excitaciones, $\rho_{ia,jb}$, y que previamente se ha utilizado
+para conocer cómo están entrelazadas cuánticamente dichas excitaciones, aplicándole Teoría de la Información .\cite{Millan}
+ \cite{JCP}.
+
+ \begin{equation*}
+	 \rho_{ia,jb} =  \frac{e^{| \bm{\widetilde{h}}_{ia} ) (\bm{h}_{ia}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_{jb} )   (\bm{h}_jb|}}
+	 {Z_{ia,jb}}
+ \end{equation*}
+
+
+\section*{Resolución de la traza parcial de $\rho$}
+
+Dado $\hat{O}$ un operador lineal definido en el espacio de Hilbert $H$, en la mecánica cuántica de distemas compuestos 
+con el espacio de Hilbert $H = H_a \otimes H_b$, se define la función \textit{función
+traza parcial}, tomado sobre el subsistema \textit{b}, como \cite{RDM}
+
+\begin{equation}\label{Tr_b}
+	Tr_b(\hat{O}) = \sum_{j=1}^{d_b} (\bm{1_a} \otimes \langle b_j|) \hat{O} (\bm{1_a} \otimes |b_j \rangle)
+\end{equation}
+
+donde $|b_j\rangle$ cualquier base ortonormal para $H_b$ y $d_b= dim(H_b)$. The $\bm{1_a}$ es el operador identidad en $H_a$.
+
+Es importante notar que la anterior definición es equivalente a otra, que aparece muy frecuentemente en la literatura\cite{RDM} \cite{Nielsen_Chuang}
+
+\begin{equation}\label{Tr_b_2}
+	Tr_b( |a \rangle \langle a' | \otimes | b\rangle \langle b' | ) = |a \rangle \langle a' | \otimes Tr (|b\rangle \langle b' |)
+\end{equation}
+
+donde $|a \rangle$, $|a' \rangle$ $\epsilon$ $H_a$ y $|b\rangle$, $|b'\rangle$ $\epsilon$ $H_b$ son vectores genéricos en 
+los correspondientes espacios de Hilbert.
+
+Se puede utilizar ambas definiciones para definir una función de traza parcial para la matriz densidad utilizando 
+el formalismo de Propagadores de Polarización \ref{rho}. 
+Si consideramos a los elementos de $\rho$ correspondentes a dichas excitaciones ($i\rightarrow a, j \rightarrow b)$ como un subsistema 
+(subsistema $A$), 
+y a los elementos de $\rho$ correspondientes al resto de las excitaciones como otro subsistema (subsistema $B$), podemos
+hallar la matriz densidad reducida $\rho_{ia,jb}$ haciendo la traza de $\rho$ con respecto al sub-sistema $B$. %\cite{Nielsen_Chuang}
+Para eso, definimos al operador identidad del espacio de 
+Fock que corresponde a las excitaciones $i\rightarrow a,j\rightarrow b$ como 
+
+\begin{equation}
+	\bm{1}_{ia,jb} = \bm{1}_{ia} \otimes \bm{1}_{jb} = \left\{  \bm{1}_{ia} ,  \bm{1}_{jb} \right\}
+\end{equation}
+
+lo cual significa que en las posiciones de las excitaciones $ia,jb$ los elementos matriciales de la matriz densidad
+quedan invariantes.
+
+
+Por otro lado, se propone que la traza sobre el algún sistema se obtiene multiplicando a izquierda por 
+los operadores $\bm{\hslash}_{p,q}$, con dimensión igual a $\bm{h_2}$, con un operador \textit{hueco-partícula} y 
+\textit{partícula-hueco} en el lugar de excitación $p\rightarrow q$ y cero en las restantes, y 
+sumamos sobre todos los $p,q$
+
+\begin{equation}\label{Tr_rho_total}
+	Tr(\rho) =  \sum_{p,q} ( \bm{\hslash}_{p,q} | \rho  \bm{\widetilde{\hslash}_{p,q}} )   
+\end{equation}
+
+\begin{equation}
+	( \bm{\hslash}_{p,q} | = \left(\begin{matrix}
+		0 \\
+		\cdots \\
+		(h_{pq}| \\
+		\cdots \\
+		0
+	\end{matrix} \right)
+\end{equation}
+
+Y a derecha por operadores filas del tipo
+
+\begin{equation}
+	| \widetilde{\bm{\hslash}}_{p,q} ) = \begin{matrix}
+		( 0 &\cdots& |h_{p,q})& \cdots& 0)
+	\end{matrix}
+\end{equation}
+
+donde definimos a cada operador $h_{p,q}$ como un conjunto de operadores 
+\textit{partícula-hueco} y \textit{hueco-partícula} entre los orbitales ocupados y desocupados $p,q$.
+
+\begin{equation}
+	h_{p,q} = {a^\dagger_p a_q, a^\dagger_p a_q}
+\end{equation}
+
+Por lo que, la traza parcial sobre el sistema que llamamos $b$ es 
+
+\begin{equation}
+	Tr_B(\bm{\rho}) = \sum_{p,q}  \left(\bm{1}_a \otimes ( \bm{\hslash}_{p,q} | \right) \bm{\rho}  \left( \bm{1}_a \otimes |\bm{\hslash}_{p,q}) \right)
+\end{equation}
+
+También, si nos basamos en la definición \ref{Tr_b_2}, podemos escribir la traza parcial sobre el sistema $B$ como 
+
+\begin{equation}
+	Tr_B(\bm{\rho}) = \rho_a Tr (\rho_b)
+\end{equation}
+
+donde ésta última ecuación es el esquema que adoptaremos de aquí en adelante.
+
+\subsection*{Numerador}
+
+
+%\begin{equation}
+%	\rho_{ia,jb} = Tr_B (\rho) 
+%\end{equation}
+
+%Sabiendo cómo se calcula la traza de una matriz densidad en el formalismo de funciones de onda,
+
+%\begin{equation}
+%	Tr(e^{-\beta \hat{H}}) = \sum_n \langle \phi_n | e^{-\beta \hat{H}} | \phi_n \rangle
+%\end{equation}
+
+%se calcula la traza en el formalismo de Propagadores de Polarización 
+
+%Sin embargo, como se necesita calcular la traza sobre los elementos de B, debemos dejar \textit{invariantes} a los elementos de
+%$p,q$ pertenecientes a las excitaciones $i\rightarrow a,j\rightarrow b$ . Por lo que, en los operadores 
+%$\bm{\hslash}$ contendrán un operador identidad en las posiciones $i,a$ y $j,b$ , como se muestra a continuación
+
+%\begin{equation}\label{Tr_rho}%
+%	Tr_B (\rho) =  \sum_p (( \bm{\hslash}_{p,q} | \rho  \widetilde{\bm{\hslash}}_{p,q} )   
+%\end{equation}
+
+
+%\begin{equation}\label{Tr_reducida}
+%	( \bm{\hslash}_{p,q} | = \left(\begin{matrix}
+%		0 \\
+%		\hat{I}_{(i,a)} \\
+%		0 \\
+%		\hat{I}_{(j,b)} \\
+%		\cdots \\
+%		(h_{pq}| \\
+%		\cdots \\
+%		0
+%	\end{matrix} \right)
+%\end{equation}
+
+%y de manera similar para el operador fila $\widetilde{\bm{\hslash}}_p$.  
+%Esto nos permite escribir la matriz densidad como el producto de dos matrices densidad
+
+sabiendo que el sistema N-electrónico puede escribirse 
+
+\begin{eqnarray}
+	\rho &=& \rho_{ia_jb} \otimes \rho_{B} \\
+	&=& e^{| {\bm{\widetilde{h}}_{ia,jb} ) (\bm{h}_{ia,jb}| E \hat{I} - \hat{H}_0 | 
+	\bm{\widetilde{h}}_{ia,jb} )   (\bm{h}_{ia,jb}|}} \otimes
+	e^{| {\bm{\widetilde{h}}_B ) (\bm{h}_B| E \hat{I} - \hat{H}_0 | 
+	\bm{\widetilde{h}}_B )   (\bm{h}_B|}} \times \frac{1}{Z}
+\end{eqnarray}
+
+%Por otro lado, 
+y sabiendo que se puede escribir la exponencial de un operador como una serie de potencias del operador
+
+\begin{equation}\label{exp_rho}
+	e^{\hat{x}} = \hat{I} + \hat{x} + \frac{\hat{x}^2}{2} + \cdots
+\end{equation}
+
+
+
+\begin{eqnarray}\label{serie_rho}
+	Tr_B (\rho) &=&  \rho_{ia,jb}  \sum_{p,q} ( \bm{\hslash}_{p,q} | \hat{I} + \frac{ | \bm{\widetilde{h}}_2 ) (\bm{h}_2| E \hat{I} - \hat{H}_0 |
+	 \bm{\widetilde{h}}_2 )   (\bm{h}_2|  + \cdots}{Z_{[0]}}  \widetilde{\bm{\hslash}}_{p,q} ) \\
+	 &=& \rho_{ia,jb} \sum_{p,q} \left[ ( \bm{\hslash}_{p,q} |  \hat{I} \widetilde{\bm{\hslash}}_{p,q} ) 
+	  + ( \bm{\hslash}_{p,q} | \frac{(\bm{h}_2| E \hat{I} - \hat{H}_0 |
+	 \bm{\widetilde{h}}_2 )   (\bm{h}_2|}{Z_{[0]}} \widetilde{\bm{\hslash}}_{p,q} ) + \cdots \right]   
+\end{eqnarray}
+
+
+
+
+
+
+\subsubsection*{Términos de la expansión en serie de la exponencial}
+Primero, se evalúa el producto $( \bm{\hslash}_{p,q} |\hat{I} \bm{\widetilde{\hslash}}_{p,q} )$
+
+
+\begin{eqnarray}
+	( \bm{\hslash}_{p,q} |\hat{I} \bm{\widetilde{\hslash}}_{p,q} ) &=& 
+	\begin{pmatrix}
+		0 \\\cdots\\
+		(h_{pq}| \\
+		\cdots \\
+		0 \end{pmatrix}
+ \times \begin{pmatrix}
+	0 & \cdots & |h_{p,q})& \cdots& 0
+\end{pmatrix} \\
+	&=& \begin{pmatrix}
+		0 & \cdots &  \cdots  \\
+		\vdots & (h_{pq} | h_{pq}) & \vdots \\
+		\vdots & 0 & \cdots
+		\end{pmatrix}
+\end{eqnarray}
+
+por lo que obtendremos una matriz con todos sus elementos cero, menos en el elemento $p,q$, 
+con un valor $\langle0| [h^\dagger_{p,q}, h_{p,q}] |0\rangle$. 
+Como hemos definido, los elementos $p,q$ de $h_{p,q}$ son los orbitales ocupados y desocupados, 
+diferentes de $i,j$ y $a,b$.
+El producto interno $(h_{pq} | h_{pq})$ está definido como 
+
+\begin{eqnarray}
+	(h_{pq} | h_{pq}) &=& \begin{pmatrix}
+		(a^\dagger_p a_q| a^\dagger_p a_q) &  (a^\dagger_p a_q| a^\dagger_q a_p) \\
+		(a^\dagger_q a_p| a^\dagger_p a_q)  & (a^\dagger_q a_p| a^\dagger_q a_p)
+	\end{pmatrix} 
+	= \begin{pmatrix}
+		1 &  0 \\
+		0 &  -1
+		\end{pmatrix}
+\end{eqnarray}
+
+%\begin{equation}%
+%	\sum_{p,q} ( \bm{\hslash}_{p,q} |\hat{I} \bm{\widetilde{\hslash}}_(p,q) ) = \sum_{p,q} $\langle0| [h^\dagger_{p,q}, h_{p,q}] |0\rangle$
+%\end{equation}
+
+
+Por lo que hacer la sumatoria sobre todos los orbitales $p,q$ perteneciantes al subsistema  
+$\sum_{p,q} (\bm{\hslash}_{p,q} |\hat{I} \bm{\widetilde{\hslash}}_{p,q})$ es igual a 0.
+
+
+El siguiente paso es analizar los elementos matriciales del término de primer órden de la ecuación \ref{serie_rho}-
+El término $( \bm{\hslash}_{p,q} | \bm{\widetilde{h}}_2 )$ está compuesto por
+
+\begin{eqnarray}
+	( \bm{\hslash}_{p,q} | \bm{\widetilde{h}}_2 ) &=& \begin{pmatrix}
+		
+		0 \\
+		\vdots \\
+		(h_{pq}| \\
+		\vdots \\
+		0
+	\end{pmatrix}
+	\times \begin{pmatrix}
+		
+		 |h_{i'a'}) & |h_{j',b'}) & \cdots  & \cdots
+	\end{pmatrix} \end{eqnarray}
+
+por ejemplo, para $( \bm{\hslash}_{i',j'} | $, tenemos 
+
+\begin{eqnarray} \label{hslash_qp}
+	( \bm{\hslash}_{p,q} | \bm{\widetilde{h}}_2 )
+		 &=& \begin{pmatrix}
+		(h_{i',a'}) \\
+		\vdots \\
+		0 \\
+		\vdots \\
+		0
+	\end{pmatrix}  \times  \begin{pmatrix}
+		|h_{i'a'}) & \cdots & |h_{j',b'}) &  \cdots
+	\end{pmatrix}            \\
+     & = & \begin{pmatrix}
+		 (h_{i',a'} | h_{i',a'}) & 0 & \cdots \\
+		 0 & \vdots & \vdots \\
+		 \vdots & \vdots & \vdots 
+	 \end{pmatrix} 
+\end{eqnarray}
+
+mientras que a derechas, tenemos que resolver el producto de matrices 
+$( \bm{h}_2 | \widetilde{\bm{\hslash}}_{p,q})$
+
+\begin{eqnarray}\label{hslash_pq}
+	( \bm{\hslash}_{p,q} | \bm{\widetilde{h}}_2 )
+		 &=& \begin{pmatrix}
+		(h_{i',a'}| \\
+		 \vdots \\
+		(h_{j',b'}| \\
+		
+		\vdots 
+	\end{pmatrix}  \times  \begin{pmatrix}
+		|h_{i'a'}) & 0 &  \cdots
+	\end{pmatrix}            \\
+     & = & \begin{pmatrix}
+		 (h_{i',a'} | h_{i',a'}) & 0 & \cdots \\
+		 0 & \vdots & \vdots \\
+		 \vdots & \vdots & \vdots 
+	 \end{pmatrix} 
+\end{eqnarray}
+
+y a la matriz central,$(\bm{h}_B| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_B )$ 
+que es el la inversa del Propagador Principal, al multiplicar a izquiera y a derecha por las matrices \ref{hslash_pq} y \ref{hslash_qp},
+solo será distinto de cero el elemento $i'\rightarrow a', j \rightarrow b'$ del Propagador Principal. 
+
+\begin{eqnarray}
+	\begin{pmatrix}
+		(h_{i',a'} | h_{i',a'}) & 0 & \cdots \\
+		0 & \vdots & \vdots \\
+		\vdots & \vdots & \vdots 
+	\end{pmatrix} \otimes \begin{pmatrix}
+		M_{i'a',i'a'} & M_{i'a',j' b'} &  \cdots \\
+		M_{j' b',i'a'} & M_{j' b',j' b'} & \vdots \\
+		\vdots & \vdots & \vdots
+	\end{pmatrix} \otimes
+	\begin{pmatrix}
+		(h_{i',a'} | h_{i',a'}) & 0 & \cdots \\
+		0 & \vdots & \vdots \\
+		\vdots & \vdots & \vdots 
+	\end{pmatrix} = M_{i'a',i'a'}
+	\end{eqnarray}
+
+Por lo que, al hacer una sumatoria sobre todos los orbitales $p,q$ diferentes de $i,j$ y $a,b$, obtendremos
+
+\begin{equation}
+	Tr\frac{\bm{h}_B| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_B }{Z_{B}} =  \sum_{p,q} \frac{M_{pq,pq}}{Z_{B}}
+\end{equation}
+
+\subsection*{Denominador}
+
+Como se puede observar en el artículo \cite{Millan}, $Z$ representa la traza de $\rho$. Esto lo podemos observar
+analizando la condición de la traza de una matriz densidad $\rho$ debe ser 1 
+
+\begin{equation}
+	Tr \rho =  \sum_k \frac{(\bm{h}_k|e^{| \bm{\widetilde{h}} ) (\bm{h}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}} )   (\bm{h}|} |\bm{\widetilde{h}}_k) } 
+	{Z} = 1
+\end{equation}
+
+Ya que la matriz densidad utilizando la teoría de Propagadores de Polarización \cite{QFT} está definida para todas las excitaciones del 
+sistema molecular bajo estudio, generadas con el \textit{manifold} de operadores $\bm{h}$, y que se puede considerar
+excitaciones de manera separada, de manera de poder escribir el espacio donde está definido el operador densidad 
+como una composición de sub-sistemas  
+\begin{equation}
+	| \bm{\widetilde{h}}_{ia,jb} ) (\bm{h_{ia,jb}}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_{ia,jb} )   (\bm{h_{ia,jb}}| \otimes
+	| \bm{\widetilde{h}}_B ) (\bm{h_B}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_B )   (\bm{h_B}|
+\end{equation}
+
+también podemos escribir $Z = Z_{ia,jb} \times Z_{B}$, por lo que la traza parcial de $\rho$ sobre el subsistema $B$ queda 
+
+\begin{eqnarray}
+	Tr_B \rho &=& \frac{e^{| {\bm{\widetilde{h}}_{ia,jb} ) (\bm{h}_{ia,jb}| E \hat{I} - \hat{H}_0 | 
+	\bm{\widetilde{h}}_{ia,jb} )   (\bm{h}_{ia,jb}|}}}{Z_{ia,jb}} \otimes \frac{Tr(\rho_B)}{Z_{B}} \\
+	&=& \rho_{ia,jb} 
+\end{eqnarray}
+
+\printbibliography
+
+\end{document}

@@ -16,14 +16,17 @@ data_J.columns = ['ang', 'fc_ab', 'a', 'b', 'fc']
 
 occ_lmo = ['H3_1s', 'H7_1s']
 
+occ_lmo1 = ['H3_1s']
+occ_lmo2 = ['H7_1s']
+
 #occ_lmo = ['O1_1s', 'O2_1s',  'O1_2p1','O2_2p1','O1_2p2', 'O2_2p2','C_C']
 #occ_lmo = ['H4_1s','H3_1s']
 
 df_F_C = data_J[(data_J.a.str.contains('H3_1s') == True) & (data_J.b.str.contains('H7_1s') == True)].reset_index()
 df_F_C.fc_ab = 0
 print(df_F_C)
-for orb1 in occ_lmo:
-    for orb2 in occ_lmo:
+for orb1 in occ_lmo2:
+    for orb2 in occ_lmo2:
         
 #        df_F_C = data_J[(data_J.a.str.contains('F3_2pz') == True) & (data_J.b.str.contains('F7_2pz') == True)]
 
@@ -37,14 +40,14 @@ for orb1 in occ_lmo:
 
 plt.figure(figsize=(10,8))
 plt.plot(ang, df_F_C.fc_ab, 'b>-', label='$^{FC}J_{ij}(H-H)$' )#f'a={orb1} b={orb2}')
-plt.plot(ang, fc, 'g<-', label='$^{FC}J(H-H)$')
+#plt.plot(ang, fc, 'g<-', label='$^{FC}J(H-H)$')
 
 plt.legend()
 plt.ylabel('Hz')
 plt.xlabel('Ángulo diedro')
 plt.suptitle('FC contribution to $^3J(H-H)_{i,j}$ en C$_2$O$_2$, cc-pVDZ')
 plt.title('i=C-H$_1$, j=C-H$_2$, a = b = all')# f'a={orb1}, b={orb2}')
-plt.savefig(f'FC_occ_C2H6.png', dpi=200)
+#plt.savefig(f'FC_occ_C2H6.png', dpi=200)
 plt.show()                #
 
 

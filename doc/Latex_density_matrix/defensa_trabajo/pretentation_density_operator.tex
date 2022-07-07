@@ -1,0 +1,592 @@
+\documentclass{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage{physics}
+\usepackage{listings} % Required for insertion of code
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{enumitem}
+\usepackage{bm}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+\useinnertheme{circles}
+\usepackage{float}
+\usepackage[backend=biber,style=numeric,sorting=none]{biblatex}
+\addbibresource{refs.bib}
+\definecolor{Logo1}{rgb}{0.208, 0.2865, 0.373}
+\definecolor{Logo2}{rgb}{0.000, 0.674, 0.863}
+
+\setbeamercolor*{palette primary}{bg=Logo1, fg=white}
+\setbeamercolor*{palette secondary}{bg=Logo1, fg=white}
+\setbeamercolor*{palette tertiary}{bg=white, fg=Logo1}
+\setbeamercolor*{palette quaternary}{bg=Logo1,fg=white}
+\setbeamercolor{structure}{fg=Logo1} % itemize, enumerate, etc
+\setbeamercolor{section in toc}{fg=Logo1} % TOC sections
+
+%------------------------------------------------------------
+%This block of code defines the information to appear in the
+%Title page
+\title[Curso: Propagadoress de Polarización] %optional
+{Matriz densidad reducida}
+
+%\subtitle{And its subtitle}
+
+\author[Daniel F. E. Bajac] % (optional)
+{Daniel F. E. Bajac}
+
+
+\institute[] % (optional)
+{
+  Instituto de Modelado e Innovación Tecnológica, CONICET\\
+  Departamento de Física, Facultad de Ciencias Exactas y Naturales, UNNE
+}
+
+\date[] % (optional)
+{Trabajo final del curso Propagadores de Polarización}
+
+\titlegraphic{\includegraphics[width=2cm]{logo_imit_2.png}\hspace*{0cm}}%
+  
+%End of title page configuration block
+%------------------------------------------------------------
+
+
+
+%------------------------------------------------------------
+%The next block of commands puts the table of contents at the 
+%beginning of each section and highlights the current section:
+
+\AtBeginSection[]
+{
+  \begin{frame}
+    \frametitle{Table of Contents}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+%------------------------------------------------------------
+
+\setbeamerfont{footnote}{size=\tiny}
+\begin{document}
+
+%The next statement creates the title page.
+\frame{\titlepage}
+
+
+%---------------------------------------------------------
+%This block of code is for the table of contents after
+%the title page
+\begin{frame}
+\frametitle{Table of Contents}
+\tableofcontents
+
+\end{frame}
+%---------------------------------------------------------
+
+
+\section{Definición del Problema}
+
+%---------------------------------------------------------
+%Changing visivility of the text
+\begin{frame}
+\frametitle{Funcional Generatriz}
+
+En el año 2014, \footfullcite[]{QFT}
+se definió por primera vez una funcional generatriz para el formalismo
+de Propagadores de Polarización utilizando formalismo de superoperadores 
+\pause
+\begin{equation*}
+	Z_{[0]} = \int D| \bm{\widetilde{h}} ) D (\bm{h}|  e^{| \bm{\widetilde{h}} ) (\bm{h}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}} )   (\bm{h}|}
+\end{equation*}
+
+\vfill
+está escrita en función del Propagador Principal, 
+contiene toda la información física que surge debido a la transmisión
+de los efectos de dos perturbaciones externas a través del marco electrónico 
+del sistema cuántico
+
+
+
+\end{frame}
+
+
+\begin{frame}
+\small
+  
+  \begin{equation*}\label{Z}
+    Z = \int D| \bm{\widetilde{h}} ) D (\bm{h}|  e^{| \bm{\widetilde{h}} ) (\bm{h}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}} )   (\bm{h}|}
+  \end{equation*}
+
+donde $E$ es la energía del sistema y $H_0$ es el Hamiltoniano del sistema sin perturbar, $\bm{h}$ es un conjunto de operadores 
+completo con el cual se puede generar todos los estados excitados de un sistema molecular N-electrónico, 
+$\bm{h} | \bm{0} \rangle = |\bm{n}\rangle$  y el estado de referencia
+es un campo autoconsistente SCF.
+
+
+\pause
+\vfill
+
+La integral sobre $D|\bm{h})$ significa que la exponencial tomará todos los caminos posibles, 
+lo que en el caso del presenta trabajo, se tienen excitaciones de MOs, se representa con una sumatoria 
+sobre todos los caminos posibles%, es decir, los ${i,j}$ pueden tomar el lugar de cualquier estado ocupado del sistema, 
+%y los ${a,b}$, el lugar de cualquier estado desocupado
+
+%\begin{equation*}\label{Z_sum}
+%	Z = \sum_{ia}  e^{| \bm{\widetilde{h}}_2 ) (\bm{h}_2| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_2 )   (\bm{h}_2|}
+%\end{equation*}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Operador densidad}
+
+  Ésta función generatriz es análoga a la función de partición de la termodinámica estadística  \footfullcite[]{functional}
+($Z = Tr (e^{\beta \hat{H}})$) \\ con la cual el operador densidad  del sistema se puede escribir
+
+
+\begin{equation*}
+	\rho = \frac{e^{| \bm{\widetilde{h}} ) (\bm{h}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}} )   (\bm{h}|}}
+	{Z}
+\end{equation*}
+
+propuesto por primera vez en el año 2018 \footfullcite[]{Millan}, para calcular el entrelazamiento entre excitaciones virtuales 
+en un sistema molecular N-electrónico.
+
+
+\end{frame}
+
+\begin{frame}
+  En el formalismo de superoperadores, es importante definir el conjunto de operadores completo:
+
+\begin{equation*}
+	\bm{h} =    \left\{ \bm{h}_2, \bm{h}_4, \cdots \right\} 
+\end{equation*}
+
+A los fines del presente trabajo, se considera tratar la matriz densidad a nivel de teoría RPA, 
+que implica considerar al estado de referencia un SCF 
+y truncar el conjunto de operadores en excitaciones simples \footfullcite[]{Revieww}  $ \bm{h} = \bm{h}_2 $ 
+
+
+\begin{equation*}
+	\bm{h}_2 = \left\{a^\dagger_a a_i, a^\dagger_i a_a, \cdots\right\}
+\end{equation*}
+
+donde $a^\dagger_i$ es un operador creación en el orbital ocupado $i$ y 
+$a_a$ es un operador aniquilación en el orbital virtual $a$. 
+%Considerar el siguiente nivel del conjunto de operadores significa considerar excitaciones dobles $\bm{h}_4$, 
+%además de utilizar un estado de referencia con estados doblemente excitados.
+  
+
+Los operadores $ \bm{h}_2 $ y $ \bm{\widetilde{h}}_2 $ son operadores 
+fila y columna respectivamente. Además, el producto interno entre dos operadores está definido como 
+
+\begin{equation*}
+	(\hat{P}|\hat{Q}) = \langle 0 | [\hat{P}^\dagger ,\hat{Q}] |0 \rangle
+\end{equation*}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Matriz densidad reducida}
+  El objetivo de este trabajo es \textit{Verificar que la matriz densidad $\rho$ reducida a ciertas excitaciones, 
+  es decir, el operador densidad que corresponde a dichas excitaciones $\rho_{ia,jb}$, se puede escribir como}
+
+  \begin{equation*}
+  \rho_{ia,jb} =  \frac{e^{| \bm{\widetilde{h}}_{ia} ) (\bm{h}_{ia}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_{jb} )   (\bm{h}_{jb}|}}
+  {Z_{ia,jb}}
+\end{equation*}
+
+previamente se ha utilizado ésta expresión para calcular el entrelazamiento entre excitaciones virtuales en un sistema
+N-electrónico, además de varias medidas de la Teoría de la Información.
+\footfullcite[]{Millan}
+\footfullcite[]{JCP}.
+
+
+\end{frame}
+
+\section{Traza parcial de $\rho$}
+
+\begin{frame}
+  \frametitle{Traza parcial de $\rho$}
+  \small
+  Dado $\hat{O}$ un operador definido en el espacio de Hilbert $H$, en la mecánica cuántica de sistemas compuestos 
+  con el espacio de Hilbert $H = H_a \otimes H_b$, se define la función \textit{función
+  traza parcial}, tomado sobre el subsistema \textit{b}, como \footfullcite[]{RDM}
+  
+  \begin{equation*}
+    Tr_b(\hat{O}) = \sum_{j=1}^{d_b} (\bm{\hat{I}_a} \otimes \langle b_j|) \hat{O} (\bm{\hat{I}_a} \otimes |b_j \rangle)
+  \end{equation*}
+  
+  donde $|b_j\rangle$ cualquier base ortonormal para $H_b$ y $d_b= dim(H_b)$. The $\bm{\hat{I}_a}$ es el operador identidad en $H_a$.
+\pause
+\vfill
+  Es importante notar que la anterior definición es equivalente a otra, que aparece muy frecuentemente en la literatura 
+  \footfullcite[]{Nielsen_Chuang}
+  
+  \begin{equation*}
+    Tr_b( |a \rangle \langle a' | \otimes | b\rangle \langle b' | ) = |a \rangle \langle a' | \otimes Tr (|b\rangle \langle b' |)
+  \end{equation*}
+  
+  donde $|a \rangle$, $|a' \rangle$ $\epsilon$ $H_a$ y $|b\rangle$, $|b'\rangle$ $\epsilon$ $H_b$ son vectores genéricos en 
+  los correspondientes espacios de Hilbert.
+
+\end{frame}
+
+\begin{frame}
+
+\small
+Se puede utilizar ambas definiciones dentro del formalismo de funciones de onda para definir una función de traza parcial 
+para la matriz densidad dentro del formalismo de Propagadores de Polarización.
+\vfill 
+\pause
+Si se considera a los elementos de $\rho$ correspondentes a dichas excitaciones ($i\rightarrow a, j \rightarrow b)$ como un subsistema 
+(subsistema $A$), 
+y a los elementos de $\rho$ correspondientes al resto de las excitaciones como otro subsistema (subsistema $B$), se puede
+hallar la matriz densidad reducida $\rho_{ia,jb}$ haciendo la traza de $\rho$ con respecto al sub-sistema $B$. %\cite{Nielsen_Chuang}
+\pause
+\vfill
+Para eso, se define al operador identidad del espacio de 
+Fock que corresponde a las excitaciones $i\rightarrow a$ como un operador identidad en la posición $\{ i,a \}$  y 
+cero en el resto de posiciones,
+
+\begin{equation*}
+  \bm{\hat{I}}_{ia,jb} = \left\{ 0, ..., \hat{I}_{ia}, 0,...,\hat{I}_{jb}, 0, ... \right\}
+\end{equation*}
+
+y el operador identidad que corresponde a las excitaciones $j\rightarrow b$ como un operador identidad 
+en la posición $\{j,b\}$ y cero en las demás posiciones.
+Lo cual significa que en las posiciones de las excitaciones $ia,jb$ los elementos matriciales de la matriz densidad
+quedan invariantes.
+
+\end{frame}
+
+
+%\begin{frame}
+%  Multiplicando $\rho$ a izquierda y derecha por $ \bm{\hat{I}}_{ia}$ y $ \bm{\hat{I}}_{jb}$
+
+%  \begin{equation*}
+%    \frac{e^{(\bm{\hat{I}}_{ia}| \bm{\widetilde{h}} ) (\bm{h}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}} )   (\bm{h}| \bm{\hat{I}}_{jb})}}%
+%	{Z}
+%  \end{equation*}
+%\end{frame}
+
+\begin{frame}
+  \small
+A su vez, la traza sobre el subsistema $B$  se obtiene multiplicando a izquierda por 
+los operadores $\bm{\hslash}_{p,q}$ formado por un operador \textit{hueco-partícula} y 
+\textit{partícula-hueco} en el lugar de excitación $p\rightarrow q$ y cero en las restantes, y 
+se suma sobre todos los $p,q$
+
+%\begin{equation*}
+%	Tr(\rho) =  \sum_{p,q} ( \bm{\hslash}_{p,q} | \rho  \bm{\widetilde{\hslash}_{p,q}} )   
+%\end{equation*}
+
+\begin{equation*}
+	( \bm{\hslash}_{p,q} | = \left(\begin{matrix}
+		0 \\
+		\cdots \\
+		(h_{pq}| \\
+		\cdots \\
+		0
+	\end{matrix} \right)
+\end{equation*}
+
+Y a derecha por operadores filas del tipo
+
+\begin{equation*}
+	| \widetilde{\bm{\hslash}}_{p,q} ) = \begin{matrix}
+		( 0 &\cdots& |h_{p,q})& \cdots& 0)
+	\end{matrix}
+\end{equation*}
+
+donde se define a cada operador $h_{p,q}$ como un conjunto de operadores 
+\textit{partícula-hueco} y \textit{hueco-partícula} entre los orbitales ocupados y desocupados $p,q$.
+
+\begin{equation*}
+	h_{p,q} = \{a^\dagger_p a_q, a^\dagger_p a_q \}
+\end{equation*}
+
+\end{frame}
+
+
+\begin{frame}
+  Por lo que, habiendo definido al sistema $B$ como aquel cuyas excitaciones son distintas de 
+$i\rightarrow a, j \rightarrow b$  
+
+\begin{equation*}
+	Tr_B(\rho) = \sum_{p,q}  \left( (\bm{\hat{I}}_{ia}| \otimes| ( \bm{\hslash}_{p,q} | \right) \rho  \left( |\bm{\hat{I}}_{jb}) \otimes |\bm{\hslash}_{p,q}) \right)
+\end{equation*}
+
+lo que es equivalente a 
+\begin{equation*}
+  \rho_{ia,jb} = e^{ { (\bm{h}_{ia}| E \hat{I} - \hat{H}_0 | 
+	\bm{\widetilde{h}}_{ia} ) }} \otimes
+	Tr(e^{| {\bm{\widetilde{h}}_B ) (\bm{h}_B| E \hat{I} - \hat{H}_0 | 
+	\bm{\widetilde{h}}_B ) )   (\bm{h}_B|}} )\times \frac{1}{Z}
+\end{equation*}
+
+\end{frame}
+
+\section{Denominador de $\rho$}
+\small
+\begin{frame}
+
+Ya que el exponente de la función partición utiliza la inversa del propagador, 
+que contiene el \textit{manifold} de operadores $\bm{h}$, y que se pueden considerar
+excitaciones de cada subsistema de manera separada, se propone  expresar la 
+función partición del sistema como un producto de las funciones partición del sistema
+
+\begin{equation*}
+  Z = Z_{ia,jb}  Z_B
+\end{equation*}
+
+%\begin{equation*}
+%  | \bm{\widetilde{h}}_{ia} ) (\bm{h_{ia}}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_{jb} )   (\bm{h_{jb}}| \otimes
+%  | \bm{\widetilde{h}}_B ) (\bm{h_B}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_B )   (\bm{h_B}|
+%\end{equation*} 
+
+%la exponencial de la última ecuación puede ser expresada como 
+
+%\begin{eqnarray*}
+%   & & e^{| \bm{\widetilde{h}}_{ia} ) (\bm{h_{ia}}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_{jb} )   (\bm{h_{jb}}| \otimes
+%  | \bm{\widetilde{h}}_B ) (\bm{h_B}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_B )   (\bm{h_B}| } \\
+%  &=& e^{| \bm{\widetilde{h}}_{ia} ) (\bm{h_{ia}}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_{jb} )   (\bm{h_{jb}}|} \times
+%  e^{| \bm{\widetilde{h}}_B ) (\bm{h_B}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_B )   (\bm{h_B}|} \\ 
+%\end{eqnarray*}
+\pause
+
+Si se tiene en cuenta que la función de partición $Z$ representa la traza de 
+la exponencial,  
+como se puede observar en el artículo de Millán et al. \footfullcite[]{Millan}. 
+Analizando la condición de la traza de una matriz densidad $\rho$ debe ser 1 
+
+\pause
+\begin{equation*}
+	Tr \rho =  \sum_k \frac{(\bm{h}_k|e^{| \bm{\widetilde{h}} ) (\bm{h}| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}} )   
+  (\bm{h}|} |\bm{\widetilde{h}}_k) } 
+	{Z} = 1
+\end{equation*}
+
+\pause
+la traza parcial de $\rho$ sobre el subsistema $B$ queda 
+
+\begin{eqnarray*}
+	Tr_B \rho &=& \frac{e^{| {\bm{\widetilde{h}}_{ia,jb} ) (\bm{h}_{ia,jb}| E \hat{I} - \hat{H}_0 | 
+	\bm{\widetilde{h}}_{ia,jb} )   (\bm{h}_{ia,jb}|}}}{Z_{ia,jb}} \otimes \frac{Tr(\rho_B)}{Z_{B}} \\
+	&=& \rho_{ia,jb} 
+\end{eqnarray*}
+
+
+
+
+
+
+%Cuando definimos a los subsistemas $A$ y $B$ como subsistemas de $\rho$, 
+%debemos definir a la función partición para cada sistema, que va a contener 
+%los caminos de excitación correspondientes a cada sistema.
+\vfill
+ 
+
+%\begin{equation*}
+%  Tr (e^{  |\bm{\widetilde{h}}_{ia}) (\bm{h}_{ia}| E \hat{I} - \hat{H}_0 | %
+%	\bm{\widetilde{h}}_{jb} ) (\bm{h}_{ia}| })
+%\end{equation*}
+
+
+
+\end{frame}
+
+\section{Numerador}
+\begin{frame}{Exponencial expresada como serie}
+Sabiendo que se puede escribir la exponencial de un operador como una serie de potencias del operador
+
+
+\begin{equation*}\label{exp_rho}
+	e^{\hat{x}} = \hat{I} + \hat{x} + \frac{\hat{x}^2}{2} + \cdots
+\end{equation*}
+
+\pause
+
+\begin{eqnarray*}\label{serie_rho}
+	Tr_B (\rho) &=&  \rho_{ia,jb}  \sum_{p,q} ( \bm{\hslash}_{p,q} | \hat{I} +  | \bm{\widetilde{h}}_2 ) (\bm{h}_2| E \hat{I} - \hat{H}_0 |
+	 \bm{\widetilde{h}}_2 )   (\bm{h}_2|  + \cdots  \widetilde{\bm{\hslash}}_{p,q} ) \times \frac{1}{Z_B} \\
+	 &=& \rho_{ia,jb} \sum_{p,q} \left[ ( \bm{\hslash}_{p,q} |  \hat{I} \widetilde{\bm{\hslash}}_{p,q} ) 
+	  + ( \bm{\hslash}_{p,q} | (\bm{h}_2| E \hat{I} - \hat{H}_0 |
+	 \bm{\widetilde{h}}_2 )   (\bm{h}_2| \widetilde{\bm{\hslash}}_{p,q} ) + \cdots \right]  \times \frac{1}{Z_B}
+\end{eqnarray*}
+
+\end{frame}
+\small
+\begin{frame}{Término de órden cero}
+  
+  se evalúa el producto $( \bm{\hslash}_{p,q} |\hat{I} \bm{\widetilde{\hslash}}_{p,q} )$
+
+
+\begin{eqnarray*}
+	( \bm{\hslash}_{p,q} |\hat{I} \bm{\widetilde{\hslash}}_{p,q} ) &=& 
+	\begin{pmatrix}
+		0 \\\cdots\\
+		(h_{pq}| \\
+		\cdots \\
+		0 \end{pmatrix}
+ \times \begin{pmatrix}
+	0 & \cdots & |h_{p,q})& \cdots& 0
+\end{pmatrix} \\
+	&=& \begin{pmatrix}
+		0 & \cdots &  \cdots  \\
+		\vdots & (h_{pq} | h_{pq}) & \vdots \\
+		\vdots & 0 & \cdots
+		\end{pmatrix}
+\end{eqnarray*}
+
+por lo que se obtiene una matriz con todos sus elementos cero, menos en el elemento $p,q$, 
+con un valor $\langle0| [h^\dagger_{p,q}, h_{p,q}] |0\rangle$. 
+Como está definido, los elementos $p,q$ de $h_{p,q}$ son los orbitales ocupados y desocupados, 
+diferentes de $i,j$ y $a,b$.
+\end{frame}
+
+\begin{frame}
+  El producto interno $(h_{pq} | h_{pq})$ está definido como 
+
+  \begin{eqnarray*}
+    (h_{pq} | h_{pq}) &=& \begin{pmatrix}
+      (a^\dagger_p a_q| a^\dagger_p a_q) &  (a^\dagger_p a_q| a^\dagger_q a_p) \\
+      (a^\dagger_q a_p| a^\dagger_p a_q)  & (a^\dagger_q a_p| a^\dagger_q a_p)
+    \end{pmatrix} 
+    = \begin{pmatrix}
+      1 &  0 \\
+      0 &  -1
+      \end{pmatrix}
+  \end{eqnarray*}
+
+  Por lo que hacer la sumatoria sobre todos los orbitales $p,q$ perteneciantes al subsistema  
+  $\sum_{p,q} (\bm{\hslash}_{p,q} |\hat{I} \bm{\widetilde{\hslash}}_{p,q})$ es igual a 0.
+  
+\end{frame}
+
+\small
+
+\small
+\begin{frame}{Término de Primer Orden}
+El término a analizar es 
+
+\begin{equation*}
+  ( \bm{\hslash}_{p,q} | (\bm{h}_2| E \hat{I} - \hat{H}_0 |
+	 \bm{\widetilde{h}}_2 )   (\bm{h}_2| \widetilde{\bm{\hslash}}_{p,q} )
+\end{equation*}
+\pause
+El término de la izquierda $( \bm{\hslash}_{p,q} | \bm{\widetilde{h}}_2 )$ está compuesto por
+
+\begin{eqnarray*}
+	( \bm{\hslash}_{p,q} | \bm{\widetilde{h}}_2 ) &=& \begin{pmatrix}
+		
+		0 \\
+		\vdots \\
+		(h_{pq}| \\
+		\vdots \\
+		0
+	\end{pmatrix}
+	\times \begin{pmatrix}
+		
+		 |h_{i'a'}) & |h_{j',b'}) & \cdots  & \cdots
+	\end{pmatrix} \end{eqnarray*}
+
+  
+\end{frame}
+
+\small
+\begin{frame}
+  por ejemplo, para $( \bm{\hslash}_{i',j'} | $, se tiene
+
+\begin{eqnarray*} \label{hslash_qp}
+	( \bm{\hslash}_{p,q} | \bm{\widetilde{h}}_2 )
+		 &=& \begin{pmatrix}
+		(h_{i',a'}) \\
+		\vdots \\
+		0 \\
+		\vdots \\
+		0
+	\end{pmatrix}  \times  \begin{pmatrix}
+		|h_{i'a'}) & \cdots & |h_{j',b'}) &  \cdots
+	\end{pmatrix}            \\
+     & = & \begin{pmatrix}
+		 (h_{i',a'} | h_{i',a'}) & 0 & \cdots \\
+		 0 & \vdots & \vdots \\
+		 \vdots & \vdots & \vdots 
+	 \end{pmatrix} 
+\end{eqnarray*}
+
+\end{frame}
+
+\begin{frame}
+  mientras que a derechas, se debe resolver el producto de matrices 
+$( \bm{h}_2 | \widetilde{\bm{\hslash}}_{p,q})$
+
+\begin{eqnarray*}\label{hslash_pq}
+	( \bm{\hslash}_{p,q} | \bm{\widetilde{h}}_2 )
+		 &=& \begin{pmatrix}
+		(h_{i',a'}| \\
+		 \vdots \\
+		(h_{j',b'}| \\
+		
+		\vdots 
+	\end{pmatrix}  \times  \begin{pmatrix}
+		|h_{i'a'}) & 0 &  \cdots
+	\end{pmatrix}            \\
+     & = & \begin{pmatrix}
+		 (h_{i',a'} | h_{i',a'}) & 0 & \cdots \\
+		 0 & \vdots & \vdots \\
+		 \vdots & \vdots & \vdots 
+	 \end{pmatrix} 
+\end{eqnarray*}
+
+\end{frame}
+\begin{frame}
+  y a la matriz central,$(\bm{h}_B| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_B )$ 
+que es el la inversa del Propagador Principal, al multiplicar a izquiera y a derecha por las matrices \ref{hslash_pq} y \ref{hslash_qp},
+solo será distinto de cero el elemento $i'\rightarrow a', j \rightarrow b'$ del Propagador Principal. 
+
+\begin{eqnarray*}
+	\begin{pmatrix}
+		(h_{i',a'} | h_{i',a'}) & 0 & \cdots \\
+		0 & \vdots & \vdots \\
+		\vdots & \vdots & \vdots 
+	\end{pmatrix} \otimes \begin{pmatrix}
+		M_{i'a',i'a'} & M_{i'a',j' b'} &  \cdots \\
+		M_{j' b',i'a'} & M_{j' b',j' b'} & \vdots \\
+		\vdots & \vdots & \vdots
+	\end{pmatrix} \otimes
+	\begin{pmatrix}
+		(h_{i',a'} | h_{i',a'}) & 0 & \cdots \\
+		0 & \vdots & \vdots \\
+		\vdots & \vdots & \vdots 
+	\end{pmatrix} = M_{i'a',i'a'}
+	\end{eqnarray*}
+
+Por lo que, al hacer una sumatoria sobre todos los orbitales $p,q$ diferentes de $i,j$ y $a,b$, se obtiene
+
+\begin{equation*}
+	Tr (\bm{h}_B| E \hat{I} - \hat{H}_0 | \bm{\widetilde{h}}_B)  =  \sum_{p,q  \epsilon B} M_{pq,pq}
+\end{equation*}
+\end{frame}
+
+
+%slide 5, SCF no es HF. A lo sumo hablar de un estado de Referencia, autoconsistente.
+% slide 7, la expresión de la operador creación en el orbital ocupado i, no está bien. 
+%no se crea un orbital sobre un ocupado, nunca... sinó que, tenemos ese operador, que luego 
+%se "relaciona" con otros, y luego se aplica al estado de referencia
+% No está muy claro el uso de las excitaciones, y de cuál es la diferencia entre
+% la rho de propagadores y de estados, que es que la de propagadores contiene excitaciones
+% entre estados, y permite evaluar las excitaciones y sus efectos sobre las propiedades
+%mientras que en el método de funciones de onda, no se puede....
+% finalmente, a la ecuación que quería llegar, no se llegó, sin embargo, 
+% podría quedar expresada
+
+% rho = e^M_{ia,jb} \times 1/Z_{[0]}
+
+%de hecho que así está en el paper del 2018. Tuve que haber sido más despierto
+%y al no resolver lo que me proponía, tuve que haberme preguntado si estaba bien
+%el objetivo del trabajo
+
+\end{document}

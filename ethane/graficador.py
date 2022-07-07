@@ -16,7 +16,7 @@ plt.plot(ang, PSO, 'bo-', label='PSO')
 #plt.plot(ang, DSO, 'm--', label='DSO')
 plt.plot(ang, FC, 'g>-', label='FC')
 plt.plot(ang, FCSD+PSO, 'r<--', label='Total')
-plt.plot(ang, FCSD - FC, 'm:', label='SC')
+plt.plot(ang, FCSD - FC, 'm:', label='SD')
 
 plt.legend()
 plt.ylabel('Hz')
