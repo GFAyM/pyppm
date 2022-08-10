@@ -35,10 +35,11 @@ class localization:
     molecule_name = attr.ib(default=None, type=str)
     atom_for_searching1 = attr.ib(default=None, type=str)
     atom_for_searching2 = attr.ib(default=None, type=str)
-
+    mol = attr.ib(default=None)
 
     def __attrs_post_init__(self):
-        self.mol = gto.M(atom=str(self.mol_input), basis=self.basis)
+        if self.mol == None:
+            self.mol = gto.M(atom=str(self.mol_input), basis=self.basis)
 
     @property
     def localiza_first(self):

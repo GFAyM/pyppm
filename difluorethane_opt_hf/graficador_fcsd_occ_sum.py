@@ -34,8 +34,10 @@ for orb1 in occ_lmo:
 #        df_F_C = data_J[(data_J.a.str.contains('F3_2pz') == True) & (data_J.b.str.contains('F7_2pz') == True)]
 
         df = data_J[(data_J.a.str.contains(orb1) == True) & (data_J.b.str.contains(orb2) == True)]
+
         if df.fc_ab[abs(df.fc_ab) > 0].any():
             ang = df.ang
+            print(df.reset_index().fc_ab)
             df_F_C.fc_ab += df.reset_index().fc_ab
             b = df.b
             fc = df.fc

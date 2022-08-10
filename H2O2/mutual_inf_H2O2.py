@@ -58,37 +58,39 @@ vir_lmo = [(H3_1s, 'H3_1s'), (H4_1s, 'H4_1s'), (H3_2s, 'H3_2s'), (H4_2s, 'H4_2s'
 				(O1_3s, 'O1_3s'), (O2_3s, 'O2_3s'), (O1_3dx,'O1_3dx'), (O2_3dx, 'O2_3dx'),
 				(O1_3py, 'O1_3py'), (O2_3py, 'O2_3py'),(O1_3dy,'O1_3dy'),(O2_3dy,'O2_3dy'),#]#,
 				(O1_3dxz,'O1_3ddxz'),(O2_3dxz,'O2_3ddxz')]
-for ang in range(1,18,1):
+for ang in range(1,2,1):
     mol_loc, mo_coeff_loc, mo_occ_loc = extra_functions(molden_file=f"H2O2_mezcla_{ang*10}.molden").extraer_coeff
 
-    i = [H3_1s[ang],H3_2s[ang],H3_2px[ang],H3_2py[ang],H3_2pz[ang]]
+    i = [H3_1s[ang],H3_2s[ang]]
     #i = [H3_1s[ang],H3_2s[ang],H3_2px[ang],H3_2pz[ang]]
 
-    j = [H4_1s[ang],H4_2s[ang],H4_2px[ang],H4_2py[ang],H4_2pz[ang]]
+    j = [H4_1s[ang],H4_2s[ang]]
     #j = [H4_1s[ang],H4_2s[ang],H4_2px[ang],H4_2pz[ang]]
 
     m_obj = inverse_principal_propagator(o1=[H3_1s_occ[ang]], o2=[H4_1s_occ[ang]], v1=i, v2=j, mo_coeff=mo_coeff_loc, mol=mol_loc)
-    cruzada = m_obj.mutual_information
+    #cruzada = m_obj.entropy_ia
+    print(i,j, m_obj.o1,m_obj.o2)
+    print(m_obj.m_iajb_mixedstate)
             #print(cruzada)
-    with open('mutual_information_H2O2.txt', 'a') as f:
-        f.write(f'{ang*10} {np.round(cruzada, decimals=6)} \n')
+    #with open('mutual_information_H2O2.txt', 'a') as f:
+    #    f.write(f'{ang*10} {np.round(cruzada, decimals=6)} \n')
 
-df_mi = pd.read_csv('mutual_information_H2O2.txt', sep='\s+', header=None)
+#df_mi = pd.read_csv('mutual_information_H2O2.txt', sep='\s+', header=None)
 
-df_mi.columns = ['ang', 'Mutual']
+#df_mi.columns = ['ang', 'Mutual']
         		
-plt.figure(figsize=(10,8))
-plt.plot(df_mi.ang, df_mi.Mutual, 'bo-', label='$I_{ia,jb}$' )#f'a={orb1} b={orb2}')
+#plt.figure(figsize=(10,8))
+#plt.plot(df_mi.ang, df_mi.Mutual, 'bo-', label='$I_{ia,jb}$' )#f'a={orb1} b={orb2}')
 #plt.plot(ang, DSO, 'm--', label='DSO')
 #plt.plot(ang, df_F_C.fc, 'go-', label='$^{FC}J(H-H)$')
 #plt.plot(ang, FCSD+FC+PSO, 'm--', label='Total')
 #plt.plot(ang, FCSD, 'r+-', label='FC+SD')
 
-plt.legend()
-plt.ylabel('Mutual Information')
-plt.xlabel('Ángulo diedro')
-plt.suptitle('Triplet Mutual Information $I_{ia,jb}$ H$_2$O$_2$, 6-31G**')
-plt.title('i=O-H$_1$, a=O-H$_1$*(1s,2s,2px,2pz,2py), j=O-H$_2$, b= O-H$_2$*(1s,2s,2px,2pz,2py)')# f'a={orb1}, b={orb2}')
+#plt.legend()
+#plt.ylabel('Mutual Information')
+#plt.xlabel('Ángulo diedro')
+#plt.suptitle('Triplet Mutual Information $I_{ia,jb}$ H$_2$O$_2$, 6-31G**')
+#plt.title('i=O-H$_1$, a=O-H$_1$*(1s,2s,2px,2pz,2py), j=O-H$_2$, b= O-H$_2$*(1s,2s,2px,2pz,2py)')# f'a={orb1}, b={orb2}')
 #plt.set_size_inches(6.5, 6.5)
-plt.savefig(f'Mutual_inf_H2O2_5exc.png', dpi=200)
-plt.show()
+#plt.savefig(f'Mutual_inf_H2O2_5exc.png', dpi=200)
+#plt.show()

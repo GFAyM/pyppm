@@ -110,19 +110,60 @@ encontrados con el programa Dalton, utilizando orbitales moleculares canónicos.
 
 En ésta sección se muestran los valores del acoplamiento J utilizando diferentes LMOs ocupados y todos los LMOs virtuales.
 Se busca cuáles son los orbitales moleculares $i,j$ que más contribuyen a la propiedad $J(H-H)_{ia,jb}$, siendo
-$i,j (a,b)$ orbitales moleculares ocupados (desocupados). 
+$i,j (a,b)$ orbitales moleculares ocupados (desocupados). Se utilizó un módulo del código \textit{pySCF} que nos
+permite conocer la contribución porcentual de algún orbital atómico a cada orbital molecular. 
+En ese contexto, H3$_1s$ indica que ese LMO tiene mayoría de OA 1s del hidrógeno,
+O2$_1$s, significa que ese LMO tiene alta contribución del OA 1s del oxígeno.
 
-Para dicho fin, es menester detallar de qué manera cambian los valores de $J_{ia,jb} (H-H)$ si los LMOs se encuentran centrados
-en la misma zona, y por ende se van a superponer, o si se encuentran separados espacialmente. Éstos son los 
-mecanismos hiperconjuntivos posibles en el cálculo de $J_{ia,jb}$
+%De allí surge la notación de los LMOs utilizados, 
+
+%Para dicho fin, es menester detallar de qué manera cambian los valores de $J_{ia,jb} (H-H)$ si los LMOs se encuentran centrados
+%en la misma zona, y por ende se van a superponer, o si se encuentran separados espacialmente. Éstos son los 
+%mecanismos hiperconjuntivos posibles en el cálculo de $J_{ia,jb}$
+
+%\begin{figure}[h]
+%	\centering
+%	\includegraphics*[scale=0.3]{coupling_types}	
+%	\caption{Mecanismos hiperconjuntivos: (a)local-local hyperconjugative (LLH),(b) double-vicinal hyper-
+%	conjugative (DVH); (c) double-local hyperconjugative (DLH); (d)
+%	local-vicinal hyperconjugative (LVH). Gráfico extraído de J. Phys. Chem. A 2004, 108, 29, 6231–6238}
+%\end{figure}. 
+
+El Orbital molecular localizado que más contribuye a $^{FC}J_{ij}(H-H)$ es aquel con una alta contribución del OA
+1s del hidrógeno y 2pz del oxígeno, y se calcula la contribución a la propiedad fijando ambos orbitales en los 
+átomos por separado, y también juntos. Es decir, fijando el orbital i en el hidrógeno 1, luego en el hidrógeno 2,
+y luego en ambos.   
 
 \begin{figure}[h]
 	\centering
-	\includegraphics*[scale=0.3]{coupling_types}	
-	\caption{Mecanismos hiperconjuntivos: (a)local-local hyperconjugative (LLH),(b) double-vicinal hyper-
-	conjugative (DVH); (c) double-local hyperconjugative (DLH); (d)
-	local-vicinal hyperconjugative (LVH)}
-\end{figure}. 
+	\includegraphics*[scale=0.3]{occ_c2h6}
+	\caption{Orbitales Moleculares Localizados que más contribuyen a $^{FC}J_{ij}$}
+\end{figure}	
+
+  
+
+\begin{figure}[h]
+	\centering
+	\includegraphics*[scale=0.4]{C2H6_FC_occ}
+	\caption{Diferentes caminos de acoplamiento a $^{FC}J_{ij}(H_1-H_2)$ y sus contribuciones a $^{FC}J(H-H)$}
+\end{figure}	
+
+Donde se observa que el camino con $i$ y $j$ centrado cada uno en su átomo es el de mayor contribución , los caminos
+donde $i$ y $j$ se encuentran en el mismo enlace, no es despreciable y ambos siguen la regla de Karplus,
+ y es interesante observar que la suma de éstas contribuyen al valor final de $^{FC}J(H_1-H_2)$
+
+
+\subsection*{Caminos de acoplamiento $^{FC}FC_{ia,jb}$}
+
+Teniendo en cuenta que ahora conocemos cuáles son los orbitales moleculares localizados que más contribuyen a la 
+propiedad, se busca cuáles son los LMOs virtuales que más contribuyen. Éstos son los $1$s, $2$s y $2$pz centrados 
+en los hidrógenos (ver apéndice)
+
+\begin{figure}[h]
+	\centering
+	\includegraphics*[scale=0.4]{FC_vir_C2H6}
+	\caption{Contribución de los LMOs $1s,2s,2p_z$ a $^{FC}J_{ij}(H_1-H_2)$ }
+\end{figure}
 
 
 
