@@ -15,15 +15,15 @@ import matplotlib.pyplot as plt
 
 occ1 = []
 occ2 = []
-for ang in range(100,110,10):
-    a = extra_functions(molden_file=f"C2H2F2_{ang}_ccpvdz_Cholesky_PM.molden").mo_hibridization(
-        'C1', .1, 1)
-    b = extra_functions(molden_file=f"C2H2F2_{ang}_ccpvdz_Cholesky_PM.molden").mo_hibridization(
-        'C2', .1, 1)
+for ang in range(180,190,10):
+    a = extra_functions(molden_file=f"C2H2F4_{ang}_ccpvdz_Cholesky_PM.molden").mo_hibridization(
+        'H3', .1, .21)
+    b = extra_functions(molden_file=f"C2H2F4_{ang}_ccpvdz_Cholesky_PM.molden").mo_hibridization(
+        'H7', .1, .21)
     #occ1.append(a)
     #occ2.append(b)
     print(a)
     print(b)
 
-#print(occ1)
-#print(occ2)
+#print(f"v6_1 = {occ1}")
+#print(f"v6_2 = {occ2}")

@@ -51,10 +51,10 @@ class localization:
             lmo_virt_first = cholesky_mos(mf.mo_coeff[:, nocc:])
 
         elif self.first_loc=="PM":
-            #PipekMezey.pop_method = self.pm_pop_method_first
-            #PipekMezey.conv_tol = self.first_conv_tol
-            #PipekMezey.max_stepsize = self.first_max_stepsize
-            #PipekMezey.max_iters = self.first_iters
+            PipekMezey.pop_method = self.pm_pop_method_first
+            PipekMezey.conv_tol = self.first_conv_tol
+            PipekMezey.max_stepsize = self.first_max_stepsize
+            PipekMezey.max_iters = self.first_iters
             #PipekMezey.init_guess = None
             lmo_occ_first = PipekMezey(self.mol).kernel(mf.mo_coeff[:, :nocc])
             lmo_virt_first = PipekMezey(self.mol).kernel(mf.mo_coeff[:, nocc:])

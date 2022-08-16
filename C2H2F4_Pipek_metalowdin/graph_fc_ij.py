@@ -20,6 +20,5 @@ plt.legend()
 plt.ylabel('Hz')
 plt.xlabel('Dihedral angle')
 plt.title(r'J$^{FC}_{ij}(H-H)$ with ligants C-H in C$_2$H$_2$F$_4$, cc-pVDZ')
-#plt.savefig('mecanismos_C2H4F2_ccpvdz.png', dpi=200)
+plt.savefig('FC_occ_C2H2F4_ccpvdz.png', dpi=200)
 plt.show()
-
