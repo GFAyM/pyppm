@@ -1,4 +1,0 @@
-\beamer@sectionintoc {1}{Definición del Problema}{3}{0}{1}
-\beamer@sectionintoc {2}{Traza parcial de $\rho $}{11}{0}{2}
-\beamer@sectionintoc {3}{Denominador de $\rho $}{19}{0}{3}
-\beamer@sectionintoc {4}{Numerador}{24}{0}{4}
