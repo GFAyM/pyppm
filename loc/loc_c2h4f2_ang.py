@@ -9,7 +9,7 @@ from pyscf import scf, gto
 from src.localization import localization
 
 
-for ang in range(0,190,10):
+for ang in range(0,10,10):
     mol = f'''
             C1   1
             C2   1 1.509253
@@ -21,6 +21,6 @@ for ang in range(0,190,10):
             H4   1 1.088919    2  110.884  3  {ang-119.16}
             '''
 
-    loc_obj = localization(mol_input=mol, basis='ccpvdz', no_second_loc=False, molecule_name='C2H4F2', atom_for_searching1='F3',
-                           atom_for_searching2='F7',pm_pop_method_second='becke', dihedral_angle=ang)
+    loc_obj = localization(mol_input=mol, basis='ccpvdz',  molecule_name='C2H4F2', atom_for_searching1='F3', first_loc='Boys',
+                           atom_for_searching2='F7', dihedral_angle=ang) #second_loc='Boys',no_second_loc=False,
     loc_obj.kernel

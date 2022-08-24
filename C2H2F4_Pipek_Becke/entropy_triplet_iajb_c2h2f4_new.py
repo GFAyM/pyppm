@@ -6,7 +6,7 @@ if module_path not in sys.path:
 	sys.path.append(module_path)
 
 from src.help_functions import extra_functions
-from src.ppe import M_matrix
+from src.ppe_new import M_matrix
 
 from src.help_functions import extra_functions
 import matplotlib.pyplot as plt
@@ -59,17 +59,20 @@ for ang in range(0,18,1):
     mol, mo_coeff, mo_occ = extra_functions(molden_file=f"C2H2F4_{ang*10}_ccpvdz_Cholesky_PM.molden").extraer_coeff
 
     inv_prop = M_matrix(mol=mol, mo_coeff=mo_coeff, mo_occ=mo_occ,
-                occ = [  occ1[ang], occ2[ang]],
-                vir = [ v1_1[ang], v2_1[ang],v3_1[ang],
-                        v1_2[ang], v2_2[ang],v3_2[ang]])
+            occ = [  occ1[ang], occ2[ang]],
+            vir = [ v1_1[ang],v2_1[ang],v3_1[ang],
+                    v1_2[ang],v2_2[ang],v3_2[ang]])
+    m = inv_prop.orb_m([occ1[ang],occ2[ang]],[v1_1[ang],v1_2[ang]])
    
-    ent_ia = inv_prop.entropy_iaia
-    ent_iajb = inv_prop.entropy_iajb
-    ent_jb = inv_prop.entropy_jbjb
+    ent_ia = inv_prop.entropy_iaia(m)
+    ent_iajb = inv_prop.entropy_iajb(m)
+    ent_jb = inv_prop.entropy_jbjb(m)
 #    print(ent_ia,ent_jb,ent_iajb)
     mutual = ent_ia + ent_jb - ent_iajb
     with open('entanglement_triplet_c2f4h2.txt', 'a') as f:
+        #f.write(f'{ang*10} {ent_ia} {ent_jb} {ent_iajb} {mutual} \n')
         f.write(f'{ang*10} {ent_ia} {ent_jb} {ent_iajb} {mutual} \n')
+
 
 
 
@@ -103,7 +106,7 @@ ax3.set_title('S$_{iajb}$')# f'a={orb1}, b={orb2}')
 ax4.set_xlabel('Dihedral angle')
 ax4.plot(data_J.ang, data_J.mutual, 'b>-', label='$^{FC}J_{ij}(F-F)$' )#f'a={orb1} b={orb2}')
 ax4.set_title('Mutual Information ')# f'a={orb1}, b={orb2}')
-#plt.savefig('entanglement_triplet_c2h4f2.png')
+plt.savefig('entanglement_triplet_c2h4f2_new.png')
 plt.show()
 #if os.path.exists('entanglement_triplet_c2f4h2.txt'):
 #    os.remove('entanglement_triplet_c2f4h2.txt')

@@ -13,7 +13,7 @@ import pandas as pd
 
 
 #print('number of threads:',lib.num_threads())
-file = str('entanglement_triplet_c2h4f2.txt')
+file = str('entanglement_singlet_c2h4f2.txt')
 
 if os.path.exists(file):
 	os.remove(file)
@@ -54,10 +54,11 @@ data = []
 for ang in range(0,19,1): 
     mol, mo_coeff, mo_occ = extra_functions(molden_file=f"C2H4F2_{ang*10}_ccpvdz_Cholesky_PM.molden").extraer_coeff
 
-    inv_prop = M_matrix(mol=mol, mo_coeff=mo_coeff, 
-                occ = [  par_lib_1[ang] , lig2[ang]],
-                vir = [ v1_1[ang ],v5_1[ang], v4_1[ang], 
-                        v1_2[ang ],v2_2[ang], v3_2[ang] ])
+    inv_prop = M_matrix(mol=mol, mo_coeff=mo_coeff, triplet=False, 
+                occ = [   lig1[ang] , 
+                          lig2[ang]],
+                vir = [ v1_1[ang ],v2_1[ang ],
+                        v1_2[ang ],v2_2[ang ] ])
     ent_ia = inv_prop.entropy_iaia
     ent_iajb = inv_prop.entropy_iajb
     ent_jb = inv_prop.entropy_jbjb
@@ -74,7 +75,7 @@ fig, (ax1, ax2,ax3,ax4) = plt.subplots(1, 4, figsize=(18,8))
 
 ax1.plot(data_J.ang, data_J.ent_ia, 'b>-', label='$^{FC}J_{ij}(H-H)$' )#f'a={orb1} b={orb2}')
 
-plt.suptitle(r'''Triplet Quantum Entanglement in C$_2$H$_4$F$_2$ 
+plt.suptitle(r'''Singlet Quantum Entanglement in C$_2$H$_4$F$_2$ 
 using Localized Molecular Orbitals Pipek-Mezey with Becke parcial charge''')
 
 ax1.set_xlabel('Dihedral angle')
@@ -93,7 +94,7 @@ ax3.set_title('S$_{iajb}$')# f'a={orb1}, b={orb2}')
 ax4.set_xlabel('Dihedral angle')
 ax4.plot(data_J.ang, data_J.mutual, 'b>-', label='$^{FC}J_{ij}(F-F)$' )#f'a={orb1} b={orb2}')
 ax4.set_title('Mutual Information ')# f'a={orb1}, b={orb2}')
-plt.savefig('entanglement_triplet_c2h4f2.png')
+plt.savefig('entanglement_singlet_c2h4f2.png')
 plt.show()
-#if os.path.exists('entanglement_triplet_ c2h4f2.txt'):
-#    os.remove('entanglement_triplet_ c2h4f2.txt')
+#if os.path.exists('entanglement_singlet_ c2h4f2.txt'):
+#    os.remove('entanglement_singlet_ c2h4f2.txt')

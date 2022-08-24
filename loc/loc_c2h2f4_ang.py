@@ -8,7 +8,7 @@ from src.localization import localization
 
 ang = 0
 
-for ang in range(180,190,10):
+for ang in range(0,100,10):
     mol = str(f'''
         C1   1
         C2   1 1.509596
