@@ -85,7 +85,8 @@ fig, (ax1, ax2,ax3,ax4) = plt.subplots(1, 4, figsize=(18,8))
 ax1.plot(data_J.ang, data_J.ent_ia, 'b>-', label='$^{FC}J_{ij}(H-H)$' )#f'a={orb1} b={orb2}')
 
 plt.suptitle(r'''Triplet Quantum Entanglement in C$_2$H$_2$F$_4$ 
-using Localized Molecular Orbitals Pipek-Mezey with Becke parcial charge''')
+using Localized Molecular Orbitals Pipek-Mezey with Becke parcial charge
+with 3 anti-ligants in each excitation''')
 
 ax1.set_xlabel('Dihedral angle')
 ax1.set_ylabel('Entanglement')
@@ -103,7 +104,7 @@ ax3.set_title('S$_{iajb}$')# f'a={orb1}, b={orb2}')
 ax4.set_xlabel('Dihedral angle')
 ax4.plot(data_J.ang, data_J.mutual, 'b>-', label='$^{FC}J_{ij}(F-F)$' )#f'a={orb1} b={orb2}')
 ax4.set_title('Mutual Information ')# f'a={orb1}, b={orb2}')
-#plt.savefig('entanglement_triplet_c2h4f2.png')
+plt.savefig('entanglement_triplet_c2h4f2_v123.png')
 plt.show()
 #if os.path.exists('entanglement_triplet_c2f4h2.txt'):
 #    os.remove('entanglement_triplet_c2f4h2.txt')

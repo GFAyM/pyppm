@@ -105,6 +105,37 @@ class M_matrix:
         self.m = self.m.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
         return self.m
 
+    @property
+    def Z_partition(self):
+        self.occidx = np.where(self.mo_occ>0)[0]
+        self.viridx = np.where(self.mo_occ==0)[0]
+
+        self.orbv = self.mo_coeff[:,self.viridx]
+        self.orbo = self.mo_coeff[:,self.occidx]
+        self.nocc = self.orbo.shape[1]        
+        self.nvir = self.orbv.shape[1]
+        
+        self.mo = np.hstack((self.orbo,self.orbv))
+        
+        self.nmo = self.nocc + self.nvir
+        
+        eri_mo = ao2mo.general(self.mol, 
+                [self.mo,self.mo,self.mo,self.mo], compact=False)
+        eri_mo = eri_mo.reshape(self.nmo,self.nmo,self.nmo,self.nmo)
+        self.m_full = np.zeros((self.nocc,self.nvir,self.nocc,self.nvir))
+        self.m_full -= np.einsum('ijba->iajb', eri_mo[:self.nocc,:self.nocc,self.nocc:,self.nocc:])
+        if self.triplet:
+            self.m_full -= np.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
+        elif not self.triplet:
+            self.m_full += np.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
+
+        self.m_full = self.m_full.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
+        tr = np.trace(self.m_full)
+        Z=0
+        for i in tr:
+            Z += np.exp(i)
+        return Z
+
 
 
     def entropy_iaia(self,m):

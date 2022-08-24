@@ -6,7 +6,7 @@ if module_path not in sys.path:
 	sys.path.append(module_path)
 
 from src.help_functions import extra_functions
-from src.ppe import M_matrix
+from src.ppe_2 import M_matrix
 
 from src.help_functions import extra_functions
 import matplotlib.pyplot as plt
@@ -63,13 +63,14 @@ for ang in range(0,18,1):
                 vir = [ v1_1[ang], v2_1[ang],v3_1[ang],
                         v1_2[ang], v2_2[ang],v3_2[ang]])
    
-    ent_ia = inv_prop.entropy_iaia
-    ent_iajb = inv_prop.entropy_iajb
-    ent_jb = inv_prop.entropy_jbjb
+    ent_ia, m_iaia = inv_prop.entropy_iaia
+    ent_iajb, m_iajb = inv_prop.entropy_iajb
+    #ent_jb = inv_prop.entropy_jbjb
 #    print(ent_ia,ent_jb,ent_iajb)
-    mutual = ent_ia + ent_jb - ent_iajb
+    #mutual = ent_ia + ent_jb - ent_iajb
     with open('entanglement_triplet_c2f4h2.txt', 'a') as f:
-        f.write(f'{ang*10} {ent_ia} {ent_jb} {ent_iajb} {mutual} \n')
+        #f.write(f'{ang*10} {ent_ia} {ent_jb} {ent_iajb} {mutual} \n')
+        f.write(f'{ang*10} {ent_ia} {m_iaia} {ent_iajb} {m_iajb} \n')
 
 
 
@@ -78,32 +79,33 @@ text = 'entanglement_triplet_c2f4h2.txt'
 
 data_J = pd.read_csv(text, sep='\s+', header=None)
 
-data_J.columns = ['ang', 'ent_ia', 'ent_jb', 'ent_iajb', 'mutual']
+data_J.columns = ['ang', 'ent_ia', 'm_iaia', 'ent_iajb', 'm_iajb']
 
 fig, (ax1, ax2,ax3,ax4) = plt.subplots(1, 4, figsize=(18,8))
 
 ax1.plot(data_J.ang, data_J.ent_ia, 'b>-', label='$^{FC}J_{ij}(H-H)$' )#f'a={orb1} b={orb2}')
 
 plt.suptitle(r'''Triplet Quantum Entanglement in C$_2$H$_2$F$_4$ 
-using Localized Molecular Orbitals Pipek-Mezey with Becke parcial charge''')
+using Localized Molecular Orbitals Pipek-Mezey with Becke parcial charge
+with 3 anti-ligants in each excitation''')
 
 ax1.set_xlabel('Dihedral angle')
 ax1.set_ylabel('Entanglement')
-ax1.set_title('S$_{ia}$')# f'a={orb1}, b={orb2}')
+ax1.set_title('S$_{iaia}$')# f'a={orb1}, b={orb2}')
 #i$=$F3$_{2s}$,F3$_{2pz}$ a$=F3$_{3s}$F3$_{2pz}$, j$=$F7$_{2s}$,F7$_{2pz},b$=F7$_{3s}$F7$_{2pz}$
 
 ax2.set_xlabel('Dihedral angle')
-ax2.plot(data_J.ang, data_J.ent_jb, 'b>-', label='$^{FC}J_{ij}(F-F)$' )#f'a={orb1} b={orb2}')
-ax2.set_title('S$_{jb}$')# f'a={orb1}, b={orb2}')
+ax2.plot(data_J.ang, data_J.m_iaia, 'b>-', label='$^{FC}J_{ij}(F-F)$' )#f'a={orb1} b={orb2}')
+ax2.set_title('M$_{iaia}$')# f'a={orb1}, b={orb2}')
 
 ax3.set_xlabel('Dihedral angle')
 ax3.plot(data_J.ang, data_J.ent_iajb, 'b>-', label='$^{FC}J_{ij}(F-F)$' )#f'a={orb1} b={orb2}')
 ax3.set_title('S$_{iajb}$')# f'a={orb1}, b={orb2}')
 
 ax4.set_xlabel('Dihedral angle')
-ax4.plot(data_J.ang, data_J.mutual, 'b>-', label='$^{FC}J_{ij}(F-F)$' )#f'a={orb1} b={orb2}')
-ax4.set_title('Mutual Information ')# f'a={orb1}, b={orb2}')
-#plt.savefig('entanglement_triplet_c2h4f2.png')
+ax4.plot(data_J.ang, data_J.m_iajb, 'b>-', label='$^{FC}J_{ij}(F-F)$' )#f'a={orb1} b={orb2}')
+ax4.set_title('M$_{iajb}$')# f'a={orb1}, b={orb2}')
+plt.savefig('entanglement_triplet_c2h4f2_M.png')
 plt.show()
 #if os.path.exists('entanglement_triplet_c2f4h2.txt'):
 #    os.remove('entanglement_triplet_c2f4h2.txt')
