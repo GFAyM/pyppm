@@ -6,7 +6,7 @@ if module_path not in sys.path:
 	sys.path.append(module_path)
 
 from src.help_functions import extra_functions
-from src.ppe import M_matrix
+from src.ppe_3 import M_matrix
 
 from src.help_functions import extra_functions
 import matplotlib.pyplot as plt
@@ -58,11 +58,7 @@ mol, mo_coeff, mo_occ = extra_functions(molden_file=f"C2H2F4_{ang*10}_ccpvdz_Cho
 
 inv_prop = M_matrix(mol=mol, mo_coeff=mo_coeff, mo_occ=mo_occ,
             occ = [  occ1[ang], occ2[ang]],
-            vir = [ v1_1[ang],
-                    v1_2[ang]])   
+            vir = [ v1_1[ang],v3_1[ang],v2_1[ang],
+                    v1_2[ang],v3_2[ang],v2_2[ang]])   
 
-#print(inv_prop.entropy_iaia)
-#print(inv_prop.Z_partition)
 print(inv_prop.entropy_iaia)
-print(inv_prop.entropy_jbjb)
-print(inv_prop.entropy_iajb)
