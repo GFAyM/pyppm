@@ -133,12 +133,12 @@ class M_matrix:
         self.m_iajb[self.m_iajb.shape[0]//2:, :self.m_iajb.shape[0]//2] += m[int(m.shape[0]*3/4):, :int(m.shape[0]*1/4)]
         self.m_iajb[:self.m_iajb.shape[0]//2, self.m_iajb.shape[0]//2:] += m[:int(m.shape[0]*1/4), int(m.shape[0]*3/4):]
         eigenvalues = np.linalg.eigvals(self.m_iajb)
-        Z=0
+        Z=1
         for i in eigenvalues:
             Z += np.exp(i)
         ent = 0
         for i in eigenvalues:
-            ent += -np.exp(i)/Z*np.log(np.exp(i)/Z)
+            ent += -(np.exp(i)/Z)*np.log(np.exp(i)/Z)
         return ent
 
 

@@ -6,16 +6,17 @@ if module_path not in sys.path:
 	sys.path.append(module_path)
 
 from src.help_functions import extra_functions
-from src.ppe_3 import M_matrix
+from src.ppe_2 import M_matrix
 
 from src.help_functions import extra_functions
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 
+text = str('entropy_triplet.txt')
+if os.path.exists(text):
+	os.remove(text)
 
-#print('number of threads:',lib.num_threads())
-if os.path.exists('entanglement_triplet_c2f4h2.txt'):
-	os.remove('entanglement_triplet_c2f4h2.txt')
 
 
 occ1 = [23, 22, 22, 22, 23, 23, 23, 22, 23, 22, 23, 22, 22, 22, 23, 22, 23, 23, 23, 22, 22, 23, 23, 23, 23, 22, 22, 23]
@@ -41,48 +42,45 @@ v5_2 = [67, 67, 67, 66, 65, 65, 67, 67, 67, 68, 67, 66, 66, 66, 65, 66, 66, 67, 
 #       10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27
 v6_1 = [26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26]
 v6_2 = [25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 93, 93, 28, 27, 28, 93, 93, 25, 25, 25, 25, 25, 25]
-#       10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27
-
-#lmo_vir = [(vir1_1s,"H1_1s"),(vir2_1s,"H2_1s"),(vir1_2s,"H1_2s"),
-#			(vir2_2s,"H2_2s"), (vir1_2px,"H1_2px"),
-#		   (vir2_2px,"H2_2px"), (vir1_2py,"H1_2py"),
-#		   (vir2_2py,"H2_2py"), (vir1_2pz,"H1_2pz"), (vir2_2pz,"H2_2pz")]
-
-#lmo_virt = [
-#            (vir1_2px,vir2_2px,"2px"), (vir1_2py,vir2_2py,"2py")]
 
 
+for ang in range(0,18,1):
+	mol, mo_coeff, mo_occ = extra_functions(molden_file=f"C2H2F4_{ang*10}_ccpvdz_Cholesky_PM.molden").extraer_coeff
 
-data = []
+	inv_prop = M_matrix(mol=mol, mo_coeff=mo_coeff, mo_occ=mo_occ,
+				occ = [  occ1[ang], occ2[ang]],
+				vir = [ v1_1[ang], v2_1[ang], v3_1[ang], v4_1[ang],v5_1[ang],
+						v1_2[ang], v2_2[ang], v3_2[ang], v4_2[ang],v5_2[ang]])   
+	
+	ent_ia = inv_prop.entropy_iaia
+	ent_iajb = inv_prop.entropy_iajb
+	ent_jb = inv_prop.entropy_jbjb
+	mutual = ent_ia + ent_jb - ent_iajb
+	with open(text, 'a') as f:
+		f.write(f'{ang*10} {ent_iajb} {ent_ia} {ent_jb} {mutual} \n')
 
-for ang in range(0,18,1): 
-    mol, mo_coeff, mo_occ = extra_functions(molden_file=f"C2H2F4_{ang*10}_ccpvdz_Cholesky_PM.molden").extraer_coeff
 
-    inv_prop = M_matrix(mol=mol, mo_coeff=mo_coeff, mo_occ=mo_occ, #classical=True,
-                occ = [ occ1[ang], occ2[ang]],
-                vir = [ v2_1[ang], v2_2[ang]])   
-    ent_iaia = inv_prop.entropy_iajb_1
-    with open('entanglement_triplet_c2f4h2.txt', 'a') as f:
-        f.write(f'{ang*10} {ent_iaia} \n')
+df = pd.read_csv(text, sep='\s+', header=None)
 
-text = 'entanglement_triplet_c2f4h2.txt'
+df.columns = ['ang','ent_iajb','ent_ia', 'ent_jb', 'mutual']
 
-data_J = pd.read_csv(text, sep='\s+', header=None)
-
-data_J.columns = ['ang', 'ent_iaia']
-
-fig, (ax1) = plt.subplots(1, 1, figsize=(8,8))
-
-ax1.plot(data_J.ang, data_J.ent_iaia, 'b>-', label='$^{FC}J_{ij}(H-H)$' )#f'a={orb1} b={orb2}')
-
-plt.suptitle(r'''Triplet Quantum Entanglement in C$_2$H$_2$F$_4$ 
-using Localized Molecular Orbitals Pipek-Mezey with Becke parcial charge
-with 3 anti-ligants in each excitation''')
-
-ax1.set_xlabel('Dihedral angle')
-ax1.set_ylabel('Entanglement')
-ax1.set_title('S$_{iaia}$')# f'a={orb1}, b={orb2}')
-#i$=$F3$_{2s}$,F3$_{2pz}$ a$=F3$_{3s}$F3$_{2pz}$, j$=$F7$_{2s}$,F7$_{2pz},b$=F7$_{3s}$F7$_{2pz}$
-
-#plt.savefig('entanglement_triplet_c2h4f2_M.png')
-plt.show()
+fig, (ax1,ax2,ax3,ax4) = plt.subplots(1, 4, figsize=(18,8))
+#plt.figure(figsize=(10,8))
+ax1.plot(df.ang, df.ent_iajb, 'b>-', label='M') #f'a={orb1} b={orb2}')
+ax1.set_title(r'$S_{iajb}$')
+ax1.legend()
+ax2.plot(df.ang, df.ent_ia, 'b>-', label='P') #f'a={orb1} b={orb2}')
+ax2.set_title(r'$S_{ia}$')
+ax2.legend()
+ax3.plot(df.ang, df.ent_jb, 'b>-', label='P') #f'a={orb1} b={orb2}')
+ax3.set_title(r'$S_{jb}$')
+ax3.legend()
+ax4.plot(df.ang, df.mutual, 'b>-', label='P') #f'a={orb1} b={orb2}')
+ax4.set_title(r'$I$')
+ax4.legend()
+#plt.ylabel('Hz')
+ax1.set_xlabel('Ángulo diedro')
+plt.suptitle(r'''Von Newmann entropy in C$_2$H$_2$F$_4$''')
+#plt.title(f'i={i}, a={a}, j={j}, b = {b}')# f'a={orb1}, b={orb2}')
+#plt.savefig('M_C2H2F4_CH1_CH1*_CH2_CH2**_.png', dpi=200)
+plt.show()  

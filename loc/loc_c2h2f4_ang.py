@@ -8,7 +8,7 @@ from src.localization import localization
 
 ang = 0
 
-for ang in range(0,100,10):
+for ang in range(0,180,10):
     mol = str(f'''
         C1   1
         C2   1 1.509596
@@ -21,5 +21,5 @@ for ang in range(0,100,10):
         ''')
 
     loc_obj = localization(mol_input=mol, basis='ccpvdz', no_second_loc=False, molecule_name='C2H2F4', atom_for_searching1='H3',
-                           atom_for_searching2='H7',pm_pop_method_second='becke', dihedral_angle=ang)
+                           atom_for_searching2='H7', dihedral_angle=ang)
     loc_obj.kernel

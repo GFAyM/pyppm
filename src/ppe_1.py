@@ -44,25 +44,87 @@ class M_matrix:
     classical = attr.ib(default=False, type=bool)
     mo_occ = attr.ib(default=None)
 
+
+    @property
+    def fock_matrix_canonical(self):
+        self.fock_canonical = self.mf.get_fock()
+        return self.fock_canonical
+
     def __attrs_post_init__(self):
+        #if self.occ == None:
+        #    self.occidx = np.where(self.mo_occ>0)[0]
+        #    self.viridx = np.where(self.mo_occ==0)[0]
+
+        #    self.orbv = self.mo_coeff[:,self.viridx]
+        #    self.orbo = self.mo_coeff[:,self.occidx]
+        #else:
         self.orbo = self.mo_coeff[:,self.occ]
         self.orbv = self.mo_coeff[:,self.vir]
+    
+
         self.nocc = self.orbo.shape[1]        
-        self.nvir = self.orbv.shape[1]        
-        self.mo = np.hstack((self.orbo,self.orbv))        
+        self.nvir = self.orbv.shape[1]
+        
+        self.mo = np.hstack((self.orbo,self.orbv))
+        
+        self.nmo = self.nocc + self.nvir
+
+        if self.classical == True:
+            self.mf = scf.RHF(self.mol).run()
+            self.m = np.zeros((self.nocc,self.nvir,self.nocc,self.nvir))
+            fock = self.fock_matrix_canonical
+            for i in range(self.nocc):
+                for j in range(self.nocc):
+                    for a in range(self.nvir):
+                        for b in range(self.nvir):
+                            if a==b:
+                                self.m[i,a,j,b] -= self.orbo[:,i].T @ fock @ self.orbo[:,j]
+                            if i==j:
+                                self.m[i,a,j,b] += self.orbv[:,a].T @ fock @ self.orbv[:,b]
+        
+        elif self.classical == False:
+            eri_mo = ao2mo.general(self.mol, 
+                [self.mo,self.mo,self.mo,self.mo], compact=False)
+            eri_mo = eri_mo.reshape(self.nmo,self.nmo,self.nmo,self.nmo)
+            self.m = np.zeros((self.nocc,self.nvir,self.nocc,self.nvir))
+            self.m -= np.einsum('ijba->iajb', eri_mo[:self.nocc,:self.nocc,self.nocc:,self.nocc:])
+            if self.triplet:
+                self.m -= np.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
+            elif not self.triplet:
+                self.m += np.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
+
+        self.m = self.m.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
+        return self.m
+
+    @property
+    def rho(self):
+        self.occidx = np.where(self.mo_occ>0)[0]
+        self.viridx = np.where(self.mo_occ==0)[0]
+
+        self.orbv = self.mo_coeff[:,self.viridx]
+        self.orbo = self.mo_coeff[:,self.occidx]
+        self.nocc = self.orbo.shape[1]        
+        self.nvir = self.orbv.shape[1]
+        
+        self.mo = np.hstack((self.orbo,self.orbv))
+        
         self.nmo = self.nocc + self.nvir
         
         eri_mo = ao2mo.general(self.mol, 
                 [self.mo,self.mo,self.mo,self.mo], compact=False)
         eri_mo = eri_mo.reshape(self.nmo,self.nmo,self.nmo,self.nmo)
-        self.m = np.zeros((self.nocc,self.nvir,self.nocc,self.nvir))
-        self.m -= np.einsum('ijba->iajb', eri_mo[:self.nocc,:self.nocc,self.nocc:,self.nocc:])
+        self.m_full = np.zeros((self.nocc,self.nvir,self.nocc,self.nvir))
+        self.m_full -= np.einsum('ijba->iajb', eri_mo[:self.nocc,:self.nocc,self.nocc:,self.nocc:])
         if self.triplet:
-            self.m -= np.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
+            self.m_full -= np.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
         elif not self.triplet:
-            self.m += np.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
+            self.m_full += np.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
 
-        self.m = self.m.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
+        self.m_full = self.m_full.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
+        self.Z = np.trace(np.exp(self.m_full))
+        #self.Z = np.linalg.eigvals(self.m_full).sum()
+        self.rho_ = np.exp(self.m_full)/self.Z
+        return self.rho_
 
 
     @property
@@ -74,22 +136,35 @@ class M_matrix:
         -------
         [real]
             [value of entanglement]
-        """ 
-        m = self.m
-        self.m_iaia = m[:m.shape[0]//4, :m.shape[0]//4]
-        eigenvalues = np.linalg.eigvals(np.exp(self.m_iaia)) # e^(m) da autovalores negativos
-        diagonals = np.diag(np.exp(self.m_iaia)) # e^(m) da autovalores negativos
-        
-        #print(eigenvalues)
-        #print(np.exp(self.m_iaia))
-        #print(np.diag(np.exp(self.m_iaia)))
-        #eigenvalues = np.exp(eigenvalues)
-        ent = 0
-        for i in diagonals:
-            ent += -i*np.log(i)
-        #print(ent)
-        return ent
+        """
+        m = self.m 
+        self.m_iaia = m[:m.shape[0]//4, :m.shape[0]//4] 
+        print(self.m_iaia)
+        rho = self.rho
+        #print(np.trace(rho))
 
+        orb_a = self.vir[:(len(self.vir)//2)]
+        orb_i = self.occ[:(len(self.occ)//2)]
+        rho_reshaped = rho.reshape(self.nocc,self.nvir,self.nocc,self.nvir)
+        for i in orb_i:
+            for a in orb_a:
+                rho_reshaped[i,a-self.nocc,i,a-self.nocc] = 0
+        rho = rho_reshaped.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
+        #tr_rho = np.trace(rho)
+        tr_rho = np.linalg.eigvals(rho).sum()
+        rho_iaia = np.exp(self.m_iaia)*tr_rho/self.Z
+        print(rho_iaia)
+
+        eigenvalues = np.linalg.eigvals(rho_iaia)
+        print(eigenvalues)
+        #diag = np.diag(rho_iaia)
+        #print(tr_rho)
+        #print(tr_rho/self.Z)
+        ent_ia = 0
+        for eig in eigenvalues:    
+            ent_ia += -eig*np.log(eig)
+        #print(ent_ia)
+        return ent_ia
 
     @property
     def entropy_iajb(self):
@@ -101,18 +176,35 @@ class M_matrix:
         [real]
             [value of entanglement]
         """
-        m = self.m
+        m = self.m 
         self.m_iajb = np.zeros((m.shape[0]//2,m.shape[0]//2))
-        self.m_iajb[:self.m_iajb.shape[0]//2, :self.m_iajb.shape[0]//2] += m[int(m.shape[0]*3/4):, :int(m.shape[0]*1/4)]
-        self.m_iajb[self.m_iajb.shape[0]//2:, self.m_iajb.shape[0]//2:] += m[:int(m.shape[0]*1/4), int(m.shape[0]*3/4):]
-        #print(self.m_iajb)
-        eigenvalues = np.diag(self.m_iajb)
-        eigenvalues = np.exp(eigenvalues)
-        ent = 0
-        for i in eigenvalues:
-            ent += -i*np.log(i)
-        #    ent += -i*np.log(i)
-        return ent
+        self.m_iajb[self.m_iajb.shape[0]//2:, :self.m_iajb.shape[0]//2] += m[int(m.shape[0]*3/4):, :int(m.shape[0]*1/4)]
+        self.m_iajb[:self.m_iajb.shape[0]//2, self.m_iajb.shape[0]//2:] += m[:int(m.shape[0]*1/4), int(m.shape[0]*3/4):]
+        #rho = self.rho
+        orb_a = self.vir[:(len(self.vir)//2)]
+        orb_i = self.occ[:(len(self.occ)//2)]
+        orb_b = self.vir[(len(self.vir)//2):]
+        orb_j = self.occ[(len(self.occ)//2):]
+        #rho_reshaped = rho.reshape(self.nocc,self.nvir,self.nocc,self.nvir)
+        #for i in orb_i:
+        #    for a in orb_a:
+        #        rho_reshaped[i,a-self.nocc,i,a-self.nocc] = 0
+        
+        #for j in orb_j:
+        #    for b in orb_b:
+        #        rho_reshaped[j,b-self.nocc,j,b-self.nocc] = 0
+        
+        #rho = rho_reshaped.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
+        #tr_rho = np.trace(rho)
+        #rho_iajb = np.exp(self.m_iajb)#*tr_rho/self.Z
+        eigenvalues = np.linalg.eigvals(np.exp(self.m_iajb))#/self.Z
+        print(np.exp(self.m_iajb))
+        print(eigenvalues)
+        ent_iajb = 0
+        for eig in eigenvalues:    
+            ent_iajb += -eig*np.log(eig)
+        return ent_iajb
+
 
     @property
     def entropy_jbjb(self):
@@ -126,10 +218,38 @@ class M_matrix:
         """
         m = self.m 
         self.m_jbjb = m[int(m.shape[0]*3/4):, int(m.shape[0]*3/4):]
-        eigenvalues = np.linalg.eigvals(np.exp(-self.m_jbjb))
-        return eigenvalues
-        #ent = 0
-        #for i in eigenvalues:
-            #ent += -np.exp(i)/Z*np.log(np.exp(i)/Z)
-        #    ent += -i*np.log(i)    
-        #return ent
+        rho = self.rho
+        orb_b = self.vir[(len(self.vir)//2):]
+        orb_j = self.occ[(len(self.occ)//2):]
+        rho_reshaped = rho.reshape(self.nocc,self.nvir,self.nocc,self.nvir)
+        for j in orb_j:
+            for b in orb_b:
+                rho_reshaped[j,b-self.nocc,j,b-self.nocc] = 0
+        rho = rho_reshaped.reshape((self.nocc*self.nvir,self.nocc*self.nvir))
+        tr_rho = np.trace(rho)
+        rho_jbjb = np.exp(self.m_jbjb)*tr_rho/self.Z
+        eigenvalues = np.linalg.eigvals(rho_jbjb)
+        ent_jb = 0
+        for eig in eigenvalues:    
+            ent_jb += -eig*np.log(eig)
+        return ent_jb
+
+    @property
+    def entropy_iajb_1(self):
+        """Entanglement of the M_{ia,jb} matrix:
+        M = (M_{ia,ia}  )
+            
+        Returns
+        -------
+        [real]
+            [value of entanglement]
+        """
+        m = self.m 
+        p = np.linalg.inv(m)
+        self.m_iajb = m[int(m.shape[0]*3/4):, :int(m.shape[0]*1/4)]
+        #print(self.m_iajb)
+        rho = np.exp(self.m_iajb)
+        #print(rho)
+        ent_jb = -rho*np.log(rho)
+        #print(ent_jb)
+        return ent_jb[0][0]
