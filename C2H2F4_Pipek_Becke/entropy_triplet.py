@@ -6,7 +6,7 @@ if module_path not in sys.path:
 	sys.path.append(module_path)
 
 from src.help_functions import extra_functions
-from src.ppe_2 import M_matrix
+from src.ppe_3 import M_matrix
 
 from src.help_functions import extra_functions
 import matplotlib.pyplot as plt
@@ -49,35 +49,26 @@ for ang in range(0,18,1):
 
 	inv_prop = M_matrix(mol=mol, mo_coeff=mo_coeff, mo_occ=mo_occ,
 				occ = [  occ1[ang], occ2[ang]],
-				vir = [ v1_1[ang], v2_1[ang], v3_1[ang], v4_1[ang],v5_1[ang],
-						v1_2[ang], v2_2[ang], v3_2[ang], v4_2[ang],v5_2[ang]])   
+				vir = [ v1_1[ang], v2_1[ang], v3_1[ang],
+						v1_2[ang], v2_2[ang], v3_2[ang]])   
 	
-	ent_ia = inv_prop.entropy_iaia
-	ent_iajb = inv_prop.entropy_iajb
-	ent_jb = inv_prop.entropy_jbjb
-	mutual = ent_ia + ent_jb - ent_iajb
+	ent_ia = inv_prop.entropy_iajb_2
 	with open(text, 'a') as f:
-		f.write(f'{ang*10} {ent_iajb} {ent_ia} {ent_jb} {mutual} \n')
+		f.write(f'{ang*10} {ent_ia}  \n')
 
 
 df = pd.read_csv(text, sep='\s+', header=None)
 
-df.columns = ['ang','ent_iajb','ent_ia', 'ent_jb', 'mutual']
+df.columns = ['ang','ent_ia']
 
-fig, (ax1,ax2,ax3,ax4) = plt.subplots(1, 4, figsize=(18,8))
+fig, (ax1) = plt.subplots(1, 1, figsize=(10,8))
 #plt.figure(figsize=(10,8))
-ax1.plot(df.ang, df.ent_iajb, 'b>-', label='M') #f'a={orb1} b={orb2}')
+ax1.plot(df.ang, df.ent_ia, 'b>-', label='M') #f'a={orb1} b={orb2}')
 ax1.set_title(r'$S_{iajb}$')
 ax1.legend()
-ax2.plot(df.ang, df.ent_ia, 'b>-', label='P') #f'a={orb1} b={orb2}')
-ax2.set_title(r'$S_{ia}$')
-ax2.legend()
-ax3.plot(df.ang, df.ent_jb, 'b>-', label='P') #f'a={orb1} b={orb2}')
-ax3.set_title(r'$S_{jb}$')
-ax3.legend()
-ax4.plot(df.ang, df.mutual, 'b>-', label='P') #f'a={orb1} b={orb2}')
-ax4.set_title(r'$I$')
-ax4.legend()
+#ax2.plot(df.ang, df.ent_ia, 'b>-', label='P') #f'a={orb1} b={orb2}')
+#ax2.set_title(r'$S_{ia}$')
+#ax2.legend()
 #plt.ylabel('Hz')
 ax1.set_xlabel('Ángulo diedro')
 plt.suptitle(r'''Von Newmann entropy in C$_2$H$_2$F$_4$''')

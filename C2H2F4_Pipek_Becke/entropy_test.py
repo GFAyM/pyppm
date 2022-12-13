@@ -60,5 +60,5 @@ inv_prop = M_matrix(mol=mol, mo_coeff=mo_coeff, mo_occ=mo_occ,
             occ = [  occ1[ang], occ2[ang]],
             vir = [ v1_1[ang],v3_1[ang],v2_1[ang],
                     v1_2[ang],v3_2[ang],v2_2[ang]])   
-
-print(inv_prop.entropy_iaia)
+print(inv_prop)
+#print(inv_prop.entropy_iaia)

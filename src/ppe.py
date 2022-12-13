@@ -1,9 +1,5 @@
 import numpy as np
 from pyscf import gto, ao2mo, scf
-from os import remove, path
-from functools import reduce
-import math
-
 import attr
 
 
@@ -43,7 +39,6 @@ class M_matrix:
     mo_occ = attr.ib(default=None)
     classical = attr.ib(default=False, type=bool)
     mo_occ = attr.ib(default=None)
-
 
     @property
     def fock_matrix_canonical(self):
@@ -109,20 +104,20 @@ class M_matrix:
         m = self.m 
         self.m_iaia = m[:m.shape[0]//4, :m.shape[0]//4]
         eigenvalues = np.linalg.eigvals(self.m_iaia)
+        print(eigenvalues)
         Z=0
         for i in eigenvalues:
             Z += np.exp(i)
-        #print(Z)
         ent = 0
         for i in eigenvalues:
             ent += -np.exp(i)/Z*np.log(np.exp(i)/Z)
         return ent
-
+    
     @property
     def entropy_iajb(self):
         """Entanglement of the M_{ia,jb} matrix:
-        M = (M_{ia,ia}  )
-            
+        M = ( 0        M_{ia,jb}  )
+            (M_{jb,ia}       0    )
         Returns
         -------
         [real]
@@ -133,7 +128,7 @@ class M_matrix:
         self.m_iajb[self.m_iajb.shape[0]//2:, :self.m_iajb.shape[0]//2] += m[int(m.shape[0]*3/4):, :int(m.shape[0]*1/4)]
         self.m_iajb[:self.m_iajb.shape[0]//2, self.m_iajb.shape[0]//2:] += m[:int(m.shape[0]*1/4), int(m.shape[0]*3/4):]
         eigenvalues = np.linalg.eigvals(self.m_iajb)
-        Z=1
+        Z=0
         for i in eigenvalues:
             Z += np.exp(i)
         ent = 0
@@ -141,6 +136,110 @@ class M_matrix:
             ent += -(np.exp(i)/Z)*np.log(np.exp(i)/Z)
         return ent
 
+    @property
+    def entropy_iajb_diagonal(self):
+        """Entanglement of the M_{ia,jb} matrix:
+        M = ( M_{ia,jb}   0          )
+            (    0       M_{jb,ia}   )
+        Returns
+        -------
+        [real]
+            [value of entanglement]
+        """
+        m = self.m 
+        self.m_iajb = np.zeros((m.shape[0]//2,m.shape[0]//2))
+        self.m_iajb[self.m_iajb.shape[0]//2:, self.m_iajb.shape[0]//2:] += m[int(m.shape[0]*3/4):, :int(m.shape[0]*1/4)]
+        self.m_iajb[:self.m_iajb.shape[0]//2, :self.m_iajb.shape[0]//2] += m[:int(m.shape[0]*1/4), int(m.shape[0]*3/4):]
+        
+        eigenvalues = np.linalg.eigvals(self.m_iajb)
+        Z=0
+        for i in eigenvalues:
+            Z += np.exp(i)
+        ent = 0
+        for i in eigenvalues:
+            ent += -(np.exp(i)/Z)*np.log(np.exp(i)/Z)
+        return ent
+
+    @property
+    def entropy_ia(self):
+        """Entanglement of the M_{ia,jb} matrix:
+        M = (  M_{ia,jb} )
+            
+        Returns
+        -------
+        [real]
+            [value of entanglement]
+        """
+        m = self.m
+        self.m_ia_1= m[int(m.shape[0]*3/4):, :int(m.shape[0]*1/4)]
+        self.m_ia_2= m[:int(m.shape[0]*1/4), int(m.shape[0]*3/4):]
+        self.m_ia_1= np.diag(self.m_ia_1.sum(axis=0).ravel())
+        self.m_ia_2= np.diag(self.m_ia_2.sum(axis=1).ravel())
+        zeros =  np.zeros_like(self.m_ia_1)
+        m1 = np.concatenate((zeros,self.m_ia_1), axis=1)
+        m2 = np.concatenate((self.m_ia_2,zeros), axis=1)
+        M = np.concatenate((m1,m2), axis=0)
+        eigenvalues = np.linalg.eigvals(M)
+        Z=0
+        for i in eigenvalues:
+            Z += np.exp(i)
+        ent = 0
+        for i in eigenvalues:
+            ent += -(np.exp(i)/Z)*np.log(np.exp(i)/Z)
+        return ent
+
+    @property
+    def entropy_jb(self):
+        """Entanglement of the M_{ia,jb} matrix:
+        M = (  M_{ia,jb} )
+            
+        REMEMBER: axis=0 sum or concatenate over the Y variable,
+                  and 1 over the X variable 
+
+        Returns
+        -------
+        [real]
+            [value of entanglement]
+        """
+        m = self.m
+        self.m_ia_1= m[int(m.shape[0]*3/4):, :int(m.shape[0]*1/4)]
+        self.m_ia_2= m[:int(m.shape[0]*1/4), int(m.shape[0]*3/4):]
+        self.m_ia_1= np.diag(self.m_ia_1.sum(axis=1).ravel())
+        self.m_ia_2= np.diag(self.m_ia_2.sum(axis=0).ravel())
+        zeros =  np.zeros_like(self.m_ia_1)
+        m1 = np.concatenate((zeros,self.m_ia_1), axis=1)
+        m2 = np.concatenate((self.m_ia_2,zeros), axis=1)
+        M = np.concatenate((m1,m2), axis=0)
+        eigenvalues = np.linalg.eigvals(M)
+        Z=0
+        for i in eigenvalues:
+            Z += np.exp(i)
+        ent = 0
+        for i in eigenvalues:
+            ent += -(np.exp(i)/Z)*np.log(np.exp(i)/Z)
+        return ent
+
+    @property
+    def entropy_iajb_single(self):
+        """Entanglement of the M_{ia,jb} matrix:
+        M = (  M_{ia,jb} )
+            
+        Returns
+        -------
+        [real]
+            [value of entanglement]
+        """
+        m = self.m 
+        #self.m_iajb = m[:int(m.shape[0]*1/4), int(m.shape[0]*3/4):]
+        self.m_iajb = m[int(m.shape[0]*3/4):, :int(m.shape[0]*1/4)]
+        eigenvalues = np.linalg.eigvals(self.m_iajb)
+        Z=0
+        for i in eigenvalues:
+            Z += np.exp(i)
+        ent = 0
+        for i in eigenvalues:
+            ent += -(np.exp(i)/Z)*np.log(np.exp(i)/Z)
+        return np.real(ent)
 
     @property
     def entropy_jbjb(self):
@@ -155,39 +254,11 @@ class M_matrix:
         m = self.m 
         self.m_jbjb = m[int(m.shape[0]*3/4):, int(m.shape[0]*3/4):]
         eigenvalues = np.linalg.eigvals(self.m_jbjb)
+        print(eigenvalues)
         Z=0
         for i in eigenvalues:
             Z += np.exp(i)
         ent = 0
         for i in eigenvalues:
             ent += -np.exp(i)/Z*np.log(np.exp(i)/Z)
-        return ent
-
-    @property
-    def entropy_iajb_inv(self):
-        """Entanglement of the full M_{ia,jb} matrix:
-        M = (M_{ia,ia} M_{ia,jb} 
-             M_{jb,ia} M_{jb,jb} )
-            
-        Returns
-        -------
-        [real]
-            [value of entanglement]
-        """
-        m = self.m 
-        self.M_iajb = np.zeros((m.shape[0]//2,m.shape[0]//2)) 
-        self.M_iajb[self.M_iajb.shape[0]//2:, self.M_iajb.shape[0]//2:] += m[int(m.shape[0]*3/4):, int(m.shape[0]*3/4):] #m_jbjb
-        self.M_iajb[:self.M_iajb.shape[0]//2, :self.M_iajb.shape[0]//2] += m[:m.shape[0]//4, :m.shape[0]//4] #m_iaia
-        self.M_iajb[self.M_iajb.shape[0]//2:, :self.M_iajb.shape[0]//2] += m[int(m.shape[0]*3/4):, :int(m.shape[0]*1/4)]
-        self.M_iajb[:self.M_iajb.shape[0]//2, self.M_iajb.shape[0]//2:] += m[:int(m.shape[0]*1/4), int(m.shape[0]*3/4):]
-        eigenvalues = np.linalg.eigvals(np.exp(self.M_iajb))
-        
-        #Z=0
-        #for i in eigenvalues:
-        #    Z += np.exp(i)
-        ent = 0
-        for i in eigenvalues:
-            #ent += -np.exp(i)/Z*np.log(np.exp(i)/Z)
-            ent += -np.exp(i)*np.log(np.exp(i))
-
         return ent

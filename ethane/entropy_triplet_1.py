@@ -7,7 +7,7 @@ if module_path not in sys.path:
 
 
 from src.help_functions import extra_functions
-from src.ppe_1 import M_matrix
+from src.ppe import M_matrix
 import plotly.express as px
 import pandas as pd
 import numpy as np
@@ -49,7 +49,7 @@ vir_lmo2 = [(H7_1s, 'H7_1s'), (H7_2s, 'H7_2s'), (H7_2px, 'H7_2px'), (H7_2py, 'H7
 for ang in range(0,19,1):
     mol_loc, mo_coeff_loc, mo_occ_loc = extra_functions(molden_file=f"C2H6_{ang*10}_ccpvdz_Cholesky_PM.molden").extraer_coeff
 
-    m_obj = inv_prop = M_matrix(mol=mol_loc, mo_coeff=mo_coeff_loc, mo_occ=mo_occ_loc,
+    inv_prop_ppe = M_matrix(mol=mol_loc, mo_coeff=mo_coeff_loc, mo_occ=mo_occ_loc,
                 occ = [  H3_1s_occ[ang], H7_1s_occ[ang]],
                 vir = [ H3_1s[ang], H3_2pz[ang], H3_2s[ang], H3_2px[ang], H3_2py[ang],
                         H7_1s[ang], H7_2pz[ang], H7_2s[ang], H7_2px[ang], H7_2py[ang]])
@@ -89,5 +89,5 @@ ax3.set_title('S$_{iajb}$')# f'a={orb1}, b={orb2}')
 ax4.set_xlabel('Dihedral angle')
 ax4.plot(data_J.ang, data_J.mutual, 'b>-', label='$^{FC}J_{ij}(F-F)$' )#f'a={orb1} b={orb2}')
 ax4.set_title('Mutual Information ')# f'a={orb1}, b={orb2}')
-#plt.savefig('entanglement_triplet_c2h6_v123.png')
+plt.savefig('entanglement_triplet_c2h6_v123.png')
 plt.show()

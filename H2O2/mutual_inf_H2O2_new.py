@@ -7,8 +7,7 @@ if module_path not in sys.path:
 
 
 from src.help_functions import extra_functions
-from src.ppe import inverse_principal_propagator
-from src.ppe import M_matrix
+from src.ppe_1 import M_matrix
 
 import plotly.express as px
 import pandas as pd
@@ -17,8 +16,9 @@ import matplotlib.pyplot as plt
 from pyscf import ao2mo
 import itertools
 
-if os.path.exists('mutual_information_H2O2_new.txt'):
-    os.remove('mutual_information_H2O2_new.txt')
+text = 'mutual_information_H2O2_new.txt'
+if os.path.exists(text):
+    os.remove(text)
 
 
 
@@ -53,47 +53,29 @@ O1_3dxz = [33, 21, 32, 22, 33, 33, 32, 32, 33, 33, 32, 32, 32, 32, 32, 32, 21, 3
 H4_1s_occ = [4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 4, 4, 4, 3, 7, 4, 4, 4]
 H3_1s_occ = [5, 5, 5, 5, 5, 5, 5, 5, 5, 4, 5, 5, 5, 5, 5, 5, 5, 5]
 
-vir_lmo = [(H3_1s, 'H3_1s'), (H4_1s, 'H4_1s'), (H3_2s, 'H3_2s'), (H4_2s, 'H4_2s'), 
-			  (H3_2px, 'H3_2px'), (H4_2px, 'H4_2px'), (H3_2py, 'H3_2py'), (H4_2py, 'H4_2py'), 
-				(H3_2pz, 'H3_2pz'),(H4_2pz, 'H4_2pz'), 
-			    (O1_3dz, 'O1_3dz'),(O2_3dz, 'O2_3dz'),
-				(O1_3s, 'O1_3s'), (O2_3s, 'O2_3s'), (O1_3dx,'O1_3dx'), (O2_3dx, 'O2_3dx'),
-				(O1_3py, 'O1_3py'), (O2_3py, 'O2_3py'),(O1_3dy,'O1_3dy'),(O2_3dy,'O2_3dy'),#]#,
-				(O1_3dxz,'O1_3ddxz'),(O2_3dxz,'O2_3ddxz')]
 for ang in range(1,18,1):
     mol_loc, mo_coeff_loc, mo_occ_loc = extra_functions(molden_file=f"H2O2_mezcla_{ang*10}.molden").extraer_coeff
 
     occ = [H3_1s_occ[ang],H4_1s_occ[ang]]
-    vir = [H3_1s[ang],H3_2s[ang],H3_2px[ang],H3_2pz[ang],
-           H4_1s[ang],H4_2s[ang],H4_2px[ang],H4_2pz[ang]]
-    #i = [H3_1s[ang],H3_2s[ang],H3_2px[ang],H3_2pz[ang]]
-
-    #j = [H4_1s[ang],H4_2s[ang],H4_2px[ang],H4_2py[ang],H4_2pz[ang]]
-    #j = [H4_1s[ang],H4_2s[ang],H4_2px[ang],H4_2pz[ang]]
-
-    #m_obj = inverse_principal_propagator(o1=[H3_1s_occ[ang]], o2=[H4_1s_occ[ang]], v1=i, v2=j, mo_coeff=mo_coeff_loc, mol=mol_loc)
-    m_obj = M_matrix(occ=occ, vir=vir, mo_coeff=mo_coeff_loc, mol=mol_loc)
-    cruzada = m_obj.entropy_jbjb + m_obj.entropy_jbjb - m_obj.entropy_iajb 
+    vir = [H3_1s[ang],H3_2s[ang],H3_2px[ang],H3_2py[ang],H3_2pz[ang],
+           H4_1s[ang],H4_2s[ang],H4_2px[ang],H4_2py[ang],H4_2pz[ang]]
+    m_obj = M_matrix(occ=occ, vir=vir, mo_coeff=mo_coeff_loc, mol=mol_loc, mo_occ=mo_occ_loc)
+    ent_iajb = m_obj.entropy_iajb  
+#    ent_ia = m_obj.entropy_iaia
+#    ent_jb = m_obj.entropy_jbjb
+#    mutual = ent_ia + ent_jb - ent_iajb
             #print(cruzada)
-    with open('mutual_information_H2O2_new.txt', 'a') as f:
-        f.write(f'{ang*10} {np.round(cruzada, decimals=10)} \n')
+    with open(text, 'a') as f:
+        f.write(f'{ang*10} {ent_iajb} \n') #{np.round(cruzada, decimals=10)}
 
-df_mi = pd.read_csv('mutual_information_H2O2_new.txt', sep='\s+', header=None)
+df = pd.read_csv(text, sep='\s+', header=None)
 
-df_mi.columns = ['ang', 'Mutual']
-        		
-plt.figure(figsize=(10,8))
-plt.plot(df_mi.ang, df_mi.Mutual, 'bo-', label='$I_{ia,jb}$' )#f'a={orb1} b={orb2}')
-#plt.plot(ang, DSO, 'm--', label='DSO')
-#plt.plot(ang, df_F_C.fc, 'go-', label='$^{FC}J(H-H)$')
-#plt.plot(ang, FCSD+FC+PSO, 'm--', label='Total')
-#plt.plot(ang, FCSD, 'r+-', label='FC+SD')
+df.columns = ['ang', 'ent_iaia']
 
-plt.legend()
-plt.ylabel('Mutual Information')
-plt.xlabel('Ángulo diedro')
-plt.suptitle('Triplet Mutual Information $I_{ia,jb}$ H$_2$O$_2$, 6-31G**')
-plt.title('i=O-H$_1$, a=O-H$_1$*(1s,2s,2px,2pz,2py), j=O-H$_2$, b= O-H$_2$*(1s,2s,2px,2pz,2py)')# f'a={orb1}, b={orb2}')
-#plt.set_size_inches(6.5, 6.5)
-#plt.savefig(f'Mutual_inf_H2O2_5exc.png', dpi=200)
-plt.show()
+fig, (ax1) = plt.subplots(1, 1, figsize=(10,8))
+#plt.figure(figsize=(10,8))
+ax1.plot(df.ang, df.ent_iaia, 'b>-', label='ia') #f'a={orb1} b={orb2}')
+ax1.set_title(r'$S_{ia}$')
+ax1.legend()
+
+plt.show()  

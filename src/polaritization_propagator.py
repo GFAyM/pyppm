@@ -4,7 +4,6 @@ import numpy
 from pyscf import lib
 import attr
 from pyscf import ao2mo
-import numpy as np
 from pyscf.dft import numint
 from pyscf.data import nist
 from pyscf.data.gyro import get_nuc_g_factor
@@ -48,7 +47,7 @@ class Prop_pol:
         A[i,a,j,b] = \delta_{ab}\delta_{ij}(E_a - E_i) + (ia||bj)
         B[i,a,j,b] = (ia||jb)
         '''
-        nao, nmo = self.mo_coeff.shape
+        #nao, nmo = self.mo_coeff.shape
         mo = numpy.hstack((self.orbo,self.orbv))
         nmo = self.nocc + self.nvir
 
@@ -86,13 +85,6 @@ class Prop_pol:
 
 
 
-    def _write(stdout, msc3x3, title):
-        stdout.write('%s\n' % title)
-        stdout.write('mu_x %s\n' % str(msc3x3[0]))
-        stdout.write('mu_y %s\n' % str(msc3x3[1]))
-        stdout.write('mu_z %s\n' % str(msc3x3[2]))
-        stdout.flush()
-
     @property
     def pp_ssc_fc(self):
         
@@ -102,7 +94,7 @@ class Prop_pol:
         h1 = self.pert_fc(sorted(self.atm1dic))
         h2 = self.pert_fc(sorted(self.atm2dic))    
         m = self.M(triplet=True)
-        p = np.linalg.inv(m)
+        p = numpy.linalg.inv(m)
         p = -p.reshape(nocc,nvir,nocc,nvir)
         para = []
         for i,j in self.nuc_pair:
@@ -123,7 +115,7 @@ class Prop_pol:
         h1 = self.pert_fc(atom1)
         h2 = self.pert_fc(atom2)    
         m = self.M(triplet=True)
-        p = np.linalg.inv(m)
+        p = numpy.linalg.inv(m)
         p = -p.reshape(nocc,nvir,nocc,nvir)
         para = []
         e = numpy.einsum('ia,iajb,jb', h1[0].T, p , h2[0].T)
@@ -189,7 +181,7 @@ class Prop_pol:
         atm2dic = dict([(ia,k) for k,ia in enumerate(atm2lst)])
         #mo1 = mo1.reshape(len(atm1lst),3,nvir,nocc)
         m = self.M(triplet=False)
-        p = np.linalg.inv(m)
+        p = numpy.linalg.inv(m)
         p = -p.reshape(nocc,nvir,nocc,nvir)
         h1 = self.pert_pso(atm1lst)
         h1 = numpy.asarray(h1).reshape(len(atm1lst),3,nvir,nocc)
@@ -209,14 +201,17 @@ class Prop_pol:
         nocc = self.nocc
         #mo1 = mo1.reshape(len(atm1lst),3,nvir,nocc)
         m = self.M(triplet=False)
-        p = np.linalg.inv(m)
+        p = numpy.linalg.inv(m)
         
         p = -p.reshape(nocc,nvir,nocc,nvir)
         h1 = self.pert_pso(atom1)
         h1 = numpy.asarray(h1).reshape(1,3,nvir,nocc)
         h2 = self.pert_pso(atom2)
         h2 = numpy.asarray(h2).reshape(1,3,nvir,nocc)
-        
+        print(h1.shape)
+        print(h1[0][2][0,0])
+        print(p[0,0,0,0])
+        print(h2[0][2][0,0])
             # PSO = -Tr(Im[h1_ov], Im[mo1_vo]) + cc = 2 * Tr(Im[h1_vo], Im[mo1_vo])
         e = numpy.einsum('iax,iajb,jby->xy', h1[0].T, p, h2[0].T)
         para.append(e*4)  # *4 for +c.c. and double occupnacy
@@ -233,7 +228,7 @@ class Prop_pol:
         h2 = self.pert_fcsd(sorted(self.atm2dic.keys()))
         h2  = numpy.asarray(h2).reshape(-1,3,3,nvir,nocc)    
         m = self.M(triplet=True)
-        p = np.linalg.inv(m)
+        p = numpy.linalg.inv(m)
         p = -p.reshape(nocc,nvir,nocc,nvir)
         para = []
         for i,j in self.nuc_pair:
@@ -253,7 +248,7 @@ class Prop_pol:
         h2 = self.pert_fcsd(atom2)
         h2  = numpy.asarray(h2).reshape(-1,3,3,nvir,nocc)    
         m = self.M(triplet=True)
-        p = np.linalg.inv(m)
+        p = numpy.linalg.inv(m)
         p = -p.reshape(nocc,nvir,nocc,nvir)
         para = []
         e = numpy.einsum('iawx,iajb,jbwy->xy', h1[0].T, p , h2[0].T)
@@ -283,7 +278,7 @@ class Prop_pol:
         symb = self.mol.atom_symbol(num_atom)
                 # Get default isotope
         gyro.append(get_nuc_g_factor(symb))
-        return np.array(gyro)
+        return numpy.array(gyro)
 
 
     #@property
@@ -330,9 +325,9 @@ class Prop_pol:
         nuc_magneton = .5 * (nist.E_MASS/nist.PROTON_MASS)  # e*hbar/2m
         au2Hz = nist.HARTREE2J / nist.PLANCK
         unit = au2Hz * nuc_magneton ** 2
-        iso_ssc = unit * np.einsum('kii->k', prop) / 3 
+        iso_ssc = unit * numpy.einsum('kii->k', prop) / 3 
         natm = self.mol.natm
         gyro1 = self._atom_gyro_list_2(atom1[0])
         gyro2 = self._atom_gyro_list_2(atom2[0])
-        jtensor = np.einsum('i,i,j->i', iso_ssc, gyro1, gyro2)
+        jtensor = numpy.einsum('i,i,j->i', iso_ssc, gyro1, gyro2)
         return jtensor

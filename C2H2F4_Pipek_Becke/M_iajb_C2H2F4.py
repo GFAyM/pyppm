@@ -13,8 +13,7 @@ import plotly.express as px
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from pyscf import scf
-from pyscf import lib
+from scipy.linalg import expm
 
 #print('number of threads:',lib.num_threads())
 text = str('m_p_C2H2F4_iajb.txt')
@@ -54,18 +53,18 @@ for ang in range(0,18,1):
 	cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, #vir=viridx, occ=occidx,
 	mo_occ_loc=mo_occ)
 
-	m = cloppa_obj.M(triplet=True)
+	m = cloppa_obj.M(triplet=True, energy_m=True)
 	p = np.linalg.inv(m)
+	m = expm(m)
+	p = expm(p)
 	m = m.reshape(cloppa_obj.nocc,cloppa_obj.nvir,cloppa_obj.nocc,cloppa_obj.nvir)
 	p = -p.reshape(cloppa_obj.nocc,cloppa_obj.nvir,cloppa_obj.nocc,cloppa_obj.nvir)
-	#m_iajb =   m[occ1[ang], v1_1[ang]-cloppa_obj.nocc, occ2[ang], v1_2[ang]-cloppa_obj.nocc]
+
 	p_iajb_3 = p[occ1[ang], v3_1[ang]-cloppa_obj.nocc, occ2[ang], v3_2[ang]-cloppa_obj.nocc]
 	m_iajb_3 = m[occ1[ang], v3_1[ang]-cloppa_obj.nocc, occ2[ang], v3_2[ang]-cloppa_obj.nocc]
 	p_iajb_1 = p[occ1[ang], v1_1[ang]-cloppa_obj.nocc, occ2[ang], v1_2[ang]-cloppa_obj.nocc]
 	m_iajb_1 = m[occ1[ang], v1_1[ang]-cloppa_obj.nocc, occ2[ang], v1_2[ang]-cloppa_obj.nocc]
 	
-#	p = p.reshape(cloppa_obj.nocc,cloppa_obj.nvir,cloppa_obj.nocc,cloppa_obj.nvir)
-#	p_iajb = p[occ1[ang],v1_1[ang] - cloppa_obj.nocc,occ2[ang],v1_2[ang] - cloppa_obj.nocc]
 	with open(text, 'a') as f:
 		f.write(f'{ang*10} {m_iajb_1} {p_iajb_1} {m_iajb_3} {p_iajb_3}\n')
 

@@ -11,6 +11,10 @@ from src.help_functions import extra_functions
 import matplotlib.pyplot as plt
 import pandas as pd
 
+text = 'test_w_T_B.txt'
+
+if os.path.exists(text):
+	os.remove(text)
 
 
 for ang in range(10,180,10):
@@ -23,10 +27,10 @@ for ang in range(10,180,10):
     fcsd = ppobj.kernel_select(FC=False, FCSD=True, PSO=False,atom1=[2], atom2=[3])
     fc = ppobj.kernel_select(FC=True, FCSD=False, PSO=False,atom1=[2], atom2=[3])
     pso = ppobj.kernel_select(FC=False, FCSD=False, PSO=True,atom1=[2], atom2=[3])
-    with open('mechanism_H2O2_631G_a1+b1.txt', 'a') as f:
+    with open(text, 'a') as f:
         f.write(f'{ang} {fcsd[0]} {fc[0]} {pso[0]} \n')
 
-data_J = pd.read_csv('mechanism_H2O2_631G_a1+b1.txt', sep='\s+', header=None)
+data_J = pd.read_csv('text', sep='\s+', header=None)
 data_J = pd.DataFrame(data_J)
 
 

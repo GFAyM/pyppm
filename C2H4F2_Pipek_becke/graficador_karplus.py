@@ -12,7 +12,7 @@ FC = data_J[2]
 PSO = data_J[3]
 
 #plt.plot(ang, DSO, 'ro', label='DSO')
-fig = plt.gcf()
+plt.figure(figsize=(10,8))
 plt.plot(ang, PSO, 'b^-', label='PSO')
 plt.plot(ang, FC, 'go-', label='FC')
 plt.plot(ang, FCSD+PSO, 'm--', label='FC+SD+PSO')
@@ -20,9 +20,8 @@ plt.plot(ang, -FC + FCSD, 'r+-', label='SD')
 
 plt.legend()
 plt.ylabel('Hz')
-plt.xlabel('Ángulo diedro')
-plt.title('Acoplamiento indirecto entre espines nucleares $^3J(F-F)$ en C$_2$H$_4$F$_2$, cc-pVDZ')
-fig.set_size_inches(8,8)
-plt.savefig('mecanismos_C2H4F2_ccpvdz.png', dpi=200)
+plt.xlabel('Dihedral Angle')
+plt.title('J-coupling $^3J$(F-F) in C$_2$H$_4$F$_2$ with cc-pVDZ basis')
+plt.savefig('mecanismos_C2H4F2_ccpvdz.png', dpi=400)
 plt.show()
 

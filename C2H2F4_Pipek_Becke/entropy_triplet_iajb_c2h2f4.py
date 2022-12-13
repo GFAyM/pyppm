@@ -6,7 +6,7 @@ if module_path not in sys.path:
 	sys.path.append(module_path)
 
 from src.help_functions import extra_functions
-from src.ppe import M_matrix
+from src.ppe_3 import M_matrix
 
 from src.help_functions import extra_functions
 import matplotlib.pyplot as plt
@@ -104,7 +104,7 @@ ax3.set_title('S$_{iajb}$')# f'a={orb1}, b={orb2}')
 ax4.set_xlabel('Dihedral angle')
 ax4.plot(data_J.ang, data_J.mutual, 'b>-', label='$^{FC}J_{ij}(F-F)$' )#f'a={orb1} b={orb2}')
 ax4.set_title('Mutual Information ')# f'a={orb1}, b={orb2}')
-plt.savefig('entanglement_triplet_c2h4f2_v123.png')
+#plt.savefig('entanglement_triplet_c2h4f2_v123.png')
 plt.show()
 #if os.path.exists('entanglement_triplet_c2f4h2.txt'):
 #    os.remove('entanglement_triplet_c2f4h2.txt')
