@@ -10,6 +10,7 @@ from pyscf.data.gyro import get_nuc_g_factor
 from pyscf import tools
 from pyscf.lib import logger
 import scipy
+from pyscf.lib import current_memory
 
 def uniq_atoms(nuc_pair):
     atm1lst = sorted(set([i for i,j in nuc_pair]))
@@ -20,203 +21,260 @@ def uniq_atoms(nuc_pair):
 
 @attr.s
 class Prop_pol:
-    """_summary_
-    """
-    mf = attr.ib(default=None, type=scf.dhf.DHF, validator=attr.validators.instance_of(scf.dhf.DHF))
+    """ This class Calculates the J-coupling between two nuclei in the 4-component framework
 
-    def __attrs_post_init__(self):
-        self.mol = self.mf.mol
-        self.mo_coeff = self.mf.mo_coeff
-        self.mo_occ = self.mf.mo_occ
-        self.mo_energy = self.mf.mo_energy
-        self.n4c, self.nmo = self.mo_coeff.shape
+        Need, as attribute, a DHF object
+
+    Returns:
+        _type_: _description_
+    """ 
+    mf = attr.ib(default=None, type=scf.dhf.DHF, validator=attr.validators.instance_of(scf.dhf.DHF))
+    print("total memory: %.1f MiB" % current_memory()[0])
+
         
-        self.n2c = self.nmo // 2
-        self.nuc_pair = [(i,j) for i in range(self.mol.natm) for j in range(i)]
-        #self.occidx = self.n2c + numpy.where(self.mo_occ[self.n2c:] == 1)[0]
-        #self.viridx = self.n2c + numpy.where(self.mo_occ[self.n2c:] == 0)[0]
-        self.occidx = numpy.where(self.mo_occ > 0)[0]
-        self.viridx = numpy.where(self.mo_occ == 0)[0]
-        
-        self.orbv = (self.mo_coeff[:,self.viridx])
-        self.orbo = (self.mo_coeff[:,self.occidx])
-        self.nvir = self.orbv.shape[1]
-        self.nocc = self.orbo.shape[1]
-        self.nmo = self.nocc + self.nvir
-        self.mo = numpy.hstack((self.orbo, self.orbv))
-        self.c1 = .5 / lib.param.LIGHT_SPEED
-        self.moL = numpy.asarray(self.mo[:self.n2c], order='F')
-        self.moS = numpy.asarray(self.mo[self.n2c:], order='F')* self.c1
-        self.orboL = self.moL[:,:self.nocc]
-        self.orboS = self.moS[:,:self.nocc]
-        #self.atm1dic, self.atm2dic = uniq_atoms(nuc_pair=self.nuc_pair)
     @property
     def M(self):
-        r'''A and B matrices for TDDFT response function.
+        """
+        A and B matrices for TDDFT response function.
+        
 
         A[i,a,j,b] = \delta_{ab}\delta_{ij}(E_a - E_i) + (ia||bj)
         B[i,a,j,b] = (ia||jb)
-        '''
-        mol = self.mol
-        nmo = self.nmo
-        mo_energy = self.mo_energy
-        viridx = self.viridx
-        occidx = self.occidx
-        nocc = self.nocc
-        nvir = self.nvir
-        moL = self.moL 
-        moS = self.moS
-        orboL = self.orboL
-        orboS = self.orboS
-        e_ia = lib.direct_sum('a-i->ia', mo_energy[viridx], mo_energy[occidx])
-        a = numpy.diag(e_ia.ravel()).reshape(nocc,nvir,nocc,nvir).astype(complex)
+
+        This matrices was extracted from the tdscf pyscf module.
         
-        b = numpy.zeros_like(a, dtype=numpy.complex128)
+        Returns:
+
+            Numpy.array: Inverse of Principal Propagator 
+        """
+        mol = self.mf.mol
+        mo_coeff = self.mf.mo_coeff
+        mo_occ = self.mf.mo_occ
+        n4c, nmo = mo_coeff.shape
+        n2c = nmo // 2
+
+        mo_energy = self.mf.mo_energy
+        occidx = numpy.where(mo_occ == 1)[0]
+        viridx = numpy.where(mo_occ == 0)[0]
+        orbo = mo_coeff[:,mo_occ==1]
+        orbv = mo_coeff[:,mo_occ==0]
+        nvir = orbv.shape[1]
+        nocc = orbo.shape[1]
+        c1 = .5 / lib.param.LIGHT_SPEED
+        mo = numpy.hstack((orbo, orbv))
+        moL = numpy.asarray(mo[:n2c], order='F')
+        moS = numpy.asarray(mo[n2c:], order='F')* c1
+        orboL = moL[:,:nocc]
+        orboS = moS[:,:nocc]
+        e_ia = lib.direct_sum('a-i->ia', mo_energy[viridx], mo_energy[occidx])
+        a = numpy.diag(e_ia.ravel()).reshape(nocc,nvir,nocc,nvir)
+        b = numpy.zeros_like(a, dtype=complex)
+        print('before M ',"total memory: %.1f MiB" % current_memory()[0])
         
         eri_mo = ao2mo.general(mol, [orboL, moL, moL, moL], intor='int2e_spinor')
         eri_mo+= ao2mo.general(mol, [orboS, moS, moS, moS], intor='int2e_spsp1spsp2_spinor')
         eri_mo+= ao2mo.general(mol, [orboS, moS, moL, moL], intor='int2e_spsp1_spinor')
         eri_mo+= ao2mo.general(mol, [moS, moS, orboL, moL], intor='int2e_spsp1_spinor').T
         eri_mo = eri_mo.reshape(nocc,nmo,nmo,nmo)
+        a = a + lib.einsum('iabj->iajb', eri_mo[:nocc,nocc:,nocc:,:nocc])
+        a = a - lib.einsum('ijba->iajb', eri_mo[:nocc,:nocc,nocc:,nocc:])
+        b = b + lib.einsum('iajb->iajb', eri_mo[:nocc,nocc:,:nocc,nocc:])
+        b = b - lib.einsum('jaib->iajb', eri_mo[:nocc,nocc:,:nocc,nocc:])
         
-        a = a + numpy.einsum('iabj->iajb', eri_mo[:nocc,nocc:,nocc:,:nocc])
-        a = a - numpy.einsum('ijba->iajb', eri_mo[:nocc,:nocc,nocc:,nocc:]) 
-        b = b + numpy.einsum('iajb->iajb', eri_mo[:nocc,nocc:,:nocc,nocc:])
-        b = b - numpy.einsum('jaib->iajb', eri_mo[:nocc,nocc:,:nocc,nocc:]) 
         m = a+b
-
-        m = m.reshape(nocc*nvir,nocc*nvir)
-        return m
-
-    @property
-    def M_myway(self):
-        mol = self.mol
-        mo = self.mo
-        nocc = self.nocc
-        nvir = self.nvir
-        n2c = self.n2c
-        c = self.c1 
-        mo_l = mo[:n2c,:]
-        mo_s = mo[n2c:,:] * (.5/c)
-        Lo = mo_l[:,:nocc]
-        So = mo_s[:,:nocc]
-        Lv = mo_l[:,nocc:]
-        Sv = mo_s[:,nocc:]
-        mo_energy = self.mo_energy
-        viridx = self.viridx 
-        occidx = self.occidx
-
-        eri_a1 = ao2mo.general(mol,  (Lv, Lo, Lo, Lv), intor='int2e_spinor')
-        eri_a1 += ao2mo.general(mol, (Sv, So, So, Sv), intor='int2e_spsp1spsp2_spinor')
-        eri_a1 += ao2mo.general(mol, (Sv, So, Lo, Lv), intor='int2e_spsp1_spinor'     )
-        eri_a1 += ao2mo.general(mol, (Lv, Lo, So, Sv), intor='int2e_spsp2_spinor'     )
-        eri_a1 = eri_a1.reshape(nvir,nocc,nocc,nvir)
-
-        eri_a2 = ao2mo.general(mol,  (Lv, Lv, Lo, Lo), intor='int2e_spinor')
-        eri_a2 += ao2mo.general(mol, (Sv, Sv, So, So), intor='int2e_spsp1spsp2_spinor')
-        eri_a2 += ao2mo.general(mol, (Sv, Sv, Lo, Lo), intor='int2e_spsp1_spinor'     )
-        eri_a2 += ao2mo.general(mol, (Lv, Lv, So, So), intor='int2e_spsp2_spinor'     )
-        eri_a2 = eri_a2.reshape(nvir,nvir,nocc,nocc)
-
-        e_ia = lib.direct_sum('a-i->ia', mo_energy[viridx], mo_energy[occidx])
-        a = numpy.diag(e_ia.ravel()).reshape(nocc,nvir,nocc,nvir)
-        eri_a1 = numpy.einsum('aijb->iajb', eri_a1)
-        eri_a2 = numpy.einsum('abji->iajb', eri_a2)
-
-        m = a + eri_a1 - eri_a2
+        m = m.reshape(nocc*nvir,nocc*nvir, order='C')
+        m_y = a-b
+        m_y = m_y.reshape(nocc*nvir,nocc*nvir, order='C')
+        print('After M ',"total memory: %.1f MiB" % current_memory()[0])
         
-        return m.reshape(nocc*nvir,nocc*nvir)
+        return m, m_y
 
 
+    def make_perturbator(self, atmlst):
+        """
+        Perturbator in 4component framework
+        Extracted from properties module, ssc/dhf.py
 
-    def make_h1(self, atmlst):
+        Args:
+            atmlst (list): The atom number in which is centered the 
+            perturbator
+
+        Returns:
+            list: list with perturbator in molecular basis
+        """
+        mol = self.mf.mol
+        mo_coeff = self.mf.mo_coeff
+        mo_occ = self.mf.mo_occ
+        orbo = mo_coeff[:,mo_occ> 0]
+        orbv = mo_coeff[:,mo_occ==0]
+        n4c = mo_coeff.shape[0]
+        n2c = n4c // 2
         h1 = []
         for ia in atmlst:
-            self.mol.set_rinv_origin(self.mol.atom_coord(ia))
-            a01int = self.mol.intor('int1e_sa01sp_spinor', 3)
-            h01 = numpy.zeros((self.n4c,self.n4c), numpy.complex128)
+            mol.set_rinv_origin(mol.atom_coord(ia))
+            a01int = mol.intor('int1e_sa01sp_spinor', 3)
+            h01 = numpy.zeros((n4c,n4c), numpy.complex128)
             for k in range(3):
-                h01[:self.n2c,self.n2c:] = .5 * a01int[k]
-                h01[self.n2c:,:self.n2c] = .5 * a01int[k].conj().T
-                h1.append(self.orbv.conj().T.dot(h01).dot(self.orbo))
+                h01[:n2c,n2c:] = .5 * a01int[k]
+                h01[n2c:,:n2c] = .5 * a01int[k].conj().T
+                h1.append(orbv.conj().T.dot(h01).dot(orbo))
         return h1
 
-
     def pp_ssc_4c(self):
-        nocc = self.nocc
-        nvir = self.nvir
-        atm1lst = sorted(set([i for i,j in self.nuc_pair]))
-        atm2lst = sorted(set([j for i,j in self.nuc_pair]))
+        """In this Function generate de Response << ; >>, i.e, multiplicate the perturbators centered
+        in all nuclei with the principal propagator.
+
+
+        Returns:
+            numpy.array: J response
+        """
+        mol = self.mf.mol
+        mo_coeff = self.mf.mo_coeff
+        mo_occ = self.mf.mo_occ
+        orbo = mo_coeff[:,mo_occ==1]
+        orbv = mo_coeff[:,mo_occ==0]
+        nvir = orbv.shape[1]
+        nocc = orbo.shape[1]
+
+        nuc_pair = [(i,j) for i in range(mol.natm) for j in range(i)]
+        atm1lst = sorted(set([i for i,j in nuc_pair]))
+        atm2lst = sorted(set([j for i,j in nuc_pair]))
+        
         atm1dic = dict([(ia,k) for k,ia in enumerate(atm1lst)])
         atm2dic = dict([(ia,k) for k,ia in enumerate(atm2lst)])
-        
-        m = self.M
-        
-        p = -numpy.linalg.inv(m)
 
-        p = p.reshape(nocc,nvir,nocc,nvir)
+        h1 = numpy.asarray(self.make_perturbator(atm1lst)).reshape(len(atm1lst),3,nvir,nocc)        
+        print('h1',"total memory: %.1f MiB" % current_memory()[0])
         
-        h1 = numpy.asarray(self.make_h1(atm1lst)).reshape(len(atm1lst),3,self.nvir,self.nocc)
-        h2 = numpy.asarray(self.make_h1(atm2lst)).reshape(len(atm1lst),3,self.nvir,self.nocc)
+        h2 = numpy.asarray(self.make_perturbator(atm2lst)).reshape(len(atm2lst),3,nvir,nocc)
+        print('h2',"total memory: %.1f MiB" % current_memory()[0])
+        
+        print('Before call M',"total memory: %.1f MiB" % current_memory()[0])
+        m_xz, m_y = self.M
+        print('After call M',"total memory: %.1f MiB" % current_memory()[0])
+        p_xz = -numpy.linalg.inv(m_xz)
+        p_xz = p_xz.reshape(nocc,nvir,nocc,nvir)
+        p_y = -numpy.linalg.inv(m_y)
+        p_y = p_y.reshape(nocc,nvir,nocc,nvir)
+
+
         para = []
-        for i,j in self.nuc_pair:
-            e = numpy.einsum('xai,iajb,ybj->xy', h1[atm1dic[i]], p, h2[atm2dic[j]].conj()) * 2
+        para_y = []
+        print('Before initialize pp response',"total memory: %.1f MiB" % current_memory()[0])
+        for i,j in nuc_pair:
+            e = lib.einsum('xai,iajb,ybj->xy', h1[atm1dic[i]], p_xz.conj(), h2[atm2dic[j]].conj()) * 2
             para.append(e.real)
-        return numpy.asarray(para) * nist.ALPHA**4
+            e_y = lib.einsum('xai,iajb,ybj->xy', h1[atm1dic[i]], p_y.conj(), h2[atm2dic[j]].conj()) * 2
+            para_y.append(e_y.real)
+            
+        resp = numpy.asarray(para)
+        resp_y = numpy.asarray(para_y)
+        for i in range(e.shape[0]):
+            resp[i][1][1] = resp_y[i][1][1]
+        print('ell modulo pp funciona')
+        print('after finalize pp response',"total memory: %.1f MiB" % current_memory()[0])
+        #print(numpy.asarray(para) * nist.ALPHA**4)
+
+        return resp * nist.ALPHA**4
 
     def pp_ssc_4c_select(self,atm1lst,atm2lst):
+        """
+        In this Function generate de Response << ; >>, i.e, multiplicate the perturbators centered in
+        the nuclei of election, with the principal propagator.
+
+        Args:
+            atm1lst (list): Nuclei A
+            atm2lst (list): Nuclei B
+
+        Returns:
+            numpy.array: << ; >>
+        """
         nocc = self.nocc
         nvir = self.nvir
+        h1 = numpy.asarray(self.make_perturbator(atm1lst)).reshape(len(atm1lst),3,self.nvir,self.nocc)
 
-        #m = self.M
-        m = self.M_myway
+        h2 = numpy.asarray(self.make_perturbator(atm2lst)).reshape(len(atm2lst),3,self.nvir,self.nocc)
+        m = self.M
 
         p = -numpy.linalg.inv(m)
-        #p = -scipy.linalg.inv(m)
         p = p.reshape(nocc,nvir,nocc,nvir)
-        #p = numpy.real(p)
-        h1 = numpy.asarray(self.make_h1(atm1lst)).reshape(len(atm1lst),3,self.nvir,self.nocc)
-        h2 = numpy.asarray(self.make_h1(atm2lst)).reshape(len(atm1lst),3,self.nvir,self.nocc)
+        
+
         para = []
         
-        print(h1[0][2][5,6])
-        print(p[5,6,7,8])
-        print(h2[0][2][7,8].conj())
-        e = numpy.einsum('xai,iajb,ybj->xy', h1[0], p, h2[0].conj()) * 2
-        para.append(e)
+        #e1 = lib.einsum('iajb,ybj->yia',  p, h2[0])
+            #e1 = p * h2[atm2dic[j]]
+            #print(e1[0])
+        #print(h1[0].shape)
+        #print(e1.shape)
+        #e = lib.einsum('xai,yia->yx', h1[0], e1.conj()) * 2
+        #print(h1[0][0].shape)
+        e = lib.einsum('ai,iajb,bj->', h1[0][0], p.conj(), h2[0][1].conj()) * 2
+        print(numpy.asarray(e.real)*nist.ALPHA**4)
+        e = lib.einsum('ai,iajb,bj->', h1[0][2], p.conj(), h2[0][2].conj()) * 2
+        print(numpy.asarray(e.real)*nist.ALPHA**4)
+        e = lib.einsum('ai,iajb,bj->', h1[0][2], p.conj(), h2[0][1].conj()) * 2
+        print(numpy.asarray(e.real)*nist.ALPHA**4)
+        e = lib.einsum('xai,iajb,ybj->xy', h1[0], p.conj(), h2[0].conj()) * 2
+        para.append(e.real)
         return numpy.asarray(para) * nist.ALPHA**4
 
 
     
 
     def kernel_select(self,atom1,atom2):
+        """This function multiplicates the response by the constants
+        in order to get the isotropic J-coupling J(A,B) between the two nuclei        
+
+        Args:
+            atom1 (list): Nuclei A
+            atom2 (list): Nuclei B
+
+        Returns:
+            Real: j coupling
+        """
         mol = self.mol
 
         e11 = self.pp_ssc_4c_select(atom1,atom2)
+        print(e11)
         nuc_mag = .5 * (nist.E_MASS/nist.PROTON_MASS) 
         au2Hz = nist.HARTREE2J / nist.PLANCK
-        iso_ssc = au2Hz * nuc_mag ** 2 * numpy.einsum('kii->k', e11) / 3
+        iso_ssc = au2Hz * nuc_mag ** 2 * lib.einsum('kii->k', e11) / 3
         gyro1 = [get_nuc_g_factor(mol.atom_symbol(atom1[0]))]
         gyro2 = [get_nuc_g_factor(mol.atom_symbol(atom2[0]))]
-        jtensor = numpy.einsum('i,i,j->ij', iso_ssc, gyro1, gyro2)
+        jtensor = lib.einsum('i,i,j->ij', iso_ssc, gyro1, gyro2)
         return jtensor
 
     def kernel(self):
-        mol = self.mol
+        """This function multiplicates the response by the constants
+        in order to get the isotropic J-coupling J between all nuclei in molecule        
 
+
+        Returns:
+            Real: j coupling
+        """
+        
+        mol = self.mf.mol
         e11 = self.pp_ssc_4c()
-        #e11 = self.ssc_4c_pyscf()
+
         nuc_mag = .5 * (nist.E_MASS/nist.PROTON_MASS) 
         au2Hz = nist.HARTREE2J / nist.PLANCK
-        iso_ssc = au2Hz * nuc_mag ** 2 * numpy.einsum('kii->k', e11) / 3
+        nuc_pair = [(i,j) for i in range(mol.natm) for j in range(i)]
+        iso_ssc = au2Hz * nuc_mag ** 2 * lib.einsum('kii->k', e11) / 3
+        #print(iso_ssc)
         natm = mol.natm
         ktensor = numpy.zeros((natm,natm))
-        for k, (i, j) in enumerate(self.nuc_pair):
+        for k, (i, j) in enumerate(nuc_pair):
             ktensor[i,j] = ktensor[j,i] = iso_ssc[k]
 
         gyro = [get_nuc_g_factor(mol.atom_symbol(ia)) for ia in range(natm)]
-        jtensor = numpy.einsum('ij,i,j->ij', ktensor, gyro, gyro)
+        jtensor = lib.einsum('ij,i,j->ij', ktensor, gyro, gyro)
         label = ['%2d %-2s'%(ia, mol.atom_symbol(ia)) for ia in range(natm)]
-        tools.dump_mat.dump_tri(self.mol.stdout, jtensor, label)
+#        print(lib.param.LIGHT_SPEED)
+        tools.dump_mat.dump_tri(mol.stdout, jtensor, label)
         
         return jtensor
+
+
+
+

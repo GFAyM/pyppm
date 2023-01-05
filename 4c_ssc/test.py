@@ -1,47 +1,55 @@
 import os
 import sys
+from pyscf import gto, scf, lib
+from pyscf import gto
+import time
+
 module_path = os.path.abspath(os.path.join('..'))
 
 if module_path not in sys.path:
     sys.path.append(module_path)
-from src.pp_4c import Prop_pol 
-from src.polaritization_propagator import Prop_pol as Prop_pol_NR
+from src.pp_4c_2 import Prop_pol 
 from pyscf import gto, scf
-
-ang = 100
-
+from pyscf.lib import current_memory
 
 
-mol = gto.M(atom='''
-O       0.0000000000            0.0000000000           -0.0409868122
-H1       0.0000000000            0.7567917171            0.5640254210
-H2       0.0000000000           -0.7567917171            0.5640254210
-''', basis='631g', unit='angstrom')
+mol_h2s = gto.M(atom='''
+S      .0000000000        0.0000000000        -.2249058930
+H1   -1.4523499293         .0000000000         .8996235720
+H2    1.4523499293         .0000000000         .8996235720
+''', basis='cc-pvtz', unit='bhor', verbose=3)
 
-#mol, ctr_coeff = mol.decontract_basis()
-mf = scf.DHF(mol).newton()
-mf.conv_tol_grad = 1e-6
-mf.conv_tol = 1e-10
-mf.kernel()
+#mol = gto.Mole()
+#mol.atom='''
+#S     0.000000000000   0.000000000000  -1.224905893000
+#H1   -1.452349929300   0.000000000000   0.899623572000
+#H2    1.452349929300   0.000000000000   0.899623572000
+#'''
+#mol.basis = 'cc-pvdz'
+#mol.unit = 'B'
+#mol.verbose=4
+#mol.build()
+#lib.param.LIGHT_SPEED = 300
 
-pp = Prop_pol(mf)
+#ang = 60
+#mol_ethane= gto.Mole()
+#mol_ethane.atom = f'''
+#        C1   1
+#        C2   1 1.525063
+#        H1   2 1.092850    1  111.256
+#        H2   2 1.092850    1  111.256  3  120 
+#        H3   2 1.092850    1  111.256  3 -120
+#        H4   1 1.092850    2  111.256  3  {ang+120}
+#        H5   1 1.092850    2  111.256  3  {ang}
+#        H6   1 1.092850    2  111.256  3  {ang-120}
+#        '''
+#mol_ethane.verbose=4
 
-#print(pp.pp_ssc_4c_select([1],[2]))
-j = pp.kernel_select([1],[2])
-print(j)
+#mol_ethane.basis = '6-31G'
+#mol_ethane.max_memory = 4000
+#mol_ethane.build()
 
-mf = scf.DHF(mol).newton()
-mf.conv_tol_grad = 1e-6
-mf.conv_tol = 1e-10
-mf.kernel()
+rhf = scf.DHF(mol_h2s).run()
+pp = Prop_pol(rhf)
 
-pp = Prop_pol(mf)
-
-#print(pp.pp_ssc_4c_select([1],[2]))
-j = pp.kernel_select([1],[2])
-print(j)
-
-#mf = scf.RHF(mol).run()
-#pp = Prop_pol_NR(mf)
-#j = pp.kernel_select(FC=False,PSO=True, atom1=[1], atom2=[2])
-#print(j)
+j = pp.kernel()

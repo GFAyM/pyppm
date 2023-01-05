@@ -35,6 +35,7 @@ def make_dia(sscobj, mol, dm0, nuc_pair=None, mb='RMB'):
             a01int = sa01sa01_integral(mol, mol.atom_coord(ia), mol.atom_coord(ja))
             ssc_dia[k] = numpy.einsum('xyij,ji', a01int, dm0[:n2c,:n2c]).real
 
+
     return ssc_dia * nist.ALPHA**4
 
 def sa01sa01_integral(mol, orig1, orig2):
@@ -124,16 +125,15 @@ def make_para(sscobj, mol, mo1, mo_coeff, mo_occ, nuc_pair=None):
     atm2lst = sorted(set([j for i,j in nuc_pair]))
     atm1dic = dict([(ia,k) for k,ia in enumerate(atm1lst)])
     atm2dic = dict([(ia,k) for k,ia in enumerate(atm2lst)])
-    print(mo1.shape)
     mo1 = mo1.reshape(len(atm1lst),3,nvir,nocc)
-    print(mo1.shape)
     h1 = make_h1(mol, mo_coeff, mo_occ, atm1lst)
     h1 = numpy.asarray(h1).reshape(len(atm1lst),3,nvir,nocc)
-    #print('h1 make para',h1.shape)
-
+    #print(mo1[0][0])
+    print(nuc_pair)
     para = []
     for i,j in nuc_pair:
         e = numpy.einsum('xij,yij->xy', h1[atm1dic[i]], mo1[atm2dic[j]].conj()) * 2
+        #print(mo1[atm2dic[j]].shape)
         para.append(e.real)
     print(numpy.asarray(para) * nist.ALPHA**4)
     return numpy.asarray(para) * nist.ALPHA**4
@@ -170,7 +170,7 @@ def solve_mo1(sscobj, mo_energy=None, mo_coeff=None, mo_occ=None,
         mo_energy = mo_energy[nmo//2:]
         mo_coeff = mo_coeff[:,nmo//2:]
         mo_occ = mo_occ[nmo//2:]
-        print(mo_occ)
+
 
     if h1 is None:
         atmlst = sorted(set([j for i,j in sscobj.nuc_pair]))
@@ -179,15 +179,17 @@ def solve_mo1(sscobj, mo_energy=None, mo_coeff=None, mo_occ=None,
     if with_cphf:
         if callable(with_cphf):
             vind = with_cphf
-            #print(mo_occ)
+            print('A')
+
         else:
             vind = gen_vind(sscobj._scf, mo_coeff, mo_occ)
-            print(mo_occ)
+            print('B')
         mo1, mo_e1 = cphf.solve(vind, mo_energy, mo_occ, h1, None,
                                 sscobj.max_cycle_cphf, sscobj.conv_tol,
                                 verbose=log)
     else:
         e_ai = lib.direct_sum('i-a->ai', mo_energy[mo_occ>0], mo_energy[mo_occ==0])
+        #print(h1.shape, e_ai.shape, (h1 / e_ai).shape, 'shape of h1 y eai')
         mo1 = h1 / e_ai
         mo_e1 = None
 
@@ -195,14 +197,13 @@ def solve_mo1(sscobj, mo_energy=None, mo_coeff=None, mo_occ=None,
 # |MO1> = Z_RMB |i> + |p> bar{C}_{pi}^1 ~= |p> C_{pi}^1
 # bar{C}_{pi}^1 ~= C_{pi}^1 - <p|Z_RMB|i>
     if sscobj.mb.upper() == 'RMB':
-        print('E')
         orbo = mo_coeff[:,mo_occ> 0]
         orbv = mo_coeff[:,mo_occ==0]
         n4c = mo_coeff.shape[0]
         n2c = n4c // 2
         c = lib.param.LIGHT_SPEED
         orbvS_T = orbv[n2c:].conj().T
-        print(mo_occ)
+
         for ia in atmlst:
             mol.set_rinv_origin(mol.atom_coord(ia))
             a01int = mol.intor('int1e_sa01sp_spinor', 3)
@@ -211,6 +212,7 @@ def solve_mo1(sscobj, mo_energy=None, mo_coeff=None, mo_occ=None,
                 mo1[ia*3+k] -= s1 * (.25/c**2)
 
     logger.timer(sscobj, 'solving mo1 eqn', *cput1)
+
     return mo1, mo_e1
 
 def gen_vind(mf, mo_coeff, mo_occ):
@@ -218,8 +220,11 @@ def gen_vind(mf, mo_coeff, mo_occ):
     occidx = mo_occ > 0
     orbo = mo_coeff[:, occidx]
     orbv = mo_coeff[:,~occidx]
+    
     nocc = orbo.shape[1]
+    #print(nocc)
     nvir = orbv.shape[1]
+    #print(nvir)
     def vind(mo1):
         #direct_scf_bak, mf.direct_scf = mf.direct_scf, False
         dm1 = [orbv.dot(x).dot(orbo.T.conj())
@@ -251,22 +256,19 @@ class SpinSpinCoupling(rhf_ssc.SpinSpinCoupling):
         dm0 = self._scf.make_rdm1()
         mo_coeff = self._scf.mo_coeff
         mo_occ = self._scf.mo_occ
-        #print(mo_occ)
-
+    
         ssc_dia = self.make_dia(mol, dm0, mb=self.mb)
 
         if mo1 is None:
             mo1 = self.mo10 = self.solve_mo1()[0]
         ssc_para = self.make_para(mol, mo1, mo_coeff, mo_occ)
-        e11 = ssc_para + ssc_dia
-        #print(ssc_dia)
-        #e11 = ssc_para         
+        e11 = ssc_para #+ ssc_dia
         logger.timer(self, 'spin-spin coupling', *cput0)
 
         if self.verbose > logger.QUIET:
             nuc_mag = .5 * (nist.E_MASS/nist.PROTON_MASS)  # e*hbar/2m
             au2Hz = nist.HARTREE2J / nist.PLANCK
-            #logger.debug('Unit AU -> Hz %s', au2Hz*nuc_mag**2)
+            #print(e11)
             iso_ssc = au2Hz * nuc_mag ** 2 * numpy.einsum('kii->k', e11) / 3
             natm = mol.natm
             ktensor = numpy.zeros((natm,natm))
@@ -288,7 +290,7 @@ class SpinSpinCoupling(rhf_ssc.SpinSpinCoupling):
             logger.info(self, '\nNuclear g factor %s', gyro)
             logger.note(self, 'Spin-spin coupling constant J (Hz)')
             tools.dump_mat.dump_tri(self.stdout, jtensor, label)
-            print(self.mb)
+            
         return e11
 
     make_dia = make_dia
@@ -298,34 +300,25 @@ class SpinSpinCoupling(rhf_ssc.SpinSpinCoupling):
 SSC = SpinSpinCoupling
 
 from pyscf import scf
+import time
 scf.dhf.UHF.SSC = scf.dhf.UHF.SpinSpinCoupling = lib.class_as_method(SSC)
 
-mol = gto.Mole()
-
 mol = gto.M(atom='''
-O        0.0000000000            0.0000000000           -0.0409868122
-H1       0.0000000000            0.7567917171            0.5640254210
-H2       0.0000000000           -0.7567917171            0.5640254210
-''', basis='6-31g', unit='angstrom')
+S   0.000000000000   0.000000000000  -0.537025207601
+H1  0.000000000000   1.996264290800   1.351544489999
+H2  0.000000000000  -1.996264290800   1.351544489999
+''', basis='cc-pvdz', unit='bhor', verbose=4)
 
-#rhf = scf.DHF(mol).run()
-#mol.verbose = 3
-#mol.output = None
 
-#mol.atom.extend([
-#    [1   , (0. , 0. , .917)],
-#    ['F' , (0. , 0. , 0.)], ])
-#mol.nucmod = {'F': 2} # gaussian nuclear model
-#mol.basis = {'H': '6-31g',
-#                'F': '6-31g',}
-mol.build()
-rhf = scf.DHF(mol).run()
-#print(rhf.mo_occ)
+mol_h2s = gto.M(atom='''
+S      .0000000000        0.0000000000        -.2249058930
+H1   -1.4523499293         .0000000000         .8996235720
+H2    1.4523499293         .0000000000         .8996235720
+''', basis='cc-pvdz', unit='bhor', verbose=4)
+
+rhf = scf.DHF(mol_h2s).run()
 
 ssc = rhf.SSC()
 ssc.cphf = True
-ssc.mb = 'RKB'#'RKB' # 'RMB'
-#ssc.mb = 'st'
+ssc.mb = 'RKB'
 jj = ssc.kernel()
-#print(jj)
-#print(lib.finger(jj)*1e8 - 0.12144116396441988)
