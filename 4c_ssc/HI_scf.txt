@@ -1,4 +1,0 @@
-
-WARN: Singularity detected in overlap matrix (condition number = 2.63e+09). SCF may be inaccurate and hard to converge.
-
-converged SCF energy = -7116.55037506314
