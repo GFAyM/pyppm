@@ -104,7 +104,7 @@ class M_matrix:
         m = self.m 
         self.m_iaia = m[:m.shape[0]//4, :m.shape[0]//4]
         eigenvalues = np.linalg.eigvals(self.m_iaia)
-        print(eigenvalues)
+        #print(eigenvalues)
         Z=0
         for i in eigenvalues:
             Z += np.exp(i)
@@ -254,7 +254,7 @@ class M_matrix:
         m = self.m 
         self.m_jbjb = m[int(m.shape[0]*3/4):, int(m.shape[0]*3/4):]
         eigenvalues = np.linalg.eigvals(self.m_jbjb)
-        print(eigenvalues)
+        #print(eigenvalues)
         Z=0
         for i in eigenvalues:
             Z += np.exp(i)

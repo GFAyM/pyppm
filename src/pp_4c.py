@@ -29,8 +29,7 @@ class Prop_pol:
         _type_: _description_
     """ 
     mf = attr.ib(default=None, type=scf.dhf.DHF, validator=attr.validators.instance_of(scf.dhf.DHF))
-    print("total memory: %.1f MiB" % current_memory()[0])
-
+    
         
     @property
     def M(self):
@@ -68,24 +67,24 @@ class Prop_pol:
         orboS = moS[:,:nocc]
         e_ia = lib.direct_sum('a-i->ia', mo_energy[viridx], mo_energy[occidx])
         a = numpy.diag(e_ia.ravel()).reshape(nocc,nvir,nocc,nvir)
-        b = numpy.zeros_like(a, dtype=complex)
-        print('before M ',"total memory: %.1f MiB" % current_memory()[0])
+        b = numpy.zeros_like(a)
         
-        eri_mo = ao2mo.general(mol, [orboL, moL, moL, moL], intor='int2e_spinor')
-        eri_mo+= ao2mo.general(mol, [orboS, moS, moS, moS], intor='int2e_spsp1spsp2_spinor')
-        eri_mo+= ao2mo.general(mol, [orboS, moS, moL, moL], intor='int2e_spsp1_spinor')
-        eri_mo+= ao2mo.general(mol, [moS, moS, orboL, moL], intor='int2e_spsp1_spinor').T
+        eri_mo = ao2mo.kernel(mol, [orboL, moL, moL, moL], intor='int2e_spinor')
+        #eri_mo+= ao2mo.kernel(mol, [orboS, moS, moS, moS], intor='int2e_spsp1spsp2_spinor')
+        #eri_mo+= ao2mo.kernel(mol, [orboS, moS, moL, moL], intor='int2e_spsp1_spinor')
+        #eri_mo+= ao2mo.kernel(mol, [moS, moS, orboL, moL], intor='int2e_spsp1_spinor').T
         eri_mo = eri_mo.reshape(nocc,nmo,nmo,nmo)
-        a = a + lib.einsum('iabj->iajb', eri_mo[:nocc,nocc:,nocc:,:nocc])
-        a = a - lib.einsum('ijba->iajb', eri_mo[:nocc,:nocc,nocc:,nocc:])
-        b = b + lib.einsum('iajb->iajb', eri_mo[:nocc,nocc:,:nocc,nocc:])
-        b = b - lib.einsum('jaib->iajb', eri_mo[:nocc,nocc:,:nocc,nocc:])
+
+        a = a + numpy.einsum('iabj->iajb', eri_mo[:nocc,nocc:,nocc:,:nocc])
+        a = a - numpy.einsum('ijba->iajb', eri_mo[:nocc,:nocc,nocc:,nocc:])
+        b = b + numpy.einsum('iajb->iajb', eri_mo[:nocc,nocc:,:nocc,nocc:])
+        b = b - numpy.einsum('jaib->iajb', eri_mo[:nocc,nocc:,:nocc,nocc:])
+
         
-        m = a+b
+        m = a #+ b
         m = m.reshape(nocc*nvir,nocc*nvir, order='C')
-        m_y = a-b
+        m_y = a #- b
         m_y = m_y.reshape(nocc*nvir,nocc*nvir, order='C')
-        print('After M ',"total memory: %.1f MiB" % current_memory()[0])
         
         return m, m_y
 
@@ -105,7 +104,7 @@ class Prop_pol:
         mol = self.mf.mol
         mo_coeff = self.mf.mo_coeff
         mo_occ = self.mf.mo_occ
-        orbo = mo_coeff[:,mo_occ> 0]
+        orbo = mo_coeff[:,mo_occ==1]
         orbv = mo_coeff[:,mo_occ==0]
         n4c = mo_coeff.shape[0]
         n2c = n4c // 2
@@ -144,106 +143,40 @@ class Prop_pol:
         atm2dic = dict([(ia,k) for k,ia in enumerate(atm2lst)])
 
         h1 = numpy.asarray(self.make_perturbator(atm1lst)).reshape(len(atm1lst),3,nvir,nocc)        
-        print('h1',"total memory: %.1f MiB" % current_memory()[0])
         
         h2 = numpy.asarray(self.make_perturbator(atm2lst)).reshape(len(atm2lst),3,nvir,nocc)
-        print('h2',"total memory: %.1f MiB" % current_memory()[0])
-        
-        print('Before call M',"total memory: %.1f MiB" % current_memory()[0])
         m_xz, m_y = self.M
-        print('After call M',"total memory: %.1f MiB" % current_memory()[0])
-        p_xz = -numpy.linalg.inv(m_xz)
+
+        p_xz = -scipy.linalg.inv(m_xz)
+
         p_xz = p_xz.reshape(nocc,nvir,nocc,nvir)
-        p_y = -numpy.linalg.inv(m_y)
+
+        p_y = -scipy.linalg.inv(m_y)
+        
         p_y = p_y.reshape(nocc,nvir,nocc,nvir)
-
-
         para = []
         para_y = []
-        print('Before initialize pp response',"total memory: %.1f MiB" % current_memory()[0])
+
         for i,j in nuc_pair:
-            e = lib.einsum('xai,iajb,ybj->xy', h1[atm1dic[i]], p_xz.conj(), h2[atm2dic[j]].conj()) * 2
+            e = numpy.einsum('xai,iajb,ybj->xy', h1[atm1dic[i]], p_xz.conj(), h2[atm2dic[j]].conj()) * 2
             para.append(e.real)
-            e_y = lib.einsum('xai,iajb,ybj->xy', h1[atm1dic[i]], p_y.conj(), h2[atm2dic[j]].conj()) * 2
+            e_y = numpy.einsum('xai,iajb,ybj->xy', h1[atm1dic[i]], p_y.conj(), h2[atm2dic[j]].conj()) * 2
             para_y.append(e_y.real)
             
         resp = numpy.asarray(para)
         resp_y = numpy.asarray(para_y)
-        for i in range(e.shape[0]):
+
+        for i in range(resp.shape[0]):
             resp[i][1][1] = resp_y[i][1][1]
-        print('ell modulo pp funciona')
-        print('after finalize pp response',"total memory: %.1f MiB" % current_memory()[0])
-        #print(numpy.asarray(para) * nist.ALPHA**4)
+
+        print(resp * nist.ALPHA**4)
 
         return resp * nist.ALPHA**4
 
-    def pp_ssc_4c_select(self,atm1lst,atm2lst):
-        """
-        In this Function generate de Response << ; >>, i.e, multiplicate the perturbators centered in
-        the nuclei of election, with the principal propagator.
-
-        Args:
-            atm1lst (list): Nuclei A
-            atm2lst (list): Nuclei B
-
-        Returns:
-            numpy.array: << ; >>
-        """
-        nocc = self.nocc
-        nvir = self.nvir
-        h1 = numpy.asarray(self.make_perturbator(atm1lst)).reshape(len(atm1lst),3,self.nvir,self.nocc)
-
-        h2 = numpy.asarray(self.make_perturbator(atm2lst)).reshape(len(atm2lst),3,self.nvir,self.nocc)
-        m = self.M
-
-        p = -numpy.linalg.inv(m)
-        p = p.reshape(nocc,nvir,nocc,nvir)
-        
-
-        para = []
-        
-        #e1 = lib.einsum('iajb,ybj->yia',  p, h2[0])
-            #e1 = p * h2[atm2dic[j]]
-            #print(e1[0])
-        #print(h1[0].shape)
-        #print(e1.shape)
-        #e = lib.einsum('xai,yia->yx', h1[0], e1.conj()) * 2
-        #print(h1[0][0].shape)
-        e = lib.einsum('ai,iajb,bj->', h1[0][0], p.conj(), h2[0][1].conj()) * 2
-        print(numpy.asarray(e.real)*nist.ALPHA**4)
-        e = lib.einsum('ai,iajb,bj->', h1[0][2], p.conj(), h2[0][2].conj()) * 2
-        print(numpy.asarray(e.real)*nist.ALPHA**4)
-        e = lib.einsum('ai,iajb,bj->', h1[0][2], p.conj(), h2[0][1].conj()) * 2
-        print(numpy.asarray(e.real)*nist.ALPHA**4)
-        e = lib.einsum('xai,iajb,ybj->xy', h1[0], p.conj(), h2[0].conj()) * 2
-        para.append(e.real)
-        return numpy.asarray(para) * nist.ALPHA**4
 
 
     
 
-    def kernel_select(self,atom1,atom2):
-        """This function multiplicates the response by the constants
-        in order to get the isotropic J-coupling J(A,B) between the two nuclei        
-
-        Args:
-            atom1 (list): Nuclei A
-            atom2 (list): Nuclei B
-
-        Returns:
-            Real: j coupling
-        """
-        mol = self.mol
-
-        e11 = self.pp_ssc_4c_select(atom1,atom2)
-        print(e11)
-        nuc_mag = .5 * (nist.E_MASS/nist.PROTON_MASS) 
-        au2Hz = nist.HARTREE2J / nist.PLANCK
-        iso_ssc = au2Hz * nuc_mag ** 2 * lib.einsum('kii->k', e11) / 3
-        gyro1 = [get_nuc_g_factor(mol.atom_symbol(atom1[0]))]
-        gyro2 = [get_nuc_g_factor(mol.atom_symbol(atom2[0]))]
-        jtensor = lib.einsum('i,i,j->ij', iso_ssc, gyro1, gyro2)
-        return jtensor
 
     def kernel(self):
         """This function multiplicates the response by the constants
@@ -256,21 +189,19 @@ class Prop_pol:
         
         mol = self.mf.mol
         e11 = self.pp_ssc_4c()
-
+       
         nuc_mag = .5 * (nist.E_MASS/nist.PROTON_MASS) 
         au2Hz = nist.HARTREE2J / nist.PLANCK
         nuc_pair = [(i,j) for i in range(mol.natm) for j in range(i)]
-        iso_ssc = au2Hz * nuc_mag ** 2 * lib.einsum('kii->k', e11) / 3
-        #print(iso_ssc)
+        iso_ssc = au2Hz * nuc_mag ** 2 * numpy.einsum('kii->k', e11) / 3
         natm = mol.natm
         ktensor = numpy.zeros((natm,natm))
         for k, (i, j) in enumerate(nuc_pair):
             ktensor[i,j] = ktensor[j,i] = iso_ssc[k]
 
         gyro = [get_nuc_g_factor(mol.atom_symbol(ia)) for ia in range(natm)]
-        jtensor = lib.einsum('ij,i,j->ij', ktensor, gyro, gyro)
+        jtensor = numpy.einsum('ij,i,j->ij', ktensor, gyro, gyro)
         label = ['%2d %-2s'%(ia, mol.atom_symbol(ia)) for ia in range(natm)]
-#        print(lib.param.LIGHT_SPEED)
         tools.dump_mat.dump_tri(mol.stdout, jtensor, label)
         
         return jtensor

@@ -73,9 +73,9 @@ class Prop_pol:
         a = numpy.diag(e_ia.ravel()).reshape(nocc,nvir,nocc,nvir)
         
         a1 = ao2mo.general(mol, [orboL, orbvL, orbvL, orboL], intor='int2e_spinor')
-        #a1 += ao2mo.general(mol, [orboS, orbvS, orbvS, orboS], intor='int2e_spsp1spsp2_spinor')
-        #a1 += ao2mo.general(mol, [orboS, orbvS, orbvL, orboL], intor='int2e_spsp1_spinor')
-        #a1 += ao2mo.general(mol, [orbvS, orboS, orboL, orbvL], intor='int2e_spsp1_spinor').T
+        a1 += ao2mo.general(mol, [orboS, orbvS, orbvS, orboS], intor='int2e_spsp1spsp2_spinor')
+        a1 += ao2mo.general(mol, [orboS, orbvS, orbvL, orboL], intor='int2e_spsp1_spinor')
+        a1 += ao2mo.general(mol, [orbvS, orboS, orboL, orbvL], intor='int2e_spsp1_spinor').T
         a1 = a1.reshape(nocc,nvir,nvir,nocc)
 
         a = a + lib.einsum('iabj->iajb', a1)
@@ -106,9 +106,9 @@ class Prop_pol:
         orbvS = moS[:,nocc:] 
 
         a2 = ao2mo.general(mol, [orboL, orboL, orbvL, orbvL], intor='int2e_spinor')
-        #a2 += ao2mo.general(mol, [orboS, orboS, orbvS, orbvS], intor='int2e_spsp1spsp2_spinor')
-        #a2+= ao2mo.general(mol, [orboS, orboS, orbvL, orbvL], intor='int2e_spsp1_spinor')
-        #a2+= ao2mo.general(mol, [orbvS, orbvS, orboL, orboL], intor='int2e_spsp1_spinor').T
+        a2 += ao2mo.general(mol, [orboS, orboS, orbvS, orbvS], intor='int2e_spsp1spsp2_spinor')
+        a2+= ao2mo.general(mol, [orboS, orboS, orbvL, orbvL], intor='int2e_spsp1_spinor')
+        a2+= ao2mo.general(mol, [orbvS, orbvS, orboL, orboL], intor='int2e_spsp1_spinor').T
         a2 = a2.reshape(nocc,nocc,nvir,nvir)
         a2 = lib.einsum('ijba->iajb', a2)
         return a2
@@ -137,9 +137,9 @@ class Prop_pol:
 
         
         b_ = ao2mo.general(mol, [orboL, orbvL, orboL, orbvL], intor='int2e_spinor')
-        #b_ += ao2mo.general(mol, [orboS, orbvS, orboS, orbvS], intor='int2e_spsp1spsp2_spinor')
-        #b_+= ao2mo.general(mol, [orboS, orbvS, orboL, orbvL], intor='int2e_spsp1_spinor')
-        #b_+= ao2mo.general(mol, [orboS, orbvS, orboL, orbvL], intor='int2e_spsp1_spinor').T
+        b_ += ao2mo.general(mol, [orboS, orbvS, orboS, orbvS], intor='int2e_spsp1spsp2_spinor')
+        b_+= ao2mo.general(mol, [orboS, orbvS, orboL, orbvL], intor='int2e_spsp1_spinor')
+        b_+= ao2mo.general(mol, [orboS, orbvS, orboL, orbvL], intor='int2e_spsp1_spinor').T
         b_ = b_.reshape(nocc,nvir,nocc,nvir)
         b_ =  lib.einsum('iajb->iajb', b_)
         b_ -= lib.einsum('jaib->iajb', b_)
@@ -224,21 +224,27 @@ class Prop_pol:
         p_xz = p_xz.reshape(nocc,nvir,nocc,nvir)
         p_y = -numpy.linalg.inv(m_y)
         p_y = p_y.reshape(nocc,nvir,nocc,nvir)
+        
+        
+        
+
+
 
         para = []
         para_y = []
         for i,j in nuc_pair:
             e = lib.einsum('xai,iajb,ybj->xy', h1[atm1dic[i]], p_xz.conj(), h2[atm2dic[j]].conj()) * 2
             para.append(e.real)
-            e_y = lib.einsum('xai,iajb,ybj->xy', h1[atm1dic[i]], p_y.conj(), h2[atm2dic[j]].conj()) * 2
-            para_y.append(e_y.real)
+            #e_y = lib.einsum('xai,iajb,ybj->xy', h1[atm1dic[i]], p_y.conj(), h2[atm2dic[j]].conj()) * 2
+            #para_y.append(e_y.real)
             
         resp = numpy.asarray(para)
-        resp_y = numpy.asarray(para_y)
-        for i in range(e.shape[0]):
-            resp[i][1][1] = resp_y[i][1][1]
-
-        print(numpy.asarray(para) * nist.ALPHA**4)
+        #resp_y = numpy.asarray(para_y)
+        #for i in range(e.shape[0]):
+        #    resp[i][1][1] = resp_y[i][1][1]
+            
+        
+        print(numpy.asarray(resp) * nist.ALPHA**4)
 
         return resp * nist.ALPHA**4
 

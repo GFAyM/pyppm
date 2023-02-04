@@ -7,7 +7,7 @@ if module_path not in sys.path:
 
 
 from src.help_functions import extra_functions
-from src.ppe_2 import M_matrix
+from src.ppe import M_matrix
 
 import plotly.express as px
 import pandas as pd
@@ -63,7 +63,7 @@ for ang in range(1,18,1):
     ent_iajb = m_obj.entropy_iajb  
     ent_ia = m_obj.entropy_iaia
     ent_jb = m_obj.entropy_jbjb
-    mutual = ent_ia + ent_jb - ent_iajb
+    mutual = -ent_ia - ent_jb + ent_iajb
             #print(cruzada)
     with open(text, 'a') as f:
         f.write(f'{ang*10} {ent_ia} {ent_iajb} {ent_jb} {mutual} \n') #{np.round(cruzada, decimals=10)}
@@ -72,20 +72,20 @@ df = pd.read_csv(text, sep='\s+', header=None)
 
 df.columns = ['ang', 'ent_iaia', 'ent_iajb', 'ent_jbjb', 'mutual']
 
-fig, (ax1,ax2,ax3,ax4) = plt.subplots(1, 4, figsize=(14,8))
+fig, (ax1,ax2,ax3,ax4) = plt.subplots(1, 4, figsize=(16,8))
 #plt.figure(figsize=(10,8))
-ax1.plot(df.ang, df.ent_iaia, 'b>-', label='ia') #f'a={orb1} b={orb2}')
+ax1.plot(df.ang, df.ent_iaia, 'b>-', label='iaia') #f'a={orb1} b={orb2}')
 ax1.set_title(r'$S_{ia}$')
 ax1.legend()
-ax2.plot(df.ang, df.ent_jbjb, 'b>-', label='ia') #f'a={orb1} b={orb2}')
+ax2.plot(df.ang, df.ent_jbjb, 'b>-', label='jbjb') #f'a={orb1} b={orb2}')
 ax2.set_title(r'$S_{jb}$')
 ax2.legend()
-ax3.plot(df.ang, df.ent_iajb, 'b>-', label='ia') #f'a={orb1} b={orb2}')
+ax3.plot(df.ang, df.ent_iajb, 'b>-', label='iajb') #f'a={orb1} b={orb2}')
 ax3.set_title(r'$S_{iajb}$')
 ax3.legend()
-ax4.plot(df.ang, df.ent_iaia, 'b>-', label='ia') #f'a={orb1} b={orb2}')
-ax4.set_title(r'I')
+ax4.plot(df.ang, df.ent_iaia, 'b>-', label='Mutual Information') #f'a={orb1} b={orb2}')
+ax4.set_title(r'Mutual Information')
 ax4.legend()
 
-
+plt.savefig('mutual_information.png')
 plt.show()  

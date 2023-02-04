@@ -125,15 +125,14 @@ def make_para(sscobj, mol, mo1, mo_coeff, mo_occ, nuc_pair=None):
     atm2lst = sorted(set([j for i,j in nuc_pair]))
     atm1dic = dict([(ia,k) for k,ia in enumerate(atm1lst)])
     atm2dic = dict([(ia,k) for k,ia in enumerate(atm2lst)])
-    mo1 = mo1.reshape(len(atm1lst),3,nvir,nocc)
+    mo1 = mo1.reshape(len(atm2lst),3,nvir,nocc)
     h1 = make_h1(mol, mo_coeff, mo_occ, atm1lst)
     h1 = numpy.asarray(h1).reshape(len(atm1lst),3,nvir,nocc)
-    #print(mo1[0][0])
-    print(nuc_pair)
     para = []
+
     for i,j in nuc_pair:
         e = numpy.einsum('xij,yij->xy', h1[atm1dic[i]], mo1[atm2dic[j]].conj()) * 2
-        #print(mo1[atm2dic[j]].shape)
+        
         para.append(e.real)
     print(numpy.asarray(para) * nist.ALPHA**4)
     return numpy.asarray(para) * nist.ALPHA**4
@@ -303,21 +302,13 @@ from pyscf import scf
 import time
 scf.dhf.UHF.SSC = scf.dhf.UHF.SpinSpinCoupling = lib.class_as_method(SSC)
 
-mol = gto.M(atom='''
-S   0.000000000000   0.000000000000  -0.537025207601
-H1  0.000000000000   1.996264290800   1.351544489999
-H2  0.000000000000  -1.996264290800   1.351544489999
-''', basis='cc-pvdz', unit='bhor', verbose=4)
 
+mol_h2o = gto.M(
+            atom = ''' O 1 0.5 0; H1 0 0 0; H2 0 0 1''',
+            basis = 'sto-3g')
 
-mol_h2s = gto.M(atom='''
-S      .0000000000        0.0000000000        -.2249058930
-H1   -1.4523499293         .0000000000         .8996235720
-H2    1.4523499293         .0000000000         .8996235720
-''', basis='cc-pvdz', unit='bhor', verbose=4)
-
-rhf = scf.DHF(mol_h2s).run()
-
+rhf = scf.DHF(mol_h2o).run()
+t0 = time.time()
 ssc = rhf.SSC()
 ssc.cphf = True
 ssc.mb = 'RKB'
