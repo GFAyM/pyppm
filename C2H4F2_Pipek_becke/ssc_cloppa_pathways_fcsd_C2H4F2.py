@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pyscf import scf
 
-file = 'cloppa_fcsd_iajb_C2H4F2.txt'
+file = 'cloppa_fcsd_iaia_C2H4F2.txt'
 
 if os.path.exists(file):
 	os.remove(file)
@@ -24,6 +24,12 @@ lig2 = [8, 8, 8, 8, 8, 7, 8, 8, 8, 9, 8, 8, 8, 8, 8, 8, 8, 8, 8]
 
 par_lib_1 = [10, 11, 10, 10, 10, 11, 11, 11, 10, 11, 11, 10, 11, 10, 11, 11, 11, 10, 11]
 par_lib_2 = [11, 10, 11, 11, 11, 10, 10, 10, 11, 10, 10, 11, 10, 11, 10, 10, 10, 11, 10]
+
+par_libx_1 = [5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5]
+par_libx_2 = [4, 5, 6, 6, 6, 6, 6, 6, 5, 5, 5, 6, 6, 6, 6, 6, 6, 5, 4]
+
+par_liby_1 = [7, 6, 5, 5, 5, 5, 5, 5, 6, 7, 6, 5, 5, 5, 5, 5, 5, 6, 7]
+par_liby_2 = [6, 7, 7, 7, 7, 8, 7, 7, 7, 6, 7, 7, 7, 7, 7, 7, 7, 7, 6]
 
 #       10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27
 #occ_lmo = [(occ1,'O-H1'), (occ2,'O-H2')]
@@ -46,9 +52,12 @@ v5_2 = [46, 51, 50, 49, 50, 44, 50, 49, 51, 49, 51, 50, 51, 49, 48, 49, 49, 50, 
 
 occ_lmo = [(lig1,'F3_2pz'), (lig2,'F7_2pz'), (par_lib_1,'F3_2p'), (par_lib_2,'F7_2p')]
 
-occ_lmo1 = [(lig1,'F3_2pz'), (par_lib_1,'F3_2s')]
-occ_lmo2 = [(lig2,'F7_2pz'), (par_lib_2,'F7_2s')]
+occ_lmo1 = [(lig1,'F3_2pz'), (par_lib_1,'F3_2s'), (par_libx_1,'F3_LPx'), (par_liby_1,'F3_LPy')]
+occ_lmo2 = [(lig2,'F7_2pz'), (par_lib_2,'F7_2s'), (par_libx_2,'F7_LPx'), (par_liby_2,'F7_LPy')]
 
+occ_lmo = [(lig1,'F3_2pz'), (lig2,'F7_2pz'), (par_lib_1,'F3_2s'), (par_lib_2,'F7_2s'),
+            (par_libx_1,'F3_LPx'),(par_libx_2,'F7_LPx'),
+            (par_liby_1,'F3_LPy'),(par_liby_2,'F7_LPy')]
 
 lmo_vir = [(v1_1,"F3_2pz"),(v1_2,"F7_2pz"),(v2_1,"F3_3pz"),(v2_2,"F7_3pz"), (v3_1,"F3_3s"),(v3_2,"F7_3s"),
 			(v4_1,"F3_3py"),(v4_2,"F7_3py"), (v5_1,"F3_3px"), (v5_2,"F7_3px")]
@@ -72,9 +81,9 @@ for ang in range(0,18,1):
 	m = cloppa_obj.M(triplet=True)
 	p = np.linalg.inv(m)
 	for i, ii in occ_lmo1:
-		for j, jj in occ_lmo2:
+		for j, jj in occ_lmo1:
 			for a, aa in lmo_vir1:
-				for b, bb in lmo_vir2:
+				for b, bb in lmo_vir1:
 					ssc = cloppa_obj.kernel_pathway(FC=False, FCSD=True, PSO=False,
 													princ_prop=p,
 													n_atom1=[2], occ_atom1=i[ang], vir_atom1=a[ang], 

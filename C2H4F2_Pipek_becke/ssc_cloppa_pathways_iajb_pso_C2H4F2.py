@@ -76,13 +76,13 @@ for ang in range(0,18,1):
 	
 	m = cloppa_obj.M(triplet=False)
 	p = np.linalg.inv(m)
-	for a, aa in lmo_vir:
-		for b, bb in lmo_vir:
+	for a, aa in lmo_vir1:
+		for b, bb in lmo_vir2:
 			ssc = cloppa_obj.kernel_pathway(FC=False, FCSD=False, PSO=True,
 											princ_prop=p,
 											n_atom1=[2], occ_atom1=[lig1[ang],par_libx_1[ang],par_liby_1[ang]],
                                             vir_atom1=a[ang], 
-											n_atom2=[6], occ_atom2=[lig1[ang],par_libx_1[ang],par_liby_1[ang]],
+											n_atom2=[6], occ_atom2=[lig2[ang],par_libx_2[ang],par_liby_2[ang]],
                                             vir_atom2=b[ang])
                                             
 			with open(file, 'a') as f:

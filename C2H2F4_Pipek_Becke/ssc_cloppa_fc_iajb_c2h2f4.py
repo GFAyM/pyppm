@@ -10,6 +10,7 @@ from src.cloppa import Cloppa
 from src.help_functions import extra_functions
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 text = 'pathways_fc_iajb_c2h2f4.txt'
 #print('number of threads:',lib.num_threads())
@@ -20,7 +21,7 @@ if os.path.exists(text):
 occ1 = [23, 22, 22, 22, 23, 23, 23, 22, 23, 22, 23, 22, 22, 22, 23, 22, 23, 23, 23, 22, 22, 23, 23, 23, 23, 22, 22, 23]
 occ2 = [22, 23, 23, 23, 22, 22, 22, 23, 22, 23, 22, 23, 23, 23, 22, 23, 22, 22, 22, 23, 23, 22, 22, 22, 22, 23, 23, 22]
 #       10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27
-
+occ_lmo = [(occ1,'O-H1'), (occ2,'O-H2')]
 
 v1_1 = [34, 35, 35, 35, 36, 36, 36, 36, 36, 35, 36, 36, 36, 36, 36, 35, 35, 36, 36, 36, 35, 35, 36, 36, 36, 36, 36, 35]
 v1_2 = [35, 34, 34, 34, 35, 35, 35, 35, 35, 36, 35, 35, 35, 35, 35, 34, 34, 35, 35, 35, 34, 34, 35, 35, 35, 35, 35, 36]
@@ -44,20 +45,18 @@ v6_2 = [25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 93, 93, 28, 
 
 
 lmo_vir1 = [(v1_1,"H1_2pz"),(v2_1,"H1_1s"),(v3_1,"H1_2s"),
-			(v4_1,"H1_2px"),(v5_1,"H1_2py"), (v6_1,"C1_2pz") ]
+			(v4_1,"H1_2px"),(v5_1,"H1_2py"), (v6_1,"C-H_1") ]
 
-lmo_vir2 = [(v1_2,"H2_2pz"),(v2_2,"H2_1s"),(v3_2,"H2_2s"),
-			(v4_2,"H2_2px"),(v5_2,"H2_2py"),  (v6_2,"C2_2pz")]
 
-lmo_vir = [(v1_1,"H3_2pz"),(v2_1,"H3_1s"),(v3_1,"H3_2s"),
-			(v4_1,"H3_2px"),(v5_1,"H3_2py"), (v6_1,"C1_2pz"), (v1_2,"H7_2pz"),(v2_2,"H7_1s"),(v3_2,"H7_2s"),
-			(v4_2,"H7_2px"),(v5_2,"H7_2py"),  (v6_2,"C2_2pz") ]
-
-lmo_occ = [(occ1, 'CH1'), (occ2, 'CH2')]
+#H1_2pz tiene en partes iguales Carbono e Hidrogeno.  
+#C-H_1 tiene 80% carbono 3
+# H1 1s tiene 80% carbono 2p
+lmo_vir2 = [(v2_2,"H2_2pz"),(v2_2,"H2_1s"),(v3_2,"H2_2s"),
+			(v4_2,"H2_2px"),(v5_2,"H2_2py"),  (v6_2,"C-H_2")]
 
 data = []
 
-for ang in range(0,18,1): 
+for ang in range(0,19,1): 
 	mol, mo_coeff, mo_occ = extra_functions(molden_file=f"C2H2F4_{ang*10}_ccpvdz_Cholesky_PM.molden").extraer_coeff
 
 	cloppa_obj = Cloppa(
@@ -66,13 +65,19 @@ for ang in range(0,18,1):
 	
 	m = cloppa_obj.M(triplet=True)
 	p = np.linalg.inv(m)
-	for i, ii in lmo_occ:
-		for j, jj in lmo_occ:
-			for a, aa in lmo_vir:
-				for b, bb in lmo_vir:
-					ssc = cloppa_obj.kernel_pathway(FC=True, FCSD=False, PSO=False,
-													princ_prop=p,
-													n_atom1=[2], occ_atom1=i[ang], vir_atom1=a[ang], 
-													n_atom2=[6], occ_atom2=j[ang], vir_atom2=b[ang])
-					with open(text, 'a') as f:
-						f.write(f'{ang*10} {ssc[0]} {ii} {aa} {jj} {bb} \n')     
+	ssc_ij = cloppa_obj.kernel_pathway(FC=True, n_atom1=[2], n_atom2=[6], princ_prop=p, 
+				       						occ_atom1=[occ1[ang]], occ_atom2=[occ2[ang]])
+	for a, aa in lmo_vir1:
+		for b, bb in lmo_vir2:
+			ssc_iajb = cloppa_obj.kernel_pathway(FC=True, FCSD=False, PSO=False,
+											princ_prop=p,
+											n_atom1=[2], occ_atom1=[occ1[ang]],  
+											n_atom2=[6], occ_atom2=[occ2[ang]],
+											vir_atom1=a[ang], vir_atom2=b[ang])
+			with open(text, 'a') as f:
+				f.write(f'{ang*10} {ssc_ij[0]} {ssc_iajb[0]} {aa} {bb} \n')     
+
+
+
+
+

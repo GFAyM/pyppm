@@ -43,7 +43,7 @@ vir1 = [H3_1s,H3_2s,H3_2px,H3_2py,H3_2pz]
 vir2 = [H4_1s,H4_2s,H4_2px,H4_2py,H4_2pz]
 
 
-for ang in range(0,17,1):
+for ang in range(0,18,1):
 	mol_loc, mo_coeff_loc, mo_occ_loc = extra_functions(molden_file=f"H2O2_mezcla_{ang*10}.molden").extraer_coeff
 	ssc_tot = 0
 	cloppa_obj = Cloppa(
@@ -58,21 +58,7 @@ for ang in range(0,17,1):
 	ssc = 0
 	for v1 in vir1:
 		for v2 in vir2:
-			ssc += cloppa_obj.kernel_pathway(FC=True, FCSD=False, PSO=False,
-										princ_prop=p,
-										n_atom1=[2], occ_atom1=H3_1s_occ[ang],vir_atom1=v1[ang], 
-										n_atom2=[3], occ_atom2=H4_1s_occ[ang],vir_atom2=v2[ang],
-										all_pathways=False)
-	for v1 in vir1:
-		for v2 in vir1:
-			ssc += cloppa_obj.kernel_pathway(FC=True, FCSD=False, PSO=False,
-										princ_prop=p,
-										n_atom1=[2], occ_atom1=H3_1s_occ[ang],vir_atom1=v1[ang], 
-										n_atom2=[3], occ_atom2=H4_1s_occ[ang],vir_atom2=v2[ang],
-										all_pathways=False)
-	for v1 in vir1:
-		for v2 in vir1:
-			ssc += cloppa_obj.kernel_pathway(FC=True, FCSD=False, PSO=False,
+			ssc += cloppa_obj.kernel_pathway(FC=False, FCSD=True, PSO=False,
 										princ_prop=p,
 										n_atom1=[2], occ_atom1=H3_1s_occ[ang],vir_atom1=v1[ang], 
 										n_atom2=[3], occ_atom2=H4_1s_occ[ang],vir_atom2=v2[ang],

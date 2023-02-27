@@ -102,8 +102,9 @@ class M_matrix:
             [value of entanglement]
         """
         m = self.m 
-        self.m_iaia = m[:m.shape[0]//4, :m.shape[0]//4]
-        eigenvalues = np.linalg.eigvals(self.m_iaia)
+        self.m_jbjb = m[int(m.shape[0]*3/4):, int(m.shape[0]*3/4):]
+        self.m_iaia = m[:m.shape[0]//4, :m.shape[0]//4] #* np.sum(np.diag(self.m_jbjb))
+        eigenvalues = np.linalg.eigvals(self.m_iaia) 
         #print(eigenvalues)
         Z=0
         for i in eigenvalues:
@@ -113,6 +114,28 @@ class M_matrix:
             ent += -np.exp(i)/Z*np.log(np.exp(i)/Z)
         return ent
     
+    @property
+    def entropy_jbjb(self):
+        """Entanglement of the M_{ia,jb} matrix:
+        M = (M_{ia,ia}  )
+            
+        Returns
+        -------
+        [real]
+            [value of entanglement]
+        """
+        m = self.m 
+        self.m_iaia = m[:m.shape[0]//4, :m.shape[0]//4]
+        self.m_jbjb = m[int(m.shape[0]*3/4):, int(m.shape[0]*3/4):] #* np.sum(np.diag(self.m_iaia))
+        eigenvalues = np.linalg.eigvals(self.m_jbjb)
+        Z=0
+        for i in eigenvalues:
+            Z += np.exp(i)
+        ent = 0
+        for i in eigenvalues:
+            ent += -np.exp(i)/Z*np.log(np.exp(i)/Z)
+        return ent
+
     @property
     def entropy_iajb(self):
         """Entanglement of the M_{ia,jb} matrix:
@@ -241,24 +264,3 @@ class M_matrix:
             ent += -(np.exp(i)/Z)*np.log(np.exp(i)/Z)
         return np.real(ent)
 
-    @property
-    def entropy_jbjb(self):
-        """Entanglement of the M_{ia,jb} matrix:
-        M = (M_{ia,ia}  )
-            
-        Returns
-        -------
-        [real]
-            [value of entanglement]
-        """
-        m = self.m 
-        self.m_jbjb = m[int(m.shape[0]*3/4):, int(m.shape[0]*3/4):]
-        eigenvalues = np.linalg.eigvals(self.m_jbjb)
-        #print(eigenvalues)
-        Z=0
-        for i in eigenvalues:
-            Z += np.exp(i)
-        ent = 0
-        for i in eigenvalues:
-            ent += -np.exp(i)/Z*np.log(np.exp(i)/Z)
-        return ent

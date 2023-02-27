@@ -12,15 +12,15 @@ from src.help_functions import extra_functions
 occ1 = []
 occ2 = []
 
-for ang in range(0,190,10):
-    a = extra_functions(molden_file=f"C2H2F4_{ang}_ccpvdz_Cholesky_PM.molden").mo_hibridization(
-        'H3 1s', .1, 1)
-    b = extra_functions(molden_file=f"C2H2F4_{ang}_ccpvdz_Cholesky_PM.molden").mo_hibridization(
-        'H7 1s', .1, 1)
+for ang in range(0,10,10):
+    a = extra_functions(molden_file=f"C2H2F4_{ang}_ccpvdz_Cholesky_PM.molden").mo_hibridization_fixed(
+        'H3 2', 34, .01, 1)
+    #b = extra_functions(molden_file=f"C2H2F4_{ang}_ccpvdz_Cholesky_PM.molden").mo_hibridization(
+    #    'C1', .1, 1)
     #occ1.append(a[1])
     #occ2.append(b[1])
     print(ang,a)
-    print(ang,b)
+    #print(ang,b)
 
 #print('H3_2px =', occ1)
 #print('H7_2px =', occ2)

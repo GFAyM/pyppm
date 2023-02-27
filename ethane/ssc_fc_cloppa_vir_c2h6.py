@@ -13,8 +13,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-if os.path.exists('cloppa_fc_vir_C2H6_ccpvdz.txt'):
-    os.remove('cloppa_fc_vir_C2H6_ccpvdz.txt')
+if os.path.exists('cloppa_fc_iajb_C2H6_ccpvdz.txt'):
+    os.remove('cloppa_fc_iajb_C2H6_ccpvdz.txt')
 
 
 H3_2s = [19, 19, 19, 20, 21, 19, 22, 19, 19, 19, 19, 19, 19, 19, 24, 20, 22, 21, 22]
@@ -36,7 +36,7 @@ H7_1s = [54, 37, 26, 28, 25, 28, 25, 57, 55, 35, 36, 25, 55, 28, 56, 25, 25, 33,
 H3_1s_occ = [6, 3, 6, 2, 6, 6, 4, 3, 4, 4, 2, 4, 2, 7, 2, 2, 4, 4, 2]
 H7_1s_occ = [3, 5, 4, 4, 5, 5, 3, 2, 5, 5, 3, 5, 7, 2, 7, 5, 7, 7, 6]
 
-
+occ_lmo = [(H3_1s_occ, 'lig_1'), (H7_1s_occ, 'lig_2')]
 
 vir_lmo = [(H3_1s, 'H3_1s'), (H7_1s, 'H7_1s'), (H3_2s, 'H3_2s'), (H7_2s, 'H7_2s'), 
 			  (H3_2px, 'H3_2px'), (H7_2px, 'H7_2px'), (H3_2py, 'H3_2py'), (H7_2py, 'H7_2py'), 
@@ -56,18 +56,18 @@ for ang in range(0,19,1):
 	fc = cloppa_obj.kernel_pathway(FC=True, FCSD=False, PSO=False, n_atom1=[2], n_atom2=[6],princ_prop=p,
 									occ_atom1=H3_1s_occ[ang], occ_atom2=H7_1s_occ[ang])
 
-	for i, ii in vir_lmo:
-		for j, jj in vir_lmo:
-			ssc = cloppa_obj.kernel_pathway(FC=True, FCSD=False, PSO=False,
-											princ_prop=p,
-											n_atom1=[2],n_atom2=[6],
-	                                        occ_atom1=H3_1s_occ[ang], 
-											occ_atom2=H7_1s_occ[ang],
-											vir_atom1=i[ang], vir_atom2=j[ang])
-			#if abs(ssc) > 0.001 :
-			ssc_tot += ssc
-			with open('cloppa_fc_vir_C2H6_ccpvdz.txt', 'a') as f:
-				f.write(f'{ang*10} {np.round(ssc[0], decimals=6)} {ii} {jj} {np.round(fc[0],decimals=6)} \n')        		
-	print(ssc_tot, '-----> La suma de las contribuciones para el ángulo', ang*10)
-	print(fc, '---------> lo que debería dar la suma de las contribuciones para el ángulo',ang*10)
+	for i, ii in occ_lmo:
+		for j, jj in occ_lmo:
+			for a, aa in vir_lmo:
+				for b, bb in vir_lmo:
+					fc_iajb = cloppa_obj.kernel_pathway(FC=True, FCSD=False, PSO=False,
+													princ_prop=p,
+													n_atom1=[2],n_atom2=[6],
+													occ_atom1=i[ang], 
+													occ_atom2=j[ang],
+													vir_atom1=a[ang], vir_atom2=b[ang])
+					#if abs(ssc) > 0.001 :
+					#ssc_tot += ssc
+					with open('cloppa_fc_iajb_C2H6_ccpvdz.txt', 'a') as f:
+						f.write(f'{ang*10} {np.round(fc_iajb[0], decimals=6)} {ii} {aa} {jj} {bb} {np.round(fc[0],decimals=6)} \n')        		
 

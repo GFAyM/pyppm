@@ -14,8 +14,8 @@ import pandas as pd
 
 text = 'pathways_fc_c2h2f4.txt'
 #print('number of threads:',lib.num_threads())
-if os.path.exists(text):
-	os.remove(text)
+#if os.path.exists(text):
+#	os.remove(text)
 
 
 occ1 = [23, 22, 22, 22, 23, 23, 23, 22, 23, 22, 23, 22, 22, 22, 23, 22, 23, 23, 23, 22, 22, 23, 23, 23, 23, 22, 22, 23]
@@ -52,7 +52,7 @@ lmo_vir2 = [(v2_2,"H2_2pz"),(v2_2,"H2_1s"),(v3_2,"H2_2s"),
 
 data = []
 
-for ang in range(0,18,1): 
+for ang in range(18,19,1): 
 	mol, mo_coeff, mo_occ = extra_functions(molden_file=f"C2H2F4_{ang*10}_ccpvdz_Cholesky_PM.molden").extraer_coeff
 
 	cloppa_obj = Cloppa(
@@ -61,28 +61,16 @@ for ang in range(0,18,1):
 	
 	m = cloppa_obj.M(triplet=True)
 	p = np.linalg.inv(m)
+	ssc_total = cloppa_obj.kernel_pathway(FC=True, n_atom1=[2], n_atom2=[6], princ_prop=p)
+	for i, ii in occ_lmo:
+		for j, jj in occ_lmo:
+			ssc = cloppa_obj.kernel_pathway(FC=True, FCSD=False, PSO=False,
+											princ_prop=p,
+											n_atom1=[2], occ_atom1=[i[ang]],  
+											n_atom2=[6], occ_atom2=[j[ang]])
+			with open(text, 'a') as f:
+				f.write(f'{ang*10} {ssc_total[0]} {ssc[0]} {ii} {jj} \n')     
 
-	ssc = cloppa_obj.kernel_pathway(FC=True, FCSD=False, PSO=False,
-									princ_prop=p,
-									n_atom1=[2], occ_atom1=[occ1[ang]],  
-									n_atom2=[6], occ_atom2=[occ1[ang]])
-	with open(text, 'a') as f:
-		f.write(f'{ang*10} {ssc[0]} \n')     
-
-data_J = pd.read_csv(text, sep='\s+', header=None)
-data_J.columns = ['ang', 'fcsd']
-
-
-plt.figure(figsize=(10,8))
-plt.plot(data_J.ang, data_J.fcsd, 'b>-')#f'a={orb1} b={orb2}')
-#plt.plot(ang, fc, 'g<-', label='$^{FC}J(H-H)$')
-plt.legend()
-plt.ylabel('Hz')
-plt.xlabel('Ángulo diedro')
-plt.suptitle('FC+SD contribution to $^3J(H-H)_{i,j}$ en C$_2$F$_2$H$_4$, cc-pVDZ')
-#plt.title('i=C-F$_1$(2s,2p$_z$, 2p$_x$), j=C-F$_2$(2s,2p$_z$,2p$_x$), a = b = all')# f'a={orb1}, b={orb2}')
-plt.savefig(f'FC_occ_ii_C2F2H4.png', dpi=200)
-plt.show() 
 
 
 

@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import pandas as pd
 
-text = 'cloppa_pso_iajb_C2H4F2.txt'
+text = 'cloppa_pso_iaia_C2H4F2.txt'
 data_J = pd.read_csv(text, sep='\s+', header=None)
 
 data_J.columns = ['ang', 'pso', 'a', 'b']
@@ -22,8 +22,8 @@ lmo_vir = ["F3_2pz","F3_3pz","F3_3s","F3_3py","F3_3px","F7_2pz","F7_3pz","F7_3s"
 df_F_C = data_J[(data_J.a.str.contains('F3_2pz') == True) & (data_J.b.str.contains('F7_2pz') == True)].reset_index()
 df_F_C.pso = 0
 
-for orb1 in lmo_vir:
-    for orb2 in lmo_vir:
+for orb1 in lmo_vir1:
+    for orb2 in lmo_vir1:
         df = data_J[(data_J.a.str.contains(orb1) == True) & (data_J.b.str.contains(orb2) == True)]
         if df.pso[abs(df.pso) > 2].any():
             

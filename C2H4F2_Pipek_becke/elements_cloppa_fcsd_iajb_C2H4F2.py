@@ -60,8 +60,8 @@ for ang in range(0,18,1):
 
 	p1__, m__, p2__ = cloppa_obj.kernel_pathway_elements(FC=True, FCSD=False, PSO=False,
 							princ_prop=p,
-							n_atom1=[2], occ_atom1=lig1[ang], vir_atom1=v1_1[ang],
-							n_atom2=[6], occ_atom2=lig1[ang], vir_atom2=v1_1[ang], elements=True)
+							n_atom1=[2], occ_atom1=lig1[ang], vir_atom1=v2_1[ang],
+							n_atom2=[6], occ_atom2=lig1[ang], vir_atom2=v2_1[ang], elements=True)
 
 
 	with open(text, 'a') as f:
@@ -76,23 +76,21 @@ df.columns = ['ang','p1','p2','m']
 fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(16,8))
 #plt.figure(figsize=(10,8))
 ax1.plot(df.ang, df.p1, 'b>-', label='H1') #f'a={orb1} b={orb2}')
-ax1.set_title(r'${b}^{FC+SD}_{i=FC_1,a=F_13pz}$')
+ax1.set_title(r'${b}^{FC+SD}_{i=C-F_1,a=F_13pz}$')
 ax1.legend()
 ax3.plot(df.ang, df.p2, 'b>-', label='H2' )#f'a={orb1} b={orb2}')
-ax3.set_title(r'${b}^{FC+SD}_{j=FC_1,b=F_23pz}$')
+ax3.set_title(r'${b}^{FC+SD}_{j=C-F_1,b=F_13pz}$')
 ax3.legend()
 ax2.plot(df.ang, df.m, 'b>-', label='$^{FC}J_{ij}(H-H)$' )#f'a={orb1} b={orb2}')
-ax2.set_title(r'$^3{P}_{ia,jb}$')
-#plt.ylabel('Hz')
+ax2.set_title(r'$^3{P}_{ia,ia}$')
 ax1.set_xlabel('Ángulo diedro')
 ax2.set_xlabel('Ángulo diedro')
 ax3.set_xlabel('Ángulo diedro')
 
 ax4.plot(df.ang, df.p1*df.p2*df.m, 'r>-')
-ax4.set_title(r'${b}^{FC+SD}_{i=FC_1,a=F_13pz}* ^3{P}_{ia,jb} *{b}^{FC+SD}_{j=FC_1,b=F_32pz}$')
+ax4.set_title(r'${b}^{FC+SD}_{i=C-F_1,a=F_13pz}* ^3{P}_{ia,ia} *{b}^{FC+SD}_{i=C-F_1,a=F_13p_z}$')
 ax4.yaxis.tick_right()
 ax4.set_xlabel('Angulo diedro')
 plt.suptitle(r'''Elements of Polarization Propagator $J^{FC+SD}(H-H)$ in C$_2$H$_2$F$_4$''')
-#plt.title(f'i={i}, a={a}, j={j}, b = {b}')# f'a={orb1}, b={orb2}')
-plt.savefig('FC_elements_C2H4F2_FCFC-3pz--3pz.png', dpi=200)
+plt.savefig('FCSD_elements_C2H4F2_iaia_lig_lig.png', dpi=200)
 plt.show()  

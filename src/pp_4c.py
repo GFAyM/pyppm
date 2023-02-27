@@ -62,7 +62,7 @@ class Prop_pol:
         c1 = .5 / lib.param.LIGHT_SPEED
         mo = numpy.hstack((orbo, orbv))
         moL = numpy.asarray(mo[:n2c], order='F')
-        moS = numpy.asarray(mo[n2c:], order='F')* c1
+        moS = numpy.asarray(mo[n2c:], order='F') * c1
         orboL = moL[:,:nocc]
         orboS = moS[:,:nocc]
         e_ia = lib.direct_sum('a-i->ia', mo_energy[viridx], mo_energy[occidx])
@@ -70,9 +70,9 @@ class Prop_pol:
         b = numpy.zeros_like(a)
         
         eri_mo = ao2mo.kernel(mol, [orboL, moL, moL, moL], intor='int2e_spinor')
-        #eri_mo+= ao2mo.kernel(mol, [orboS, moS, moS, moS], intor='int2e_spsp1spsp2_spinor')
-        #eri_mo+= ao2mo.kernel(mol, [orboS, moS, moL, moL], intor='int2e_spsp1_spinor')
-        #eri_mo+= ao2mo.kernel(mol, [moS, moS, orboL, moL], intor='int2e_spsp1_spinor').T
+        eri_mo+= ao2mo.kernel(mol, [orboS, moS, moS, moS], intor='int2e_spsp1spsp2_spinor')
+        eri_mo+= ao2mo.kernel(mol, [orboS, moS, moL, moL], intor='int2e_spsp1_spinor')
+        eri_mo+= ao2mo.kernel(mol, [moS, moS, orboL, moL], intor='int2e_spsp1_spinor').T
         eri_mo = eri_mo.reshape(nocc,nmo,nmo,nmo)
 
         a = a + numpy.einsum('iabj->iajb', eri_mo[:nocc,nocc:,nocc:,:nocc])
@@ -81,9 +81,9 @@ class Prop_pol:
         b = b - numpy.einsum('jaib->iajb', eri_mo[:nocc,nocc:,:nocc,nocc:])
 
         
-        m = a #+ b
+        m = a + b
         m = m.reshape(nocc*nvir,nocc*nvir, order='C')
-        m_y = a #- b
+        m_y = a - b
         m_y = m_y.reshape(nocc*nvir,nocc*nvir, order='C')
         
         return m, m_y
@@ -174,10 +174,6 @@ class Prop_pol:
         return resp * nist.ALPHA**4
 
 
-
-    
-
-
     def kernel(self):
         """This function multiplicates the response by the constants
         in order to get the isotropic J-coupling J between all nuclei in molecule        
@@ -205,7 +201,3 @@ class Prop_pol:
         tools.dump_mat.dump_tri(mol.stdout, jtensor, label)
         
         return jtensor
-
-
-
-

@@ -50,12 +50,13 @@ class Cloppa:
 
             self.atm1dic, self.atm2dic = uniq_atoms(nuc_pair=self.nuc_pair)
             #here we made a SCF (in the canonical basis) calculation of the molecule
-            self.mf = scf.RHF(self.mol_loc).run()
+            
 
         @property
         def fock_matrix_canonical(self):
-                self.fock_canonical = self.mf.get_fock()
-                return self.fock_canonical
+            self.mf = scf.RHF(self.mol_loc).run()
+            self.fock_canonical = self.mf.get_fock()
+            return self.fock_canonical
 
 
         def M(self,triplet=True, energy_m=True, pzoa=False):

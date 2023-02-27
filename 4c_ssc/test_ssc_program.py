@@ -177,12 +177,14 @@ def solve_mo1(sscobj, mo_energy=None, mo_coeff=None, mo_occ=None,
         
     if with_cphf:
         if callable(with_cphf):
-            vind = with_cphf
             print('A')
+            vind = with_cphf
+            
 
         else:
             vind = gen_vind(sscobj._scf, mo_coeff, mo_occ)
             print('B')
+        print('aquí se genera el mo1')
         mo1, mo_e1 = cphf.solve(vind, mo_energy, mo_occ, h1, None,
                                 sscobj.max_cycle_cphf, sscobj.conv_tol,
                                 verbose=log)
@@ -304,7 +306,7 @@ scf.dhf.UHF.SSC = scf.dhf.UHF.SpinSpinCoupling = lib.class_as_method(SSC)
 
 
 mol_h2o = gto.M(
-            atom = ''' O 1 0.5 0; H1 0 0 0; H2 0 0 1''',
+            atom = ''' O 2 0 0; H1 1 0 0; H2 1 0 1''',
             basis = 'sto-3g')
 
 rhf = scf.DHF(mol_h2o).run()

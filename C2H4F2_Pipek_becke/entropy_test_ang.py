@@ -56,12 +56,12 @@ for ang in range(0,18,1):
 	mol, mo_coeff, mo_occ = extra_functions(molden_file=f"C2H4F2_{ang*10}_ccpvdz_Cholesky_PM.molden").extraer_coeff
 
 	inv_prop = M_matrix(mol=mol, mo_coeff=mo_coeff, mo_occ=mo_occ,
-				occ = [  lig1[ang], lig2[ang]],
-				vir = [ v1_1[ang],v3_1[ang],v2_1[ang], v4_1[ang],v5_1[ang],
-						v1_2[ang],v3_2[ang],v2_2[ang], v4_2[ang],v5_2[ang]])   
-	ent_ia = inv_prop.entropy_ia
+				occ = [  lig1[ang], par_lib_1[ang], par_lib_2[ang],  lig2[ang]],
+				vir = [ v1_1[ang],v3_1[ang],v2_1[ang],
+						v1_2[ang],v3_2[ang],v2_2[ang]])   
+	ent_ia = inv_prop.entropy_iaia
 	ent_iajb = inv_prop.entropy_iajb
-	ent_jb = inv_prop.entropy_jb
+	ent_jb = inv_prop.entropy_jbjb
 	mutual = ent_ia + ent_jb - ent_iajb
 	with open(text, 'a') as f:
 		f.write(f'{ang*10} {ent_ia} {ent_jb} {ent_iajb} {mutual} \n')

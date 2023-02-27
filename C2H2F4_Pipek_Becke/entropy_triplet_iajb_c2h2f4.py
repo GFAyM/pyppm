@@ -6,7 +6,7 @@ if module_path not in sys.path:
 	sys.path.append(module_path)
 
 from src.help_functions import extra_functions
-from src.ppe_3 import M_matrix
+from src.ppe import M_matrix
 
 from src.help_functions import extra_functions
 import matplotlib.pyplot as plt
@@ -60,8 +60,8 @@ for ang in range(0,18,1):
 
     inv_prop = M_matrix(mol=mol, mo_coeff=mo_coeff, mo_occ=mo_occ,
                 occ = [  occ1[ang], occ2[ang]],
-                vir = [ v1_1[ang], v2_1[ang],v3_1[ang],
-                        v1_2[ang], v2_2[ang],v3_2[ang]])
+                vir = [ v1_1[ang], v2_1[ang],v4_1[ang],v3_1[ang],v5_1[ang],
+                        v1_2[ang], v2_2[ang],v4_2[ang],v3_2[ang],v5_2[ang]])
     
     ent_ia = inv_prop.entropy_iaia
     ent_iajb = inv_prop.entropy_iajb
@@ -84,9 +84,8 @@ fig, (ax1, ax2,ax3,ax4) = plt.subplots(1, 4, figsize=(18,8))
 
 ax1.plot(data_J.ang, data_J.ent_ia, 'b>-', label='$^{FC}J_{ij}(H-H)$' )#f'a={orb1} b={orb2}')
 
-plt.suptitle(r'''Triplet Quantum Entanglement in C$_2$H$_2$F$_4$ 
-using Localized Molecular Orbitals Pipek-Mezey with Becke parcial charge
-with 3 anti-ligants in each excitation''')
+plt.suptitle(r'''Quantum Entanglement between excitation in C$_2$H$_2$F$_4$ 
+using Localized Molecular Orbitals Pipek-Mezey with Becke parcial charge''')
 
 ax1.set_xlabel('Dihedral angle')
 ax1.set_ylabel('Entanglement')
@@ -104,7 +103,7 @@ ax3.set_title('S$_{iajb}$')# f'a={orb1}, b={orb2}')
 ax4.set_xlabel('Dihedral angle')
 ax4.plot(data_J.ang, data_J.mutual, 'b>-', label='$^{FC}J_{ij}(F-F)$' )#f'a={orb1} b={orb2}')
 ax4.set_title('Mutual Information ')# f'a={orb1}, b={orb2}')
-#plt.savefig('entanglement_triplet_c2h4f2_v123.png')
+plt.savefig('entanglement_triplet_c2h4f2.png')
 plt.show()
 #if os.path.exists('entanglement_triplet_c2f4h2.txt'):
 #    os.remove('entanglement_triplet_c2f4h2.txt')
