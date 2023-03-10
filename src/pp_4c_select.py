@@ -277,7 +277,4 @@ class Prop_pol:
         gyro2 = [get_nuc_g_factor(mol.atom_symbol(atom2[0]))]
 
         jtensor = numpy.einsum('i,i,j->i', iso_ssc, gyro1, gyro2)
-        #label = ['%2d %-2s'%(ia, mol.atom_symbol(ia)) for ia in range(natm)]
-        #tools.dump_mat.dump_tri(mol.stdout, jtensor, label)
-        
         return jtensor

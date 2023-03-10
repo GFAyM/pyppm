@@ -327,34 +327,8 @@ class Prop_pol:
         unit = au2Hz * nuc_magneton ** 2
         iso_ssc = unit * numpy.einsum('kii->k', prop) / 3 
         natm = self.mol.natm
-        gyro1 = self._atom_gyro_list_2(atom1[0])
+        gyro1 = get_nuc_g_factor(atom1[0])
         gyro2 = self._atom_gyro_list_2(atom2[0])
         jtensor = numpy.einsum('i,i,j->i', iso_ssc, gyro1, gyro2)
         return jtensor
 
-    @property
-    def a_b(self):
-        r'''A and B matrices for TDDFT response function.
-
-        A[i,a,j,b] = \delta_{ab}\delta_{ij}(E_a - E_i) + (ia||bj)
-        B[i,a,j,b] = (ia||jb)
-        '''
-        #nao, nmo = self.mo_coeff.shape
-        mo = numpy.hstack((self.orbo,self.orbv))
-        nmo = self.nocc + self.nvir
-
-
-        e_ia = lib.direct_sum('a-i->ia', self.mo_energy[self.viridx], self.mo_energy[self.occidx])
-        a = numpy.diag(e_ia.ravel()).reshape(self.nocc,self.nvir,self.nocc,self.nvir)
-        b = numpy.zeros_like(a)
-
-        eri_mo = ao2mo.general(self.mol, [self.orbo,mo,mo,mo], compact=False)
-        eri_mo = eri_mo.reshape(self.nocc,nmo,nmo,nmo)
-        
-        a = a + numpy.einsum('iabj->iajb', eri_mo[:self.nocc,self.nocc:,self.nocc:,:self.nocc])
-        a = a - numpy.einsum('ijba->iajb', eri_mo[:self.nocc,:self.nocc,self.nocc:,self.nocc:])
-        b = b + numpy.einsum('iajb->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
-        b = b - numpy.einsum('jaib->iajb', eri_mo[:self.nocc,self.nocc:,:self.nocc,self.nocc:])
-        print(self.nocc,self.nvir)
-
-        return a, b
