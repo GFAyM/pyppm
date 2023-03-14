@@ -52,11 +52,11 @@ v5_2 = [46, 51, 50, 49, 50, 44, 50, 49, 51, 49, 51, 50, 51, 49, 48, 49, 49, 50, 
 for ang in range(0,19,1):
     mol, mo_coeff, mo_occ = extra_functions(molden_file=f"C2H4F2_{ang*10}_ccpvdz_Cholesky_PM.molden").extraer_coeff
 
-    occ = [par_lib_1[ang],lig1[ang], par_libx_1[ang], par_liby_1[ang],
-           par_lib_2[ang],lig2[ang], par_libx_2[ang], par_liby_2[ang]]
-    vir = [v1_1[ang],v2_1[ang],v3_1[ang],
-           v1_2[ang],v2_2[ang],v3_2[ang]]
-    m_obj = M_matrix(occ=occ, vir=vir, mo_coeff=mo_coeff, mol=mol, mo_occ=mo_occ)
+    occ = [lig1[ang],par_liby_1[ang],par_libx_1[ang] ,# , ,    # lig1[ang] ,
+           lig2[ang],par_liby_2[ang],par_libx_2[ang]]#, par_libx_2[ang], par_liby_2[ang] ]  #  lig2[ang] ,
+    vir = [v1_1[ang],v2_1[ang], v3_1[ang], v4_1[ang], v5_1[ang],  
+           v1_2[ang],v2_2[ang], v3_2[ang], v4_2[ang], v5_2[ang]]
+    m_obj = M_matrix(occ=occ, vir=vir, mo_coeff=mo_coeff, mol=mol, mo_occ=mo_occ, triplet=False)
     ent_iajb = m_obj.entropy_ab  
     ent_ia = m_obj.entropy_iaia
     ent_jb = m_obj.entropy_jbjb
@@ -71,27 +71,27 @@ df.columns = ['ang', 'ent_iaia', 'ent_iajb', 'ent_jbjb', 'mutual', 'diag0']
 
 fig, (ax1,ax2,ax3,ax4, ax5) = plt.subplots(1, 5, figsize=(24,8))
 #plt.figure(figsize=(10,8))
-ax1.plot(df.ang, df.ent_iaia, 'b>-', label='ia') #f'a={orb1} b={orb2}')
-ax1.set_title(r'$S_{ia}(1)$')
+ax1.plot(df.ang, df.ent_iaia, 'b>-', label=r'$S_{ia}(1)$') #f'a={orb1} b={orb2}')
+#ax1.set_title(r'$S_{ia}(1)$')
 ax1.set_xlabel('Dihedral angle')
-#ax1.legend()
-ax2.plot(df.ang, df.ent_jbjb, 'b>-', label='ia') #f'a={orb1} b={orb2}')
-ax2.set_title(r'$S_{jb}(1)$')
+ax1.legend()
+ax2.plot(df.ang, df.ent_jbjb, 'b>-', label=r'$S_{jb}(1)$') #f'a={orb1} b={orb2}')
+#ax2.set_title(r'$S_{jb}(1)$')
 ax2.set_xlabel('Dihedral angle')
-#ax2.legend()
-ax3.plot(df.ang, df.ent_iajb, 'b>-', label='ia') #f'a={orb1} b={orb2}')
-ax3.set_title(r'$S_{iajb}(2)$')
+ax2.legend()
+ax3.plot(df.ang, df.ent_iajb, 'b>-', label=r'$S_{iajb}(2)$') #f'a={orb1} b={orb2}')
+#ax3.set_title(r'$S_{iajb}(2)$')
 ax3.set_xlabel('Dihedral angle')
-#ax3.legend()
-ax4.plot(df.ang, df.ent_iaia, 'b>-', label='ia') #f'a={orb1} b={orb2}')
+ax3.legend()
+ax4.plot(df.ang, df.mutual, 'b>-', label=r'Mutual Information') #f'a={orb1} b={orb2}')
 ax4.set_xlabel('Dihedral angle')
-ax4.set_title('I')
-
-ax5.plot(df.ang, df.diag0, 'b>-', label='ia') #f'a={orb1} b={orb2}')
+ax4.set_title(r'$S_{ia}(1)$+$S_{ij}(1)$-$S_{ia,jb}(2)$')
+ax4.legend()
+ax5.plot(df.ang, df.diag0, 'b>-', label=r'Diag=0') #f'a={orb1} b={orb2}')
 ax5.set_xlabel('Dihedral angle')
-ax5.set_title(r'S_{ia,jb} diag=0')
+ax5.set_title(r'$S_{ia,jb}(2)$ ')
+ax5.legend()
 
-#ax4.legend()
-plt.suptitle(r'Medidas de entrelazamiento cuántico triplete utilizando ligantes y pares libres 2s y 2p$_{xy}$')#, 2p$_y$ y 2p$_z$')
-#plt.savefig('C2H4F2_entanglement_triplet_all.png')
+plt.suptitle(r'Medidas de entrelazamiento cuántico singlete utilizando Ligantes y PL 2pxy ')#, 2p$_y$ y 2p$_z$')
+plt.savefig('C2H4F2_entanglement_singlet_ligant_PL_pxy.png')
 plt.show()  

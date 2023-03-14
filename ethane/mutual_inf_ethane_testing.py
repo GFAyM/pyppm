@@ -52,7 +52,7 @@ for ang in range(0,18,1):
     #print(m_obj.m_jbjb)
     #ent_jb = m_obj.entropy_jbjb
     #mutual = ent_ia + ent_jb - ent_iajb
-    ent = m_obj.entropy_iajb_diagonal
+    ent = m_obj.entropy_ab
     #print(ent_ia,ent_jb)
             #print(cruzada)
     with open(text, 'a') as f:

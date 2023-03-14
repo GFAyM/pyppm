@@ -48,21 +48,20 @@ for ang in range(0,19,1):
     vir = [H3_2s[ang],H3_2pz[ang], H3_2px[ang], H3_2py[ang],
            H7_2s[ang],H7_2pz[ang], H7_2px[ang], H7_2py[ang]]
     m_obj = M_matrix(occ=occ, vir=vir, mo_coeff=mo_coeff_loc, mol=mol_loc, mo_occ=mo_occ_loc)
-    ent = m_obj.entropy_ab
-    ent_iajb = m_obj.entropy_iajb  
+    ent_iajb = m_obj.entropy_ab  
     ent_ia = m_obj.entropy_iaia
     ent_jb = m_obj.entropy_jbjb
-    mutual = ent_ia + ent_jb - ent
+    mutual = ent_ia + ent_jb - ent_iajb
     #print(ent_ia,ent_jb)
             #print(cruzada)
     with open(text, 'a') as f:
-        f.write(f'{ang*10} {ent_ia} {ent} {ent_jb} {mutual} {ent_iajb} \n') #{np.round(cruzada, decimals=10)}
+        f.write(f'{ang*10} {ent_ia} {ent_iajb} {ent_jb} {mutual} \n') #{np.round(cruzada, decimals=10)}
 
 df = pd.read_csv(text, sep='\s+', header=None)
 
-df.columns = ['ang', 'ent_iaia', 'ent_ab', 'ent_jbjb', 'mutual', 'ent_iajb']
+df.columns = ['ang', 'ent_iaia', 'ent_iajb', 'ent_jbjb', 'mutual']
 
-fig, (ax1,ax2,ax3,ax4) = plt.subplots(1, 5, figsize=(24,8))
+fig, (ax1,ax2,ax3,ax4) = plt.subplots(1, 4, figsize=(17,8))
 #plt.figure(figsize=(10,8))
 ax1.plot(df.ang, df.ent_iaia, 'b>-', label='ia') #f'a={orb1} b={orb2}')
 ax1.set_title(r'$S_{ia}(1)$')
@@ -72,7 +71,7 @@ ax2.plot(df.ang, df.ent_jbjb, 'b>-', label='ia') #f'a={orb1} b={orb2}')
 ax2.set_title(r'$S_{jb}(1)$')
 ax2.set_xlabel('Dihedral angle')
 #ax2.legend()
-ax3.plot(df.ang, df.ent_ab, 'b>-', label='ia') #f'a={orb1} b={orb2}')
+ax3.plot(df.ang, df.ent_iajb, 'b>-', label='ia') #f'a={orb1} b={orb2}')
 ax3.set_title(r'$S_{iajb}(2)$')
 ax3.set_xlabel('Dihedral angle')
 #ax3.legend()
@@ -80,13 +79,7 @@ ax4.plot(df.ang, df.ent_iaia, 'b>-', label='ia') #f'a={orb1} b={orb2}')
 #ax4.set_title(r'I = $S_{ia}$(1) + S$_{jb}$(1) - S$_{ia,jb}$(2)')
 ax4.set_xlabel('Dihedral angle')
 ax4.set_title('I')
-ax4.plot(df.ang, df.ent_iaia, 'b>-', label='ia') #f'a={orb1} b={orb2}')
-#ax4.set_title(r'I = $S_{ia}$(1) + S$_{jb}$(1) - S$_{ia,jb}$(2)')
-ax4.set_xlabel('Dihedral angle')
-ax4.set_title(r'$S_{iajb}(2)$ diag=0')
-
 #ax4.legend()
-plt.suptitle(r'''Medidas de entrelazamiento cuántico utilizando los principales antiligantes
-            y normalizado con la $\rho$ completa''')#, 2p$_y$ y 2p$_z$')
-plt.savefig('ethane_entanglement_normalizado.png')
+plt.suptitle('Medidas de entrelazamiento cuántico utilizando los antiligantes 1s, 2s, 2p$_z$')#, 2p$_y$ y 2p$_z$')
+plt.savefig('ethane_entanglement_new_normalization.png')
 plt.show()  
