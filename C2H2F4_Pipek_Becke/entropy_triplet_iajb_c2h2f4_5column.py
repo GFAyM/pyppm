@@ -55,8 +55,8 @@ for ang in range(0,18,1):
 
     inv_prop = M_matrix(mol=mol, mo_coeff=mo_coeff, mo_occ=mo_occ,
                 occ = [  occ1[ang], occ2[ang]],
-                vir = [ v6_1[ang], v2_1[ang],v3_1[ang],v5_1[ang],v4_1[ang], #,, 
-                        v6_2[ang], v2_2[ang],v3_2[ang],v5_2[ang],v4_2[ang]]) #,,  
+                vir = [ v6_1[ang], v2_1[ang],v1_1[ang],#v5_1[ang],v4_1[ang], #,, 
+                        v6_2[ang], v2_2[ang],v1_2[ang]])#v5_2[ang],v4_2[ang]]) #,,  
     ent_iajb = inv_prop.entropy_ab
     ent_ia = inv_prop.entropy_iaia
     ent_iajb_diag0 = inv_prop.entropy_iajb
@@ -102,7 +102,9 @@ ax3.legend()
 ax4.set_xlabel('Dihedral angle')
 ax4.plot(data_J.ang, data_J.mutual, 'b>-', label='Mutual Information' )#f'a={orb1} b={orb2}')
 ax4.set_title('Mutual Information ')# f'a={orb1}, b={orb2}')
-ax4.set_title(r'$S_{ia}(1)$ + $S_{jb}(1)$ - $S_{iajb}(2)$')
+#ax4.set_title(r'$S_{ia}(1)$ + $S_{jb}(1)$ - $S_{iajb}(2)$')
+ax4.set_title(r'I')
+
 
 ax5.set_xlabel('Dihedral angle')
 ax5.plot(data_J.ang, data_J.ent_iajb_diag0, 'b>-', label=r'$Diag=0$' )#f'a={orb1} b={orb2}')

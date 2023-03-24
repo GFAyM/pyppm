@@ -52,8 +52,8 @@ v5_2 = [46, 51, 50, 49, 50, 44, 50, 49, 51, 49, 51, 50, 51, 49, 48, 49, 49, 50, 
 for ang in range(0,19,1):
     mol, mo_coeff, mo_occ = extra_functions(molden_file=f"C2H4F2_{ang*10}_ccpvdz_Cholesky_PM.molden").extraer_coeff
 
-    occ = [lig1[ang],par_liby_1[ang],par_libx_1[ang] ,# , ,    # lig1[ang] ,
-           lig2[ang],par_liby_2[ang],par_libx_2[ang]]#, par_libx_2[ang], par_liby_2[ang] ]  #  lig2[ang] ,
+    occ = [par_liby_1[ang],par_libx_1[ang],lig1[ang], par_lib_1[ang],# , ,    # lig1[ang] ,
+           par_liby_2[ang],par_libx_2[ang],lig2[ang], par_lib_2[ang]]#, par_libx_2[ang], par_liby_2[ang] ]  #  lig2[ang] ,
     vir = [v1_1[ang],v2_1[ang], v3_1[ang], v4_1[ang], v5_1[ang],  
            v1_2[ang],v2_2[ang], v3_2[ang], v4_2[ang], v5_2[ang]]
     m_obj = M_matrix(occ=occ, vir=vir, mo_coeff=mo_coeff, mol=mol, mo_occ=mo_occ, triplet=False)
@@ -61,7 +61,7 @@ for ang in range(0,19,1):
     ent_ia = m_obj.entropy_iaia
     ent_jb = m_obj.entropy_jbjb
     ent_iajb_diag0 = m_obj.entropy_iajb
-    mutual = ent_ia + ent_jb - ent_iajb
+    mutual = -ent_ia - ent_jb + ent_iajb
     with open(text, 'a') as f:
         f.write(f'{ang*10} {ent_ia} {ent_iajb} {ent_jb} {mutual} {ent_iajb_diag0} \n') 
 
@@ -92,6 +92,6 @@ ax5.set_xlabel('Dihedral angle')
 ax5.set_title(r'$S_{ia,jb}(2)$ ')
 ax5.legend()
 
-plt.suptitle(r'Medidas de entrelazamiento cuántico singlete utilizando Ligantes y PL 2pxy ')#, 2p$_y$ y 2p$_z$')
-plt.savefig('C2H4F2_entanglement_singlet_ligant_PL_pxy.png')
+plt.suptitle(r'Quantum entanglement measures with Singlet Principal Perturbator using occupied ligant and 2p$_{xy}$ free pair')#, 2p$_y$ y 2p$_z$')
+plt.savefig('C2H4F2_entanglement_singlet_ligant_PL_pxy_.png')
 plt.show()  

@@ -52,10 +52,10 @@ v5_2 = [46, 51, 50, 49, 50, 44, 50, 49, 51, 49, 51, 50, 51, 49, 48, 49, 49, 50, 
 for ang in range(0,19,1):
     mol, mo_coeff, mo_occ = extra_functions(molden_file=f"C2H4F2_{ang*10}_ccpvdz_Cholesky_PM.molden").extraer_coeff
 
-    occ = [par_lib_1[ang],lig1[ang], par_libx_1[ang], par_liby_1[ang],
-           par_lib_2[ang],lig2[ang], par_libx_2[ang], par_liby_2[ang]]
-    vir = [v1_1[ang],v2_1[ang],v3_1[ang],
-           v1_2[ang],v2_2[ang],v3_2[ang]]
+    occ = [ lig1[ang],#,par_lib_1[ang],par_libx_1[ang], par_liby_1[ang],
+            lig2[ang]]#,par_lib_2[ang],par_libx_2[ang], par_liby_2[ang]]
+    vir = [v1_1[ang],v2_1[ang],v3_1[ang],#,v4_1[ang],v5_1[ang],
+           v1_2[ang],v2_2[ang],v3_2[ang]]#,v4_2[ang],v5_2[ang]]
     m_obj = M_matrix(occ=occ, vir=vir, mo_coeff=mo_coeff, mol=mol, mo_occ=mo_occ)
     ent_iajb = m_obj.entropy_ab  
     ent_ia = m_obj.entropy_iaia

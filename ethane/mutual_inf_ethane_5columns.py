@@ -45,14 +45,14 @@ for ang in range(0,19,1):
     mol_loc, mo_coeff_loc, mo_occ_loc = extra_functions(molden_file=f"C2H6_{ang*10}_ccpvdz_Cholesky_PM.molden").extraer_coeff
 
     occ = [H3_1s_occ[ang],H7_1s_occ[ang]]
-    vir = [H3_1s[ang],H3_2s[ang],H3_2pz[ang], H3_2px[ang], H3_2py[ang],
-           H7_1s[ang],H7_2s[ang],H7_2pz[ang], H7_2px[ang], H7_2py[ang]]
+    vir = [H3_1s[ang],H3_2s[ang],H3_2pz[ang],
+           H7_1s[ang],H7_2s[ang],H7_2pz[ang]]
     m_obj = M_matrix(occ=occ, vir=vir, mo_coeff=mo_coeff_loc, mol=mol_loc, mo_occ=mo_occ_loc)
     ent = m_obj.entropy_ab
     ent_iajb = m_obj.entropy_iajb  
     ent_ia = m_obj.entropy_iaia
     ent_jb = m_obj.entropy_jbjb
-    mutual = -ent_ia - ent_jb + ent
+    mutual = ent_ia + ent_jb - ent
     #print(ent_ia,ent_jb)
             #print(cruzada)
     with open(text, 'a') as f:
@@ -86,7 +86,6 @@ ax5.set_xlabel('Dihedral angle')
 ax5.set_title(r'$S_{iajb}(2)$ diag=0')
 
 #ax4.legend()
-plt.suptitle(r'''Medidas de entrelazamiento cuántico utilizando los principales antiligantes
-            y normalizado con cada $\rho$''')#, 2p$_y$ y 2p$_z$')
-plt.savefig('ethane_entanglement_normalizado_old.png')
+plt.suptitle(r'''Quantum entanglement measures between LMOs that contribute the most''')#, 2p$_y$ y 2p$_z$')
+plt.savefig('ethane_entanglement_normalizado.png')
 plt.show()  

@@ -52,16 +52,16 @@ v5_2 = [46, 51, 50, 49, 50, 44, 50, 49, 51, 49, 51, 50, 51, 49, 48, 49, 49, 50, 
 for ang in range(0,19,1):
     mol, mo_coeff, mo_occ = extra_functions(molden_file=f"C2H4F2_{ang*10}_ccpvdz_Cholesky_PM.molden").extraer_coeff
 
-    occ = [lig1[ang], par_lib_1[ang],par_libx_1[ang], par_liby_1[ang],   
-           lig2[ang], par_lib_2[ang],par_libx_2[ang], par_liby_2[ang] ]
+    occ = [lig1[ang], par_lib_1[ang],#par_libx_1[ang], par_liby_1[ang],   
+           lig2[ang], par_lib_2[ang]]#,par_libx_2[ang], par_liby_2[ang] ]
     vir = [v1_1[ang],v2_1[ang], v3_1[ang], v4_1[ang], v5_1[ang],  
            v1_2[ang],v2_2[ang], v3_2[ang], v4_2[ang], v5_2[ang]]
     m_obj = M_matrix(occ=occ, vir=vir, mo_coeff=mo_coeff, mol=mol, mo_occ=mo_occ)
     ent_iajb = m_obj.entropy_ab  
-    ent_ia = m_obj.entropy_iaia
-    ent_jb = m_obj.entropy_jbjb
+    ent_ia = m_obj.entropy_iaia  
+    ent_jb = m_obj.entropy_jbjb  
     ent_iajb_diag0 = m_obj.entropy_iajb
-    mutual = ent_ia + ent_jb - ent_iajb
+    mutual = -ent_ia - ent_jb + ent_iajb
     with open(text, 'a') as f:
         f.write(f'{ang*10} {ent_ia} {ent_iajb} {ent_jb} {mutual} {ent_iajb_diag0} \n') 
 
@@ -85,13 +85,14 @@ ax3.set_xlabel('Dihedral angle')
 ax3.legend()
 ax4.plot(df.ang, df.mutual, 'b>-', label=r'Mutual Information') #f'a={orb1} b={orb2}')
 ax4.set_xlabel('Dihedral angle')
-ax4.set_title(r'$S_{ia}(1)$+$S_{ij}(1)$-$S_{ia,jb}(2)$')
+#ax4.set_title(r'$S_{ia}(1)$+$S_{ij}(1)$-$S_{ia,jb}(2)$')
+ax4.set_title('I')
 ax4.legend()
 ax5.plot(df.ang, df.diag0, 'b>-', label=r'Diag=0') #f'a={orb1} b={orb2}')
 ax5.set_xlabel('Dihedral angle')
 ax5.set_title(r'$S_{ia,jb}(2)$ ')
 ax5.legend()
 
-plt.suptitle(r'Medidas de entrelazamiento cuántico triplete utilizando Ligantes y Pares Libres 2s, 2px, 2py')#, 2p$_y$ y 2p$_z$')
-plt.savefig('C2H4F2_entanglement_triplet_lig_PL2s_2pxy.png')
+plt.suptitle(r'Quantum entanglement measures using lingants and free pairs')#, 2p$_y$ y 2p$_z$')
+plt.savefig('C2H4F2_entanglement_triplet__.png')
 plt.show()  
