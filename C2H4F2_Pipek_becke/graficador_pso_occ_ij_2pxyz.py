@@ -8,17 +8,14 @@ data_J = pd.read_csv(text, sep='\s+', header=None)
 
 data_J.columns = ['ang', 'pso', 'a', 'b']
 
-occ_lmo = ['F3_2pz','F7_2pz','F3_LPx','F7_LPx','F3_LPy','F7_LPy']#,'F3_2s', 'F7_2s']
-occ_lmo = ['F3_LPx','F7_LPx','F3_LPy','F7_LPy']#,'F3_2s', 'F7_2s']
-#occ_lmo = ['F3_2pz','F7_2pz']#,'F3_2s', 'F7_2s']
+occ_lmo = ['F3_2pz','F7_2pz','F3_LPx','F7_LPx','F3_LPy','F7_LPy','F3_2s', 'F7_2s']
+#occ_lmo = ['F3_2pz','F7_2pz','F3_LPx','F7_LPx','F3_LPy','F7_LPy']
 
+occ_lmo_1 = ['F3_2pz','F3_LPx','F3_LPy','F3_2s']
+#occ_lmo_1 = ['F3_2pz','F3_LPx','F3_LPy']
 
-occ_lmo_1 = ['F3_2pz','F3_LPx','F3_LPy']#,'F3_2s']
-occ_lmo_1 = ['F3_LPx','F3_LPy']#,'F3_2s']
-
-occ_lmo_2 = ['F7_2pz','F7_LPx','F7_LPy']#, 'F7_2s']
-occ_lmo_2 = ['F7_LPx','F7_LPy']#, 'F7_2s']
-
+occ_lmo_2 = ['F7_2pz','F7_LPx','F7_LPy','F7_2s']
+#occ_lmo_2 = ['F7_2pz','F7_LPx','F7_LPy']
 
 df_F_C = data_J[(data_J.a.str.contains('F3_2pz') == True) & (data_J.b.str.contains('F7_2pz') == True)].reset_index()
 df_F_C.pso = 0
@@ -80,7 +77,7 @@ ax1.legend()
 ax1.set_ylabel('Hz')
 ax1.set_xlabel('Dihedral angle')
 plt.suptitle('PSO contribution to $^3J(F-F)_{i,j}$ in C$_2$F$_2$H$_4$ with 2p occupied LMOs')
-ax1.set_title(r'i=[F$_1$2p$_{xy}$, F$_2$2p$_{xy}$]')# f'a={orb1}, b={orb2}')
+ax1.set_title(r'i=[F$_1$2p$_{zxy},2s$, F$_2$2p$_{zxy},2s$]')# f'a={orb1}, b={orb2}')
 
 
 
@@ -90,8 +87,8 @@ ax2.plot(ang, PSO, 'g<-', label='$^{PSO}J(F-F)$')
 ax2.legend()
 ax2.set_ylabel('Hz')
 ax2.set_xlabel('Dihedral angle')
-plt.suptitle('PSO contribution to $J(F-F)_{i,j}$ in C$_2$F$_2$H$_4$ with 2p$_{xy}$ occupied LMOs')
-ax2.set_title(r'i=F$_1$2p$_{xy}$, j=F$_1$2p$_{xy}$')# f'a={orb1}, b={orb2}')
+plt.suptitle('PSO contribution to $J(F-F)_{i,j}$ in C$_2$F$_2$H$_4$ with 2p$_{zxy}$ occupied LMOs and lone pair 2s')
+ax2.set_title(r'i=F$_1$2p$_{zxy},2s$, j=F$_1$2p$_{zxy},2s$')# f'a={orb1}, b={orb2}')
 #plt.savefig(f'FC_occ_C2F2H4_sum_2.png', dpi=200)
 
 
@@ -100,15 +97,15 @@ ax3.set_xlabel('Dihedral angle')
 ax3.plot(ang, df_F_C_2.pso, 'b>-', label='$^{PSO}J_{ij}(F-F)$' )#f'a={orb1} b={orb2}')
 ax3.plot(ang, PSO, 'g<-', label='$^{PSO}J(F-F)$')
 ax3.legend()
-ax3.set_title(r'i=F$_2$2p$_{xy}$, j=F$_2$2p$_{xy}$')# f'a={orb1}, b={orb2}')
+ax3.set_title(r'i=F$_2$2p$_{zxy},2s$, j=F$_2$2p$_{zxy},2s$')# f'a={orb1}, b={orb2}')
 
 #ax3.set_ylabel('Hz')
 ax4.set_xlabel('Dihedral angle')
 ax4.plot(ang, df_F_C_3.pso, 'b>-', label='$^{PSO}J_{ij}(F-F)$' )#f'a={orb1} b={orb2}')
 ax4.plot(ang, PSO, 'g<-', label='$^{PSO}J(F-F)$')
 ax4.legend(loc=8)
-ax4.set_title(r'i=F$_1$2p$_{xy}$, j=F$_2$2p$_{xy}$')# f'a={orb1}, b={orb2}')
+ax4.set_title(r'i=F$_1$2p$_{zxy}$,2s, j=F$_2$2p$_{zxy},2s$')# f'a={orb1}, b={orb2}')
 
-plt.savefig('C2F2H4_pso_ij_2pxy.png')
+plt.savefig('C2F2H4_pso_ij_2pzxy_2s.png')
 plt.show()    
 
