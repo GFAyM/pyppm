@@ -101,9 +101,18 @@ for orb1 in occ_lmo1:
         df_F_C_3.fcsd += df.reset_index().fcsd
 
 
+text = 'mechanism_C2H4F2_ccpvdz.txt'
+data_tot_J = pd.read_csv(text, sep='\s+', header=None)
+
+data_tot_J.columns = ['ang', 'fcsd', 'fc', 'pso']
+
+
+
 fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(16,10))
 ax1.plot(ang, df_F_C.fcsd, 'b>-', label='$^{FC+SD}J_{ia,jb}(F-F)$' )#f'a={orb1} b={orb2}')
 ax1.plot(ang, df_F_C_3.fcsd, 'g<-', label='$^{FC+SD}J_{ij}(F-F)$')
+ax1.plot(ang, data_tot_J.fcsd, 'm<-', label='$^{FC+SD}J(F-F)$')
+
 ax1.set_ylabel('Hz')
 ax1.set_xlabel('Dihedral angle')
 ax1.set_title('virt = [2p$_z$, 3p$_z$, 3s, 3p$_{xy}$]')# f'a={orb1}, b={orb2}')
@@ -137,7 +146,7 @@ ax4.legend()
 plt.suptitle('FC+SD contribution of $^3J(F_1-F_2)_{ia,jb}$ to $^3J(F_1-F_2)_{i,j}$ in H$_2$C$_4$F$_2$.')
 
 
-plt.savefig(f'FCSD_iajb_C2H4F2.png', dpi=200)
+#plt.savefig(f'FCSD_iajb_C2H4F2.png', dpi=200)
 
 
 plt.show()               

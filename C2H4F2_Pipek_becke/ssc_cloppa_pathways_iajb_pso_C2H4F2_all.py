@@ -14,7 +14,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pyscf import scf
 
-file = 'cloppa_pso_ij_C2H4F2.txt'
+file = 'cloppa_pso_iajb_C2H4F2_all.txt'
 
 if os.path.exists(file):
 	os.remove(file)

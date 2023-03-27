@@ -5,7 +5,6 @@ module_path = os.path.abspath(os.path.join('..'))
 if module_path not in sys.path:
 	sys.path.append(module_path)
 
-from src.polaritization_propagator import Prop_pol as pp
 from src.help_functions import extra_functions
 from src.cloppa import Cloppa
 import plotly.express as px
@@ -14,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pyscf import scf
 
-file = 'cloppa_pso_ij_C2H4F2.txt'
+file = 'cloppa_pso_iajb_C2H4F2_all.txt'
 
 if os.path.exists(file):
 	os.remove(file)
@@ -30,6 +29,7 @@ par_libx_2 = [4, 5, 6, 6, 6, 6, 6, 6, 5, 5, 5, 6, 6, 6, 6, 6, 6, 5, 4]
 
 par_liby_1 = [7, 6, 5, 5, 5, 5, 5, 5, 6, 7, 6, 5, 5, 5, 5, 5, 5, 6, 7]
 par_liby_2 = [6, 7, 7, 7, 7, 8, 7, 7, 7, 6, 7, 7, 7, 7, 7, 7, 7, 7, 6]
+
 #       10  11  12  13  14  15  16  17  18  19  20  21  22  23  24  25  26  27
 #occ_lmo = [(occ1,'O-H1'), (occ2,'O-H2')]
 
@@ -55,14 +55,9 @@ occ_lmo = [(lig1,'F3_2pz'), (lig2,'F7_2pz'), (par_lib_1,'F3_2p'), (par_lib_2,'F7
 
 
 
+
 lmo_vir = [(v1_1,"F3_2pz"),(v1_2,"F7_2pz"),(v2_1,"F3_3pz"),(v2_2,"F7_3pz"), (v3_1,"F3_3s"),(v3_2,"F7_3s"),
 			(v4_1,"F3_3py"),(v4_2,"F7_3py"), (v5_1,"F3_3px"), (v5_2,"F7_3px")]
-
-lmo_vir1 = [(v1_1,"F3_2pz_"),(v2_1,"F3_3pz_"),(v3_1,"F3_3s_"),
-			(v4_1,"F3_3py_"),(v5_1,"F3_3px_")]
-
-lmo_vir2 = [(v1_2,"F7_2pz_"),(v2_2,"F7_3pz_"), (v3_2,"F7_3s_"),
-			(v4_2,"F7_3py_"),(v5_2,"F7_3px_")]
 
 
 
@@ -78,10 +73,12 @@ for ang in range(0,18,1):
 	p = np.linalg.inv(m)
 	for i, ii in occ_lmo:
 		for j, jj in occ_lmo:
-			ssc = cloppa_obj.kernel_pathway(FC=False, FCSD=False, PSO=True,
-											princ_prop=p,
-											n_atom1=[2], occ_atom1=i[ang], 
-											n_atom2=[6], occ_atom2=j[ang])
-			with open(file, 'a') as f:
-				f.write(f'{ang*10} {ssc[0]} {ii} {jj} \n')     
+			for a, aa in lmo_vir:
+				for b, bb in lmo_vir:
+					ssc = cloppa_obj.kernel_pathway(FC=False, FCSD=False, PSO=True,
+													princ_prop=p,
+													n_atom1=[2], occ_atom1=i[ang], vir_atom1=a[ang], 
+													n_atom2=[6], occ_atom2=j[ang], vir_atom2=b[ang])
+					with open(file, 'a') as f:
+						f.write(f'{ang*10} {ssc[0]} {ii} {aa} {jj} {bb} \n')     
 				
