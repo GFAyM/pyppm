@@ -1,6 +1,9 @@
 import pytest
 from pyPPE.help_functions import extra_functions
 from pyPPE.ssc_cloppa import Cloppa
+import os
+
+main_directory=os.path.realpath(os.path.dirname(__file__))+'/../'
 
 @pytest.mark.parametrize("atom1, atom2, value", 
                          [('H3', 'H7', -1.00180548e-07)])
@@ -13,7 +16,7 @@ def test_ssc_pathway(atom1,atom2,value):
         atom2 (str): atom2 name
         value (int): value of the pathway
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
@@ -33,7 +36,7 @@ def test_ssc_pathway(atom1,atom2,value):
         atom2 (str): atom2 name
         value (int): value of ssc mechanism with all pathways
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
@@ -55,7 +58,7 @@ def test_pathway_elements(atom1,atom2, value_p1, value_m, value_p2):
         value_m (real): M$_{ia,jb}$ Principal propagator for a definite pathway
         value_p2 (real): P$_{jb}$(atom2) perturbator centered in the atom2
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
@@ -74,7 +77,7 @@ def test_obtain_atom_order(Element, I):
         Element (str): Element
         ID (int): id number of the atom in the molecule
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
@@ -92,7 +95,7 @@ def test_pp_fc_pathways(n_atom1,n_atom2,value):
         atom2 (str): atom2 name
         value (int): value of ssc mechanism with all pathways
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
@@ -114,7 +117,7 @@ def test_pp_fcsd_pathways(n_atom1,n_atom2,value):
         atom2 (str): atom2 name
         value (int): value of firts fcsd response with all pathways
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
@@ -134,7 +137,7 @@ def test_pp_pso_pathways(n_atom1,n_atom2,value):
         atom2 (str): atom2 name
         value (int): value of firts PSO response with all pathways
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
@@ -152,7 +155,7 @@ def test_pert_fcsd(atm_id, pert_fcsd_squared_sum):
         atm_id (list): List with the id of the atom in wich the perturbator is centered
         pert_fcsd_squared_sum (real): fcsd perturbator sum
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
@@ -170,7 +173,7 @@ def test_pert_fc(atm_id, pert_fc_sum):
         atm_id (list): list with the id of the atom in wich the perturbator is centered
         pert_fc_sum (real) : perturbator sum
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
@@ -187,7 +190,7 @@ def test_pert_PSO(atm_id, pert_pso):
         atm_id (list): list with the id of the atom in wich the perturbator is centered
         pert_fc_sum (real) : perturbator sum
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
@@ -201,7 +204,7 @@ def test_get_integrals_fcsd(atm_id, fcsd_integrals):
         atm_id (int): atom id in wich the integrals are centered
         pert_fcsd_squared_sum (real): sum of squared of the fcsd perturbator
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
@@ -219,7 +222,7 @@ def test_M(Triplet, M_trace):
         Triplet (boolean): if the response is triplet or singlet
         M_trace (real) : value of the M trace
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
@@ -228,8 +231,8 @@ def test_M(Triplet, M_trace):
 
 
 
-@pytest.mark.parametrize(" Triplet ", [([-101.40711350439749])])
-def test_M(Triplet, M_trace):
+@pytest.mark.parametrize(" M_trace ", [([-101.40711350439749])])
+def test_M(M_trace):
     """
     Test for Inverse of the Principal Propagator Matrix using Localized 
     molecular orbitals
@@ -239,9 +242,9 @@ def test_M(Triplet, M_trace):
         Triplet (boolean): if the response is triplet or singlet
         M_trace (real) : value of the M trace
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
-    m = cloppa_obj.M(triplet=Triplet)
+    m = cloppa_obj.M(triplet=False)
     assert M_trace - m.trace() < 1e-5

@@ -1,7 +1,9 @@
 import pytest
 from pyPPE.help_functions import extra_functions
 from pyPPE.entropy import entropy
+import os
 
+main_directory=os.path.realpath(os.path.dirname(__file__))+'/../'
 
 @pytest.mark.parametrize("ent_ab",[(1.3715180507864897)])
 def test_entropy_ab(ent_ab):
@@ -11,7 +13,7 @@ def test_entropy_ab(ent_ab):
         ent_ab (real): ent_ab value given a couple of occupied LMOs and 
         two pairs of virtual LMOs
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
 
     cloppa_obj = entropy(mo_coeff=mo_coeff, mol=mol,
@@ -27,7 +29,9 @@ def test_entropy_iaia(ent_iaia):
         ent_ab (real): ent_iaia value given a couple of occupied LMOs and 
         two pairs of virtual LMOs
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    #molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
+
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
     cloppa_obj = entropy(mo_coeff=mo_coeff, mol=mol,
                         occ=[2,3], vir=[10,11,14,17])
@@ -42,7 +46,9 @@ def test_entropy_jbjb(ent_jbjb):
         ent_ab (real): ent_iaia value given a couple of occupied LMOs and 
         two pairs of virtual LMOs
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    #molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
+
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
     cloppa_obj = entropy(mo_coeff=mo_coeff, mol=mol,
                         occ=[2,3], vir=[10,11,14,17])

@@ -1,11 +1,14 @@
 import pytest
 from pyPPE.help_functions import extra_functions
 from pyscf import tools
+import os
+
+main_directory=os.path.realpath(os.path.dirname(__file__))+'/../'
 
 def test_extraer_coeff():
     """testing extraer_coeff property
     """
-    molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
     mol_t, mo_energy, mo_coeff_t, mo_occ_t, irrep_labels, spins =  tools.molden.load(molden)
     print(mo_occ)
@@ -24,7 +27,8 @@ def test_mo_hibridization(atm_id, hibridization_coeff):
         atm_id (int): Atom ID of the atom with the requiered hibridization
         hibridization_coeff (real): hibridization coeff
     """
-    extra_func_obj = extra_functions(molden_file="C2H6_ccpvdz_Pipek_Mezey.molden")
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
+    extra_func_obj = extra_functions(molden_file=molden)
 
     hibri = extra_func_obj.mo_hibridization(lim1=0.5,lim2=0.9, mo_label='H3')
     assert hibri[0] == atm_id
@@ -40,7 +44,8 @@ def test_mo_hibridization_fixed(atm_id, hibridization_coeff):
         atm_id (int): Atom ID of the atom with the requiered hibridization
         hibridization_coeff (real): hibridization coeff
     """
-    extra_func_obj = extra_functions(molden_file="C2H6_ccpvdz_Pipek_Mezey.molden")
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
+    extra_func_obj = extra_functions(molden_file=molden)
 
     hibri = extra_func_obj.mo_hibridization_fixed(
             fixed_orbital=atm_id,lim1=0.1,lim2=0.9, mo_label='C2')
