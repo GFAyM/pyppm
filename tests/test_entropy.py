@@ -3,9 +3,7 @@ from pyPPE.help_functions import extra_functions
 from pyPPE.entropy import entropy
 
 
-@pytest.mark.parametrize("ent_ab", 
-                         [(1.3715180507864897)])
-
+@pytest.mark.parametrize("ent_ab",[(1.3715180507864897)])
 def test_entropy_ab(ent_ab):
     """testing entropy_ab function
 
@@ -21,9 +19,7 @@ def test_entropy_ab(ent_ab):
     ent_ab_ = cloppa_obj.entropy_ab
     assert ent_ab - ent_ab_ < 1e-5
 
-@pytest.mark.parametrize("ent_iaia", 
-                         [(0.7108313054501851)])
-
+@pytest.mark.parametrize("ent_iaia",[(0.7108313054501851)])
 def test_entropy_iaia(ent_iaia):
     """testing entropy_iaia function
 
@@ -38,9 +34,7 @@ def test_entropy_iaia(ent_iaia):
     ent_iaia_ = cloppa_obj.entropy_iaia
     assert ent_iaia - ent_iaia_ < 1e-5
 
-@pytest.mark.parametrize("ent_jbjb", 
-                         [(0.6606867886260831)])
-
+@pytest.mark.parametrize("ent_jbjb",[(0.6606867886260831)])
 def test_entropy_jbjb(ent_jbjb):
     """testing entropy_iaia function
 
