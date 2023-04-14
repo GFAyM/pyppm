@@ -8,7 +8,6 @@ from pyscf.dft import numint
 from pyscf.data import nist
 from pyscf.data.gyro import get_nuc_g_factor
 from pyscf import tools
-from pyscf.lib import logger
 import sys
 from functools import reduce
 

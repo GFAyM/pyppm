@@ -1,6 +1,6 @@
 import pytest
-from src.help_functions import extra_functions
-from src.entropy import entropy
+from pyPPE.help_functions import extra_functions
+from pyPPE.entropy import entropy
 
 
 @pytest.mark.parametrize("ent_ab", 

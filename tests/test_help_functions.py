@@ -1,5 +1,5 @@
 import pytest
-from src.help_functions import extra_functions
+from pyPPE.help_functions import extra_functions
 from pyscf import tools
 
 def test_extraer_coeff():

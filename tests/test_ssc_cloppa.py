@@ -1,6 +1,6 @@
 import pytest
-from src.help_functions import extra_functions
-from src.ssc_cloppa import Cloppa
+from pyPPE.help_functions import extra_functions
+from pyPPE.ssc_cloppa import Cloppa
 
 @pytest.mark.parametrize("atom1, atom2, value", 
                          [('H3', 'H7', -1.00180548e-07)])

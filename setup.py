@@ -12,10 +12,10 @@ PATH = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 REQUIREMENTS = [
     "attrs==21.2",
     "numpy==1.21.2",
-    "pyscf==1.7.6.post1",
+    "pyscf==2.1.1",
 ]
 
-with open(PATH / "src" / "__init__.py") as fp:
+with open(PATH / "pyPPE" / "__init__.py") as fp:
     for line in fp.readlines():
         if line.startswith("__version__ = "):
             VERSION = line.split("=", 1)[-1].replace('"', "").strip()
@@ -30,7 +30,7 @@ with open("README.md", "r") as readme:
 # =============================================================================
 
 setup(
-    name="src",
+    name="pyPPE",
     version="0.1.1",
     author="""
     Daniel Bajac,
@@ -38,17 +38,17 @@ setup(
     author_email="""
     danielbajac94@gmail.com
     """,
-    packages=["src"],
+    packages=["pyPPE"],
     install_requires=REQUIREMENTS,
     license="The GPLv3 License",
-    description="Atomic and Molecular Cluster Energy Surface Sampler",
+    description="Quantum entanglement between virtual excitations",
     long_description_content_type="text/markdown",
     long_description=LONG_DESCRIPTION,
     url="https://github.com/DanielBajac/pyPPE",
     keywords=[
         "CLOPPA",
         "Spin Spin Contact",
-        "entanglement",
+        "Entanglement",
     ],
     classifiers=[
         "Development Status :: 4 - Beta",
