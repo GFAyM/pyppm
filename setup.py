@@ -9,7 +9,6 @@ from setuptools import setup
 
 PATH = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
 
-
 REQUIREMENTS = [
     "attrs==21.2",
     "numpy==1.21.2",
