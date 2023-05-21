@@ -97,7 +97,10 @@ class entropy:
         m = self.m 
         self.m_iaia = m[:m.shape[0]//4, :m.shape[0]//4] 
         eigenvalues = np.linalg.eigvals(self.m_iaia) 
-        Z=self.Z
+        Z=0
+        for i in eigenvalues:
+            Z += np.exp(i)
+        Z = self.Z
         ent = 0
         for i in eigenvalues:
             ent += -np.exp(i)/Z*np.log(np.exp(i)/Z)
@@ -116,8 +119,11 @@ class entropy:
         m = self.m 
         self.m_jbjb = m[int(m.shape[0]*3/4):, int(m.shape[0]*3/4):] #* np.sum(np.diag(self.m_iaia))
         eigenvalues = np.linalg.eigvals(self.m_jbjb)
-        Z=self.Z
-        ent=0
+        Z=0
+        for i in eigenvalues:
+            Z += np.exp(i)
+        ent = 0
+        Z = self.Z
         for i in eigenvalues:
             ent += -np.exp(i)/Z*np.log(np.exp(i)/Z)
         return ent

@@ -204,7 +204,7 @@ class Cloppa:
         nvir = self.nvir
         nocc = self.nocc
 
-        if princ_prop == None:
+        if princ_prop.all() == None:
             m = self.M(triplet=False)
             p = np.linalg.inv(m)
             p = -p.reshape(nocc, nvir, nocc, nvir)
@@ -279,7 +279,7 @@ class Cloppa:
         nvir = self.nvir
         nocc = self.nocc
 
-        if princ_prop == None:
+        if princ_prop.all() == None:
             m = self.M(triplet=True)
             p = np.linalg.inv(m)
             p = -p.reshape(nocc, nvir, nocc, nvir)
@@ -351,7 +351,7 @@ class Cloppa:
         """
         nvir = self.nvir
         nocc = self.nocc
-        if princ_prop == None:
+        if princ_prop.all() == None:
             m = self.M(triplet=True)
             p = np.linalg.inv(m)
             p = -p.reshape(nocc, nvir, nocc, nvir)
@@ -406,7 +406,7 @@ class Cloppa:
         FC=False,
         FCSD=True,
         PSO=False,
-        princ_prop=None,
+        princ_prop=np.full((2,2),None),
         atom1=None,
         occ_atom1=None,
         vir_atom1=None,
@@ -496,6 +496,7 @@ class Cloppa:
 
         gyro1 = [get_nuc_g_factor(self.mol_loc.atom_symbol(n_atom1[0]))]
         gyro2 = [get_nuc_g_factor(self.mol_loc.atom_symbol(n_atom2[0]))]
+        print(gyro1,gyro2,unit)
         jtensor = np.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)
         return jtensor[0]
 
@@ -504,7 +505,7 @@ class Cloppa:
         FC=False,
         FCSD=False,
         PSO=False,
-        princ_prop=None,
+        princ_prop=np.full((2,2),None),
         atom1=None,
         occ_atom1=None,
         vir_atom1=None,

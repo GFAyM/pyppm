@@ -2,6 +2,7 @@ import pytest
 from pyPPE.help_functions import extra_functions
 from pyPPE.ssc_cloppa import Cloppa
 import os
+import numpy as np
 
 main_directory=os.path.realpath(os.path.dirname(__file__))+'/../'
 
@@ -102,7 +103,8 @@ def test_pp_fc_pathways(n_atom1,n_atom2,value):
     pp_fc = cloppa_obj.pp_fc_pathways(n_atom1=n_atom1, n_atom2=n_atom2, 
                     all_pathways=True,
                     occ_atom1=None, vir_atom1=None, occ_atom2=None,
-                    vir_atom2=None, elements=False, princ_prop=None)
+                    vir_atom2=None, elements=False, 
+                    princ_prop=np.full((2,2), None))
     assert value - pp_fc[0][0][0] < 1e-14
 
 
@@ -124,7 +126,8 @@ def test_pp_fcsd_pathways(n_atom1,n_atom2,value):
     pp_fcsd = cloppa_obj.pp_fcsd_pathways(n_atom1=n_atom1, n_atom2=n_atom2, 
                     all_pathways=True,
                     occ_atom1=None, vir_atom1=None, occ_atom2=None,
-                    vir_atom2=None, elements=False, princ_prop=None)
+                    vir_atom2=None, elements=False, 
+                    princ_prop=np.full((2,2), None))
     assert value - pp_fcsd[0][0][0] < 1e-14
 
 @pytest.mark.parametrize("n_atom1, n_atom2, value", 
@@ -144,7 +147,8 @@ def test_pp_pso_pathways(n_atom1,n_atom2,value):
     pp_pso = cloppa_obj.pp_pso_pathways(n_atom1=n_atom1, n_atom2=n_atom2, 
                     all_pathways=True,
                     occ_atom1=None, vir_atom1=None, occ_atom2=None,
-                    vir_atom2=None, elements=False, princ_prop=None)
+                    vir_atom2=None, elements=False, 
+                    princ_prop=np.full((2,2), None))
     assert value - pp_pso[0][0][0] < 1e-14
 
 @pytest.mark.parametrize(" atm_id, pert_fcsd_squared_sum ", [([1], [31.832289675231266])])
