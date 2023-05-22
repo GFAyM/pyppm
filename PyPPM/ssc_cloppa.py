@@ -418,7 +418,7 @@ class Cloppa:
         """Spin Spin Coupling mechanisms between two nuclei,
 
         Args:
-			FC (True, optional): if True, calculate the FC SSC. Defaults to
+			FC (bool, optional): if True, calculate the FC SSC. Defaults to
 													False.
 			FCSD (bool, optional): if True, calculate the FC+SD SSC.
 															Defaults to True.
