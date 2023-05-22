@@ -1,5 +1,5 @@
 import pytest
-from pyPPE.help_functions import extra_functions
+from PyPPM.help_functions import extra_functions
 from pyscf import tools
 import os
 

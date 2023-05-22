@@ -315,4 +315,4 @@ class Prop_pol:
         gyro1 = [get_nuc_g_factor(self.mol.atom_symbol(atom1_[0]))]
         gyro2 = [get_nuc_g_factor(self.mol.atom_symbol(atom2_[0]))]
         jtensor = numpy.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)
-        return jtensor
+        return jtensor[0]

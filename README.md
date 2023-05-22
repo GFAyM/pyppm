@@ -1,4 +1,4 @@
-# pyPPE
+# PyPPM
 Repository with main programs to calculate quantum entanglement between localized molecular orbitals,
 i.e, between excitations.
 

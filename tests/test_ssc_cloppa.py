@@ -1,6 +1,6 @@
 import pytest
-from pyPPE.help_functions import extra_functions
-from pyPPE.ssc_cloppa import Cloppa
+from PyPPM.help_functions import extra_functions
+from PyPPM.ssc_cloppa import Cloppa
 import os
 import numpy as np
 

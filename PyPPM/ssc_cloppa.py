@@ -44,7 +44,7 @@ class Cloppa:
         Returns:
                 numpy.array: Fock matrix in canonical basis
         """
-        self.mf = scf.RHF(self.mol_loc).run()
+        self.mf = scf.RHF(self.mol_loc).run(verbose=0)
         self.fock_canonical = self.mf.get_fock()
         return self.fock_canonical
 
@@ -403,8 +403,8 @@ class Cloppa:
 
     def ssc_pathway(
         self,
-        FC=False,
-        FCSD=True,
+        FC=True,
+        FCSD=False,
         PSO=False,
         princ_prop=np.full((2,2),None),
         atom1=None,
@@ -496,7 +496,6 @@ class Cloppa:
 
         gyro1 = [get_nuc_g_factor(self.mol_loc.atom_symbol(n_atom1[0]))]
         gyro2 = [get_nuc_g_factor(self.mol_loc.atom_symbol(n_atom2[0]))]
-        print(gyro1,gyro2,unit)
         jtensor = np.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)
         return jtensor[0]
 
@@ -518,7 +517,7 @@ class Cloppa:
         propagator of a definite coupling pathway
 
         Args:
-			FC (True, optional): if True, calculate the FC SSC. Defaults to
+			FC (bool, optional): if True, calculate the FC SSC. Defaults to
 													False.
 			FCSD (bool, optional): if True, calculate the FC+SD SSC.
 															Defaults to True.
