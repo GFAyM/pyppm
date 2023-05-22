@@ -49,7 +49,7 @@ class Cloppa:
         return self.fock_canonical
 
     def M(self, triplet=True):
-        """Principal Propagator Inverse, defined as M = A+B
+        """Principal Propagator Inverse, defined as M = A + B
 
         A[i,a,j,b] =  delta_{ij}F_{ab} -delta_{ab}F_{ij} + (ia||bj)
         B[i,a,j,b] = (ia||jb)
