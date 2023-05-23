@@ -24,3 +24,5 @@ jobs:
         run: pip install tox tox-gh-actions
       - name: Test with tox
         run: tox -r
+      - name: Upload to codecov
+        uses: codecov/codecov-action@v1.0.13
