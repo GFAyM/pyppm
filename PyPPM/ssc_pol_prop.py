@@ -28,8 +28,7 @@ class Prop_pol:
     """
 
     mf = attr.ib(
-        default=None, type=scf.hf.RHF, 
-        validator=attr.validators.instance_of(scf.hf.RHF)
+        default=None, type=scf.hf.RHF, validator=attr.validators.instance_of(scf.hf.RHF)
     )
 
     def __attrs_post_init__(self):
@@ -139,7 +138,7 @@ class Prop_pol:
         # print(e)
         para.append(e * 4)  # *4 for +c.c. and for double occupancy
 
-        fc = numpy.einsum(",k,xy->kxy", nist.ALPHA ** 4, para, numpy.eye(3))
+        fc = numpy.einsum(",k,xy->kxy", nist.ALPHA**4, para, numpy.eye(3))
         return fc
 
     def pert_fcsd(self, atmlst):
@@ -248,7 +247,7 @@ class Prop_pol:
 
         e = numpy.einsum("iax,iajb,jby->xy", h1[0].T, p, h2[0].T)
         para.append(e * 4)  # *4 for +c.c. and double occupnacy
-        pso = numpy.asarray(para) * nist.ALPHA ** 4
+        pso = numpy.asarray(para) * nist.ALPHA**4
         return pso
 
     def pp_fcsd(self, atom1, atom2):
@@ -277,7 +276,7 @@ class Prop_pol:
         para = []
         e = numpy.einsum("iawx,iajb,jbwy->xy", h1[0].T, p, h2[0].T)
         para.append(e * 4)
-        fcsd = numpy.asarray(para) * nist.ALPHA ** 4
+        fcsd = numpy.asarray(para) * nist.ALPHA**4
         return fcsd
 
     def ssc(self, FC=True, FCSD=False, PSO=False, atom1=None, atom2=None):
@@ -310,7 +309,7 @@ class Prop_pol:
 
         nuc_magneton = 0.5 * (nist.E_MASS / nist.PROTON_MASS)  # e*hbar/2m
         au2Hz = nist.HARTREE2J / nist.PLANCK
-        unit = au2Hz * nuc_magneton ** 2
+        unit = au2Hz * nuc_magneton**2
         iso_ssc = unit * numpy.einsum("kii->k", prop) / 3
         gyro1 = [get_nuc_g_factor(self.mol.atom_symbol(atom1_[0]))]
         gyro2 = [get_nuc_g_factor(self.mol.atom_symbol(atom2_[0]))]

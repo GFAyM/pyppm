@@ -1,9 +1,9 @@
-.. pyPPE documentation master file, created by
-   sphinx-quickstart on Mon Apr 17 12:22:33 2023.
+.. PyPPM documentation master file, created by
+   sphinx-quickstart on Tue May 23 18:35:16 2023.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pyPPE's documentation!
+Welcome to PyPPM's documentation!
 =================================
 
 .. toctree::
