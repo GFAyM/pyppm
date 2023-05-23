@@ -1,6 +1,7 @@
 # PyPPM
-Repository with main programs to calculate quantum entanglement between localized molecular orbitals,
-i.e, between excitations.
+PyPPM is a python program based on PySCF that allow calculate and analyze molecular response properties and entanglement between virtual excitations using the Polarization Propagator formalism.
 
-The CLOPPA method, at RPA approach is implemented in order to know which are the main LMOs that contributes to a property.
+# Motivation
+
+# Features
 
