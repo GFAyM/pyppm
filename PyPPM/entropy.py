@@ -2,11 +2,9 @@ import numpy as np
 from pyscf import gto, ao2mo
 import attr
 
-
 @attr.s
 class entropy:
-    """[summary]
-    Class to compute the entropy of systems formed by virtual excitations.
+    """Class to compute the entropy of systems formed by virtual excitations.
     Density matrix corresponding to those systems are formed by
     the inverse matrix of the principal propagator using a set of previously
     localized occupied and virtual molecular orbitals.
@@ -16,9 +14,11 @@ class entropy:
     Ref: Aucar G.A., Concepts in Magnetic Resonance,2008,doi:10.1002/cmr.a.20108
 
     mo_coeff [np.array] = Localized molecular coefficients
-    mol [gto.Mole] = mole of the molecule
-    triplet [bool] = if True, it use the triplet principal propagator inverse,
+    mol [gto.Mole] = mole of the molecule.
+
+    triplet [bool]. If True, it use the triplet principal propagator inverse,
     if false, use the singlet.
+    
     occ [list] = Order number of the set of occupied LMO in the localized
     mo_coeff coefficient matrix whit which you want to form the system.
 
@@ -31,16 +31,14 @@ class entropy:
     and then in the other bond, in such a way that both list are divided in two,
     with number orders that correspond to one bond, and another.
 
-
-    -------
-    [type]
-        [description]
+    Returns:
+        numpy.ndarray: Communicator matrix
     """
 
-    occ = attr.ib(default=None, type=list)
-    vir = attr.ib(default=None, type=list)
-    mo_coeff = attr.ib(default=None, type=np.ndarray)
-    mol = attr.ib(default=None, type=gto.Mole)
+    occ = attr.ib( type=list)
+    vir = attr.ib( type=list)
+    mo_coeff = attr.ib( type=np.ndarray)
+    mol = attr.ib( type=gto.Mole)
     triplet = attr.ib(default=True, type=bool)
 
     def __attrs_post_init__(self):
@@ -145,6 +143,7 @@ class entropy:
         """Entanglement of the M_{ia,jb} matrix:
             M = (M_{ia,ia}   M_{ia,jb} )
                 (M_{jb,ia}   M_{jb,jb} )
+                
         Returns
         -------
         [real]

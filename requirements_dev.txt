@@ -25,3 +25,4 @@ docutils==0.18.1
 sphinxcontrib-bibtex==2.5.0
 autopep8==2.0.2
 mendeleev==0.12.1
+furo==2023.5.20

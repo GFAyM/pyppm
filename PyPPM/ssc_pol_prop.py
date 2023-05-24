@@ -143,7 +143,7 @@ class Prop_pol:
 
     def pert_fcsd(self, atmlst):
         """Perturbator for the response Fermi-Contact + Spin-Dependent
-            contribution
+        contribution
         Args:
                 atmlst (lsit): atom order in wich the perturbator is centered
 

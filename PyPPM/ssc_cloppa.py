@@ -121,6 +121,7 @@ class Cloppa:
     def pert_fcsd(self, atmlst):
         """Perturbator for the response Fermi-Contact + Spin-Dependent
                 contribution in a localized MO basis
+
         Args:
                 atmlst (list): atom order in wich the perturbator is centered
 
