@@ -1,6 +1,6 @@
 import pytest
-from PyPPM.help_functions import extra_functions
-from PyPPM.entropy import entropy
+from pyppm.help_functions import extra_functions
+from pyppm.entropy import entropy
 import os
 
 main_directory=os.path.realpath(os.path.dirname(__file__))+'/../'

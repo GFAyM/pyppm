@@ -1,6 +1,6 @@
 PyPPM API Reference
 =====================
-.. automodule:: PyPPM
+.. automodule:: pyppm
     :members:
     :undoc-members:
     :show-inheritance:
@@ -9,7 +9,7 @@ PyPPM API Reference
 Help Functions 
 ***********************************
 
-.. automodule:: PyPPM.help_functions
+.. automodule:: pyppm.help_functions
     :members:
     :undoc-members:
     :show-inheritance:
@@ -17,7 +17,7 @@ Help Functions
 J-coupling using canonical MOs 
 ******************************
 
-.. automodule:: PyPPM.ssc_pol_prop
+.. automodule:: pyppm.ssc_pol_prop
     :members:
     :undoc-members:
     :show-inheritance:
@@ -25,7 +25,7 @@ J-coupling using canonical MOs
 J-coupling using localized MOs: CLOPPA method 
 *********************************************
 
-.. automodule:: PyPPM.ssc_cloppa
+.. automodule:: pyppm.ssc_cloppa
     :members:
     :undoc-members:
     :show-inheritance:
@@ -33,7 +33,7 @@ J-coupling using localized MOs: CLOPPA method
 Entropy between virtual excitations 
 ***********************************
 
-.. automodule:: PyPPM.entropy
+.. automodule:: pyppm.entropy
     :members:
     :undoc-members:
     :show-inheritance:

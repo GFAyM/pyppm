@@ -1,6 +1,6 @@
 import pytest
 from pyscf import gto, scf
-from PyPPM.ssc_pol_prop import Prop_pol
+from pyppm.ssc_pol_prop import Prop_pol
 
 
 @pytest.mark.parametrize(" Triplet, M_trace ", [(True, [534.94666413])])

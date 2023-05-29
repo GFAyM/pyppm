@@ -15,7 +15,7 @@ REQUIREMENTS = [
     "pyscf==2.1.1",
 ]
 
-with open(PATH / "PyPPM" / "__init__.py") as fp:
+with open(PATH / "pyppm" / "__init__.py") as fp:
     for line in fp.readlines():
         if line.startswith("__version__ = "):
             VERSION = line.split("=", 1)[-1].replace('"', "").strip()
@@ -30,7 +30,7 @@ with open("README.md", "r") as readme:
 # =============================================================================
 
 setup(
-    name="PyPPM",
+    name="pyppm",
     version="0.1.1",
     author="""
     Daniel Bajac,
@@ -38,13 +38,13 @@ setup(
     author_email="""
     danielbajac94@gmail.com
     """,
-    packages=["PyPPM"],
+    packages=["pyppm"],
     install_requires=REQUIREMENTS,
     license="The GPLv3 License",
     description="Quantum entanglement between virtual excitations",
     long_description_content_type="text/markdown",
     long_description=LONG_DESCRIPTION,
-    url="https://github.com/DanielBajac/PyPPM",
+    url="https://github.com/DanielBajac/pyppm",
     keywords=[
         "CLOPPA",
         "Spin Spin Contact",
