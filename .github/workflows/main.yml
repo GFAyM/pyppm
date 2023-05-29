@@ -27,7 +27,7 @@ jobs:
         run: pip install tox tox-gh-actions
       - name: Test with tox
         run: tox -r
-      - name: Coveralls
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: coveralls --service=github
+      - name: Upload to codecov
+        uses: codecov/codecov-action@v1.0.13
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
