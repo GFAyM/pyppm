@@ -2,6 +2,7 @@ import numpy as np
 from pyscf import gto, ao2mo
 import attr
 
+
 @attr.s
 class entropy:
     """Class to compute the entropy of systems formed by virtual excitations.
@@ -18,7 +19,7 @@ class entropy:
 
     triplet [bool]. If True, it use the triplet principal propagator inverse,
     if false, use the singlet.
-    
+
     occ [list] = Order number of the set of occupied LMO in the localized
     mo_coeff coefficient matrix whit which you want to form the system.
 
@@ -35,10 +36,10 @@ class entropy:
         numpy.ndarray: Communicator matrix
     """
 
-    occ = attr.ib( type=list)
-    vir = attr.ib( type=list)
-    mo_coeff = attr.ib( type=np.ndarray)
-    mol = attr.ib( type=gto.Mole)
+    occ = attr.ib(type=list)
+    vir = attr.ib(type=list)
+    mo_coeff = attr.ib(type=np.ndarray)
+    mol = attr.ib(type=gto.Mole)
     triplet = attr.ib(default=True, type=bool)
 
     def __attrs_post_init__(self):
@@ -143,7 +144,7 @@ class entropy:
         """Entanglement of the M_{ia,jb} matrix:
             M = (M_{ia,ia}   M_{ia,jb} )
                 (M_{jb,ia}   M_{jb,jb} )
-                
+
         Returns
         -------
         [real]

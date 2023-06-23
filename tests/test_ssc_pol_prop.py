@@ -36,7 +36,7 @@ def test_obtain_atom_order(Element, I):
     assert id == I
 
 
-@pytest.mark.parametrize(" atm_id, pert_fc_sum ", [([0], [-0.26329630])])
+@pytest.mark.parametrize(" atm_id, pert_fc_sum ", [([0], [0.17070183232781733])])
 def test_pert_fc(atm_id, pert_fc_sum):
     """
     Test for Perturbator

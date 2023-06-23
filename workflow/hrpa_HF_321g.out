@@ -1,0 +1,3073 @@
+
+
+     ************************************************************************
+     *************** Dalton - An Electronic Structure Program ***************
+     ************************************************************************
+
+    This is output from DALTON release Dalton2022.0-dev (2022)
+         ( Web site: http://daltonprogram.org )
+
+   ----------------------------------------------------------------------------
+
+    NOTE:
+     
+    Dalton is an experimental code for the evaluation of molecular
+    properties using (MC)SCF, DFT, CI, and CC wave functions.
+    The authors accept no responsibility for the performance of
+    the code or for the correctness of the results.
+     
+    The code (in whole or part) is provided under a licence and
+    is not to be reproduced for further distribution without
+    the written permission of the authors or their representatives.
+     
+    See the home page "http://daltonprogram.org" for further information.
+     
+    If results obtained with this code are published,
+    the appropriate citations would be both of:
+     
+       K. Aidas, C. Angeli, K. L. Bak, V. Bakken,
+       R. Bast, L. Boman, O. Christiansen, R. Cimiraglia,
+       S. Coriani, P. Dahle, E. K. Dalskov, U. Ekstroem,
+       T. Enevoldsen, J. J. Eriksen, P. Ettenhuber, B. Fernandez,
+       L. Ferrighi, H. Fliegl, L. Frediani, K. Hald, A. Halkier,
+       C. Haettig, H. Heiberg, T. Helgaker, A. C. Hennum,
+       H. Hettema, E. Hjertenaes, S. Hoest, I.-M. Hoeyvik,
+       M. F. Iozzi, B. Jansik, H. J. Aa. Jensen, D. Jonsson,
+       P. Joergensen, J. Kauczor, S. Kirpekar,
+       T. Kjaergaard, W. Klopper, S. Knecht, R. Kobayashi, H. Koch,
+       J. Kongsted, A. Krapp, K. Kristensen, A. Ligabue,
+       O. B. Lutnaes, J. I. Melo, K. V. Mikkelsen, R. H. Myhre,
+       C. Neiss, C. B. Nielsen, P. Norman, J. Olsen,
+       J. M. H. Olsen, A. Osted, M. J. Packer, F. Pawlowski,
+       T. B. Pedersen, P. F. Provasi, S. Reine, Z. Rinkevicius,
+       T. A. Ruden, K. Ruud, V. Rybkin, P. Salek, C. C. M. Samson,
+       A. Sanchez de Meras, T. Saue, S. P. A. Sauer,
+       B. Schimmelpfennig, K. Sneskov, A. H. Steindal,
+       K. O. Sylvester-Hvid, P. R. Taylor, A. M. Teale,
+       E. I. Tellgren, D. P. Tew, A. J. Thorvaldsen, L. Thoegersen,
+       O. Vahtras, M. A. Watson, D. J. D. Wilson, M. Ziolkowski
+       and H. Agren,
+       "The Dalton quantum chemistry program system",
+       WIREs Comput. Mol. Sci. 2014, 4:269–284 (doi: 10.1002/wcms.1172)
+     
+    and
+     
+       Dalton, a molecular electronic structure program,
+       Release Dalton2022.0-dev (2022), see http://daltonprogram.org
+   ----------------------------------------------------------------------------
+
+    Authors in alphabetical order (Major contribution(s) in parenthesis):
+
+  Kestutis Aidas,              Vilnius University,        Lithuania   (QM/MM)
+  Celestino Angeli,            University of Ferrara,     Italy       (NEVPT2)
+  Juan J. Aucar,               Northeast National UniversiArgentina   (LRESC, Relativistic Effects on EFG)
+  Keld L. Bak,                 UNI-C,                     Denmark     (AOSOPPA, non-adiabatic coupling, magnetic properties)
+  Vebjoern Bakken,             University of Oslo,        Norway      (DALTON; geometry optimizer, symmetry detection)
+  Radovan Bast,                UiT The Arctic U. of NorwayNorway      (DALTON installation and execution frameworks)
+  Pablo Baudin,                University of Valencia,    Spain       (Cholesky excitation energies)
+  Linus Boman,                 NTNU,                      Norway      (Cholesky decomposition and subsystems)
+  Bruno N. Cabral Tenorio,     Technical Univ. of Denmark,Denmark     (Lanczos-based CC methods)
+  Ove Christiansen,            Aarhus University,         Denmark     (CC module)
+  Renzo Cimiraglia,            University of Ferrara,     Italy       (NEVPT2)
+  Sonia Coriani,               Technical Univ. of Denmark,Denmark     (CC and RESPONS modules)
+  Janusz Cukras,               University of Warsaw,      Poland      (MChD in RESPONS)
+  Paal Dahle,                  University of Oslo,        Norway      (Parallelization)
+  Erik K. Dalskov,             UNI-C,                     Denmark     (SOPPA)
+  Thomas Enevoldsen,           Univ. of Southern Denmark, Denmark     (SOPPA)
+  Janus J. Eriksen,            Aarhus University,         Denmark     (Polarizable embedding, TDA)
+  Rasmus Faber,                Technical Univ. of Denmark,Denmark     (Vib.avg. NMR w. SOPPA, parallel AO-SOPPA, CVS-CC and EOMCC)
+  Tobias Fahleson,             KTH Stockholm,             Sweden      (Damped cubic response)
+  Berta Fernandez,             U. of Santiago de CompostelSpain       (Doublet spin, ESR in RESPONS)
+  Lara Ferrighi,               Aarhus University,         Denmark     (PCM Cubic response)
+  Heike Fliegl,                University of Oslo,        Norway      (CCSD(R12))
+  Luca Frediani,               UiT The Arctic U. of NorwayNorway      (PCM)
+  Emmanuel Fromager,           Univ. Strasbourg,          France      (MC-srDFT)
+  Bin Gao,                     UiT The Arctic U. of NorwayNorway      (Gen1Int library)
+  Andre S. P. Gomes,           CNRS/Universite de Lille,  France      (Frozen density embedding)
+  Christof Haettig,            Ruhr-University Bochum,    Germany     (CC module)
+  Kasper Hald,                 Aarhus University,         Denmark     (CC module)
+  Asger Halkier,               Aarhus University,         Denmark     (CC module)
+  Frederik Beyer Hansen,       University of Copenhagen,  Denmark     (Parallel AO-SOPPA)
+  Erik D. Hedegaard,           Univ. of Southern Denmark, Denmark     (Polarizable embedding, QM/MM, and MC-srDFT)
+  Hanne Heiberg,               University of Oslo,        Norway      (Geometry analysis, selected one-electron integrals)
+  Trygve Helgaker,             University of Oslo,        Norway      (DALTON; ABACUS, ERI, DFT modules, London, and much more)
+  Alf Christian Hennum,        University of Oslo,        Norway      (Parity violation)
+  Hinne Hettema,               University of Auckland,    New Zealand (Quadratic response in RESPONS; SIRIUS supersymmetry)
+  Andreas E. Hillers-Bendtsen, University of Copenhagen,  Denmark     (MP3)
+  Eirik Hjertenaes,            NTNU,                      Norway      (Cholesky decomposition)
+  Nicolai Machholdt Hoeyer,    Aarhus University,         Denmark     (MP3)
+  Pi A. B. Haase,              University of Copenhagen,  Denmark     (Triplet AO-SOPPA)
+  Maria Francesca Iozzi,       University of Oslo,        Norway      (RPA)
+  Christoph Jacob              TU Braunschweig            Germany     (Frozen density embedding)
+  Brano Jansik                 Technical Univ. of Ostrava Czech Rep.  (DFT cubic response)
+  Hans Joergen Aa. Jensen,     Univ. of Southern Denmark, Denmark     (DALTON; SIRIUS, RESPONS, ABACUS, MC-srDFT, and much more)
+  Dan Jonsson,                 UiT The Arctic U. of NorwayNorway      (Cubic response in RESPONS module)
+  Poul Joergensen,             Aarhus University,         Denmark     (RESPONS, ABACUS, and CC modules)
+  Maciej Kaminski,             University of Warsaw,      Poland      (CPPh in RESPONS)
+  Joanna Kauczor,              Linkoeping University,     Sweden      (Complex polarization propagator (CPP) module)
+  Sheela Kirpekar,             Univ. of Southern Denmark, Denmark     (Mass-velocity & Darwin integrals)
+  Frederik Oersted Kjeldal,    Technical Univ. of Denmark,Denmark     (MP3)
+  Erik Kjellgren,              Univ. of Southern Denmark, Denmark     (MC-srDFT)
+  Wim Klopper,                 KIT Karlsruhe,             Germany     (R12 code in CC, SIRIUS, and ABACUS modules)
+  Stefan Knecht,               ETH Zurich,                Switzerland (Parallel CI and MCSCF, MC-srDFT)
+  Rika Kobayashi,              Australian National Univ., Australia   (DIIS in CC, London in MCSCF)
+  Henrik Koch,                 NTNU,                      Norway      (CC module, Cholesky decomposition)
+  Jacob Kongsted,              Univ. of Southern Denmark, Denmark     (Polarizable embedding, polarizable density embedding, QM/MM)
+  Andrea Ligabue,              University of Modena,      Italy       (CTOCD, AOSOPPA)
+  Nanna H. List                Univ. of Southern Denmark, Denmark     (Polarizable embedding)
+  Ola B. Lutnaes,              University of Oslo,        Norway      (DFT Hessian)
+  Juan I. Melo,                University of Buenos Aires,Argentina   (LRESC, Relativistic Effects on NMR Shieldings)
+  Kurt V. Mikkelsen,           University of Copenhagen,  Denmark     (MC-SCRF, QM/MM, and MP3)
+  Rolf H. Myhre,               NTNU,                      Norway      (Subsystems and CC3)
+  Christian Neiss,             Univ. Erlangen-Nuernberg,  Germany     (CCSD(R12))
+  Christian B. Nielsen,        University of Copenhagen,  Denmark     (QM/MM)
+  Patrick Norman,              KTH Stockholm,             Sweden      (Cubic response and complex frequency response in RESPONS)
+  Jeppe Olsen,                 Aarhus University,         Denmark     (SIRIUS CI/density modules)
+  Jogvan Magnus H. Olsen,      Aarhus University,         Denmark     (Polarizable embedding and polarizable density embedding)
+  Anders Osted,                Copenhagen University,     Denmark     (QM/MM)
+  Martin J. Packer,            University of Sheffield,   UK          (SOPPA)
+  Filip Pawlowski,             Kazimierz Wielki UniversityPoland      (CC3)
+  Morten N. Pedersen,          Univ. of Southern Denmark, Denmark     (Polarizable embedding)
+  Thomas B. Pedersen,          University of Oslo,        Norway      (Cholesky decomposition)
+  Patricio F. Provasi,         University of Northeastern,Argentina   (Analysis of coupling constants in localized orbitals)
+  Peter Reinholdt,             Univ. of Southern Denmark, Denmark     (Polarizable embedding and polarizable density embedding)
+  Zilvinas Rinkevicius,        KTH Stockholm,             Sweden      (open-shell DFT, ESR)
+  Elias Rudberg,               KTH Stockholm,             Sweden      (DFT grid and basis info)
+  Torgeir A. Ruden,            University of Oslo,        Norway      (Numerical derivatives in ABACUS)
+  Kenneth Ruud,                UiT The Arctic U. of NorwayNorway      (DALTON; ABACUS magnetic properties and much more)
+  Pawel Salek,                 KTH Stockholm,             Sweden      (DALTON; DFT code)
+  Claire C. M. Samson          University of Karlsruhe    Germany     (Boys localization, r12 integrals in ERI)
+  Alfredo Sanchez de Meras,    University of Valencia,    Spain       (CC module, Cholesky decomposition)
+  Trond Saue,                  Paul Sabatier University,  France      (direct Fock matrix construction)
+  Stephan P. A. Sauer,         University of Copenhagen,  Denmark     (SOPPA(CCSD), SOPPA prop., AOSOPPA, vibrational g-factors)
+  Bernd Schimmelpfennig,       Forschungszentrum KarlsruheGermany     (AMFI module)
+  Anna K. Schnack-Petersen,    University of Copenhagen,  Denmark     (RPA(D) and HRPA(D) properties in AOSOPPA)
+  Kristian Sneskov,            Aarhus University,         Denmark     (Polarizable embedding, QM/MM)
+  Arnfinn H. Steindal,         UiT The Arctic U. of NorwayNorway      (parallel QM/MM, polarizable embedding)
+  Casper Steinmann,            Aalborg University,        Denmark     (QFIT, polarizable embedding)
+  K. O. Sylvester-Hvid,        University of Copenhagen,  Denmark     (MC-SCRF)
+  Peter R. Taylor,             VLSCI/Univ. of Melbourne,  Australia   (Symmetry handling ABACUS, integral transformation)
+  Andrew M. Teale,             University of Nottingham,  England     (DFT-AC, DFT-D)
+  David P. Tew,                University of Bristol,     England     (CCSD(R12))
+  Julien Toulouse,             Sorbonne Univ.,            France      (MC-srDFT)
+  Olav Vahtras,                KTH Stockholm,             Sweden      (Triplet response, spin-orbit, ESR, TDDFT, open-shell DFT)
+  Lucas Visscher,              Vrije Universiteit AmsterdaNetherlands (Frozen density embedding)
+  David J. Wilson,             La Trobe University,       Australia   (DFT Hessian and DFT magnetizabilities)
+  Luna Zamok,                  University of Copenhagen,  Denmark     (Block Lanczos RPA solver in SOPPA module)
+  Hans Agren,                  KTH Stockholm,             Sweden      (SIRIUS module, RESPONS, MC-SCRF solvation)
+ --------------------------------------------------------------------------------
+
+     Date and time (Linux)  : Mon Nov 21 19:10:13 2022
+     Host name              : fer                                     
+
+ * Work memory size             :    64000000 =  488.28 megabytes.
+
+ * Directories for basis set searches:
+   1) /home/fer/Dalton/J_for_test
+   2) /home/fer/dalton/build/basis
+
+
+Compilation information
+-----------------------
+
+ Who compiled             | fer
+ Host                     | fer
+ System                   | Linux-5.15.0-33-generic
+ CMake generator          | Unix Makefiles
+ Processor                | x86_64
+ 64-bit integers          | OFF
+ MPI                      | OFF
+ Fortran compiler         | /usr/bin/gfortran
+ Fortran compiler version | GNU Fortran (Ubuntu 11.2.0-19ubuntu1) 11.2.0
+ C compiler               | /usr/bin/gcc
+ C compiler version       | gcc (Ubuntu 11.2.0-19ubuntu1) 11.2.0
+ C++ compiler             | /usr/bin/g++
+ C++ compiler version     | g++ (Ubuntu 11.2.0-19ubuntu1) 11.2.0
+ BLAS                     | /usr/lib/x86_64-linux-gnu/libblas.so
+ LAPACK                   | /usr/lib/x86_64-linux-gnu/liblapack.so
+ Static linking           | OFF
+ Last Git revision        | 07292fe2d2f7d5349434b1d9c2de3151ddb86ccb
+ Git branch               | master
+ Configuration time       | 2022-06-01 21:36:30.754329
+
+
+   Content of the .dal input file
+ ----------------------------------
+
+**DALTON INPUT
+.RUN RESPONSE
+**INTEGRALS
+.FC
+**WAVE FUNCTIONS
+.HF
+.MP2
+**RESPONSE
+.HIRPA
+.TRPFLG
+*LINEAR
+.PROPRT
+FC H 001
+.PROPRT
+FC F 002
+.PRINT
+ 32
+**END OF DALTON INPUT
+
+
+   Content of the .mol file
+ ----------------------------
+
+BASIS
+3-21G
+         h2o Vertical Excitation Energies
+         aug-cc-pVDZ
+Angstrom Atomtypes=2
+Charge=1.0 Atoms=1
+H     0.0000000000    0.0000000000    -1.6902522555
+Charge=9.0 Atoms=1
+F     0.0000000000    0.0000000000     0.1319629808
+
+
+       *******************************************************************
+       *********** Output from DALTON general input processing ***********
+       *******************************************************************
+
+ --------------------------------------------------------------------------------
+   Overall default print level:    0
+   Print level for DALTON.STAT:    1
+
+    HERMIT 1- and 2-electron integral sections will be executed
+    "Old" integral transformation used (limited to max 255 basis functions)
+    Wave function sections will be executed (SIRIUS module)
+    Dynamic molecular response properties section will be executed (RESPONSE module)
+ --------------------------------------------------------------------------------
+
+
+   ****************************************************************************
+   *************** Output of molecule and basis set information ***************
+   ****************************************************************************
+
+
+    The two title cards from your ".mol" input:
+    ------------------------------------------------------------------------
+ 1:          h2o Vertical Excitation Energies                               
+ 2:          aug-cc-pVDZ                                                    
+    ------------------------------------------------------------------------
+
+  Coordinates are entered in Angstrom and converted to atomic units.
+          - Conversion factor : 1 bohr = 0.52917721 A
+
+  Atomic type no.    1
+  --------------------
+  Nuclear charge:   1.00000
+  Number of symmetry independent centers:    1
+  Number of basis sets to read;    2
+  Basis set file used for this atomic type with Z =   1 :
+     "/home/fer/dalton/build/basis/3-21G"
+
+  Info about the basis set file: your basis has no documentation.
+  Basis set: 3-21G                                                                           
+
+  Atomic type no.    2
+  --------------------
+  Nuclear charge:   9.00000
+  Number of symmetry independent centers:    1
+  Number of basis sets to read;    2
+  Basis set file used for this atomic type with Z =   9 :
+     "/home/fer/dalton/build/basis/3-21G"
+
+  Info about the basis set file: your basis has no documentation.
+  Basis set: 3-21G                                                                           
+
+
+                      SYMADD: Requested addition of symmetry
+                      --------------------------------------
+
+ Symmetry test threshold:  5.00E-06
+
+@  The molecule has been centered at center of mass and rotated
+@  so the principal axes of inertia are along coordinate axes.
+
+ Symmetry class found: C(oo,v)        
+
+ Symmetry Independent Centres             
+ ----------------------------
+F      9 :      0.00000000     0.00000000     0.17346763  Isotope  1
+H      1 :      0.00000000     0.00000000    -3.27002010  Isotope  1
+
+ The following symmetry elements were found:   X  Y     
+
+
+                         SYMGRP: Point group information
+                         -------------------------------
+
+@    Full point group is: C(oo,v)        
+@    Represented as:      C2v
+
+@  * The irrep name for each symmetry:    1: A1     2: B1     3: B2     4: A2 
+
+   * The point group was generated by:
+
+      Reflection in the yz-plane
+      Reflection in the xz-plane
+
+   * Group multiplication table
+
+        |  E   C2z  Oxz  Oyz
+   -----+--------------------
+     E  |  E   C2z  Oxz  Oyz
+    C2z | C2z   E   Oyz  Oxz
+    Oxz | Oxz  Oyz   E   C2z
+    Oyz | Oyz  Oxz  C2z   E 
+
+   * Character table
+
+        |  E   C2z  Oxz  Oyz
+   -----+--------------------
+    A1  |   1    1    1    1
+    B1  |   1   -1    1   -1
+    B2  |   1   -1   -1    1
+    A2  |   1    1   -1   -1
+
+   * Direct product table
+
+        | A1   B1   B2   A2 
+   -----+--------------------
+    A1  | A1   B1   B2   A2 
+    B1  | B1   A1   A2   B2 
+    B2  | B2   A2   A1   B1 
+    A2  | A2   B2   B1   A1 
+
+
+                                 Isotopic Masses
+                                 ---------------
+
+                           H           1.007825
+                           F          18.998403
+
+                       Total mass:    20.006228 amu
+                       Natural abundance:  99.985 %
+
+ Center-of-mass coordinates (a.u.):    0.000000    0.000000    0.000000
+ Center-of-mass coordinates (Angs):    0.000000    0.000000    0.000000
+
+
+  Atoms and basis sets
+  --------------------
+
+  Number of atom types :    2
+  Total number of atoms:    2
+
+  Basis set used is "3-21G" from the basis set library.
+
+  label    atoms   charge   prim   cont     basis
+  ----------------------------------------------------------------------
+  H           1    1.0000     3     2      [3s|2s]                                            
+  F           1    9.0000    15     9      [6s3p|3s2p]                                        
+  ----------------------------------------------------------------------
+  total:      2   10.0000    18    11
+  ----------------------------------------------------------------------
+
+  Threshold for neglecting AO integrals:  1.00D-12
+
+
+  Cartesian Coordinates (a.u.)
+  ----------------------------
+
+  Total number of coordinates:    6
+  H       :     1  x   0.0000000000    2  y   0.0000000000    3  z  -3.2700201038
+  F       :     4  x   0.0000000000    5  y   0.0000000000    6  z   0.1734676336
+
+
+  Symmetry Coordinates
+  --------------------
+
+  Number of coordinates in each symmetry:     2    2    2    0
+
+  Symmetry  A1  ( 1)
+
+    1   H     z    3
+    2   F     z    6
+
+  Symmetry  B1  ( 2)
+
+    3   H     x    1
+    4   F     x    4
+
+  Symmetry  B2  ( 3)
+
+    5   H     y    2
+    6   F     y    5
+
+
+   Interatomic separations (in Angstrom):
+   --------------------------------------
+
+            H           F     
+            ------      ------
+ H     :    0.000000
+ F     :    1.822215    0.000000
+
+
+  Max    interatomic separation is    1.8222 Angstrom (    3.4435 Bohr)
+  between atoms    2 and    1, "F     " and "H     ".
+
+  Min HX interatomic separation is    1.8222 Angstrom (    3.4435 Bohr)
+
+
+  Bond distances (Angstrom):
+  --------------------------
+
+                  atom 1     atom 2       distance
+                  ------     ------       --------
+
+
+
+
+ Principal moments of inertia (u*A**2) and principal axes
+ --------------------------------------------------------
+
+   IA       0.000000          0.000000    0.000000    1.000000
+   IB       3.177872          0.000000    1.000000    0.000000
+   IC       3.177872          1.000000    0.000000    0.000000
+
+
+ Rotational constants
+ --------------------
+
+@    The molecule is linear.
+
+               B =       159030.65 MHz     (    5.304692 cm-1)
+
+
+@  Nuclear repulsion energy :    2.613629170871 Hartree
+
+
+  Symmetry Orbitals
+  -----------------
+
+  Number of orbitals in each symmetry:           7    2    2    0
+
+
+  Symmetry  A1 ( 1)
+
+    1     H        1s         1
+    2     H        1s         2
+    3     F        1s         3
+    4     F        1s         4
+    5     F        1s         5
+    6     F        2pz        8
+    7     F        2pz       11
+
+
+  Symmetry  B1 ( 2)
+
+    8     F        2px        6
+    9     F        2px        9
+
+
+  Symmetry  B2 ( 3)
+
+   10     F        2py        7
+   11     F        2py       10
+
+
+  No orbitals in symmetry  A2 ( 4)
+
+  Symmetries of electric field:  B1 (2)  B2 (3)  A1 (1)
+
+  Symmetries of magnetic field:  B2 (3)  B1 (2)  A2 (4)
+
+
+                     .---------------------------------------.
+                     | Starting in Integral Section (HERMIT) |
+                     `---------------------------------------'
+
+
+
+ ***************************************************************************************
+ ****************** Output from **INTEGRALS input processing (HERMIT) ******************
+ ***************************************************************************************
+
+
+
+    *************************************************************************
+    ****************** Output from HERMIT input processing ******************
+    *************************************************************************
+
+
+ Default print level:        1
+
+ Calculation of one- and two-electron Hamiltonian integrals.
+
+ The following one-electron property integrals are calculated as requested:
+          - overlap integrals
+          - Fermi contact integrals
+            (Dirac delta function integrals)
+
+ Center of mass  (bohr):      0.000000000000      0.000000000000      0.000000000000
+ Operator center (bohr):      0.000000000000      0.000000000000      0.000000000000
+ Gauge origin    (bohr):      0.000000000000      0.000000000000      0.000000000000
+ Dipole origin   (bohr):      0.000000000000      0.000000000000      0.000000000000
+
+ Integrals for all indirect spin-spin coupling and/or shielding tensors are calculated.
+
+Calculation of 2-electron integrals are postponed until they are needed.
+
+
+     ************************************************************************
+     ************************** Output from HERINT **************************
+     ************************************************************************
+
+
+
+                      Nuclear contribution to dipole moments
+                      --------------------------------------
+
+                 au               Debye          C m (/(10**-30)
+
+      z     -1.70881140        -4.34336507       -14.48790639
+
+
+  Total CPU  time used in HERMIT:   0.00 seconds
+  Total wall time used in HERMIT:   0.00 seconds
+
+
+                        .----------------------------------.
+                        | End of Integral Section (HERMIT) |
+                        `----------------------------------'
+
+
+
+                   .--------------------------------------------.
+                   | Starting in Wave Function Section (SIRIUS) |
+                   `--------------------------------------------'
+
+
+ *** Output from Huckel module :
+
+     Using EWMO model:          T
+     Using EHT  model:          F
+     Number of Huckel orbitals each symmetry:    4    1    1    0
+
+ EWMO - Energy Weighted Maximum Overlap - is a Huckel type method,
+        which normally is better than Extended Huckel Theory.
+ Reference: Linderberg and Ohrn, Propagators in Quantum Chemistry (Wiley, 1973)
+
+ Huckel EWMO eigenvalues for symmetry :  1
+          -26.382748      -1.584040      -0.770302      -0.448110
+
+ Huckel EWMO eigenvalues for symmetry :  2
+           -0.730000
+
+ Huckel EWMO eigenvalues for symmetry :  3
+           -0.730000
+
+ **********************************************************************
+ *SIRIUS* a direct, restricted step, second order MCSCF program       *
+ **********************************************************************
+
+ 
+     Date and time (Linux)  : Mon Nov 21 19:10:13 2022
+     Host name              : fer                                     
+
+ Title lines from ".mol" input file:
+              h2o Vertical Excitation Energies                               
+              aug-cc-pVDZ                                                    
+
+ Print level on unit LUPRI =   2 is   0
+ Print level on unit LUW4  =   2 is   5
+
+@    MP2, closed-shell Moeller-Plesset second-order calculation.
+
+@    This is a combination run starting with
+@              a restricted, closed shell Hartree-Fock calculation
+
+
+ Initial molecular orbitals are obtained according to
+ ".MOSTART EWMO  " input option
+
+     Wave function specification
+     ============================
+@    Wave function type        --- MP2 ---
+@    Number of closed shell electrons          10
+@    Number of electrons in active shells       0
+@    Total charge of the molecule               0
+
+@    Spin multiplicity and 2 M_S                1         0
+@    Total number of symmetries                 4 (point group: C2v)
+@    Reference state symmetry                   1 (irrep name : A1 )
+
+     Orbital specifications
+     ======================
+@    Abelian symmetry species          All |    1    2    3    4
+@                                          |  A1   B1   B2   A2 
+                                       --- |  ---  ---  ---  ---
+@    Total number of orbitals           11 |    7    2    2    0
+@    Number of basis functions          11 |    7    2    2    0
+
+      ** Automatic occupation of RHF orbitals **
+
+      -- Initial occupation of symmetries is determined from extended Huckel guess.           
+      -- Initial occupation of symmetries is :
+@    Occupied SCF orbitals               5 |    3    1    1    0
+
+     Maximum number of Fock   iterations      0
+     Maximum number of DIIS   iterations     60
+     Maximum number of QC-SCF iterations     60
+     Threshold for SCF convergence     1.00D-06
+
+
+ ***********************************************
+ ***** DIIS acceleration of SCF iterations *****
+ ***********************************************
+
+ C1-DIIS algorithm; max error vectors =    8
+
+ Automatic occupation of symmetries with  10 electrons.
+
+ Iter     Total energy    Error norm  Delta(E)    SCF occupation
+ -----------------------------------------------------------------------------
+
+Calculating AOSUPINT
+
+---> (Re)generating AOTWOINT
+
+
+     ************************************************************************
+     ************************** Output from HERINT **************************
+     ************************************************************************
+
+
+ Threshold for neglecting two-electron integrals:  1.00D-12
+ HERMIT - Number of two-electron integrals written:         677 ( 30.6% )
+ HERMIT - Megabytes written:                              0.014
+
+     (Precalculated AO two-electron integrals are transformed to P-supermatrix elements.
+      Threshold for discarding integrals :  1.00D-12 )
+@  1  -99.1540589271       1.51D+00  -9.92D+01     3   1   1   0
+      Virial theorem: -V/T =      1.981402
+@    MULPOP   H       0.66; F      -0.66; 
+   1  Level shift: doubly occupied orbital energies shifted by -2.00D-01
+ -----------------------------------------------------------------------------
+@  2  -99.2286170182       9.07D-01  -7.46D-02     3   1   1   0
+      Virial theorem: -V/T =      2.019541
+@    MULPOP   H       0.26; F      -0.26; 
+   2  Level shift: doubly occupied orbital energies shifted by -2.00D-01
+ -----------------------------------------------------------------------------
+@  3  -99.2517764227       2.18D-01  -2.32D-02     3   1   1   0
+      Virial theorem: -V/T =      2.008687
+@    MULPOP   H       0.27; F      -0.27; 
+   3  Level shift: doubly occupied orbital energies shifted by -5.00D-02
+ -----------------------------------------------------------------------------
+@  4  -99.2537062630       1.88D-02  -1.93D-03     3   1   1   0
+      Virial theorem: -V/T =      2.005539
+@    MULPOP   H       0.25; F      -0.25; 
+   4  Level shift: doubly occupied orbital energies shifted by -1.25D-02
+ -----------------------------------------------------------------------------
+@  5  -99.2537201708       4.32D-03  -1.39D-05     3   1   1   0
+      Virial theorem: -V/T =      2.005893
+@    MULPOP   H       0.25; F      -0.25; 
+ -----------------------------------------------------------------------------
+@  6  -99.2537207630       2.36D-04  -5.92D-07     3   1   1   0
+      Virial theorem: -V/T =      2.005833
+@    MULPOP   H       0.25; F      -0.25; 
+ -----------------------------------------------------------------------------
+@  7  -99.2537207647       6.55D-06  -1.78D-09     3   1   1   0
+      Virial theorem: -V/T =      2.005830
+@    MULPOP   H       0.25; F      -0.25; 
+ -----------------------------------------------------------------------------
+@  8  -99.2537207647       2.74D-06  -2.93D-12     3   1   1   0
+      Virial theorem: -V/T =      2.005830
+@    MULPOP   H       0.25; F      -0.25; 
+ -----------------------------------------------------------------------------
+@  9  -99.2537207647       2.74D-07  -2.84D-13     3   1   1   0
+
+@ *** DIIS converged in   9 iterations !
+@     Converged SCF energy, gradient:    -99.253720764730    2.74D-07
+    - total time used in SIRFCK :              0.00 seconds
+
+ --- Writing SIRIFC interface file
+
+--------------------------------------------------------------------------------
+
+
+     .--------------------------------------------------.
+     | HF-SCF KT IPs [a.u. & eV] from Koopmans' theorem |
+     `--------------------------------------------------'
+
+
+     HF-SCF KT symmetry 1 ( A1 ) in point group C2v -- 3 principal poles with pole strength 1
+
+   ============  ============  ============
+      26.129697      1.447808      0.478798
+     711.025212     39.396861     13.028748
+   ============  ============  ============
+
+     HF-SCF KT symmetry 2 ( B1 ) in point group C2v -- 1 principal poles with pole strength 1
+
+   ============
+       0.574376
+      15.629570
+   ============
+
+     HF-SCF KT symmetry 3 ( B2 ) in point group C2v -- 1 principal poles with pole strength 1
+
+   ============
+       0.574376
+      15.629570
+   ============
+
+@ Summary of HF-SCF KT ionization potentials [eV]:
+
+@ Symmetry 1 (A1 ) :   711.025      39.397      13.029
+
+@ Symmetry 2 (B1 ) :    15.630
+
+@ Symmetry 3 (B2 ) :    15.630
+
+@ Symmetry 4 (A2 ) :  No IPs in this symmetry
+
+  === End of HF-SCF KT output ===
+--------------------------------------------------------------------------------
+
+
+ CPU and wall time for SCF :       0.002       0.002
+
+
+ ----- Output from SIRIUS MP2 module -----
+
+ Reference: H.J.Aa.Jensen, P.Jørgensen, H.Ågren, and J.Olsen,
+            J. Chem. Phys. 88, 3834 (1988); 89, 5354 (1988)
+
+ Checking that the closed shell orbitals are canonical Hartree-Fock orbitals
+
+    Number of electrons  :   10
+    Closed shell orbitals:    3    1    1    0
+
+ Generating Fock matrix
+
+ Hartree-Fock electronic energy:        -101.867349935601
+ Hartree-Fock total      energy:         -99.253720764730
+
+ Hartree-Fock orbital energies, symmetry 1 ( A1 ),    3 occupied SCF orbitals
+
+       -26.12969653    -1.44780806    -0.47879768    -0.02505400     1.09145364
+         2.32930261     3.37541509
+
+ Hartree-Fock orbital energies, symmetry 2 ( B1 ),    1 occupied SCF orbitals
+
+        -0.57437615     2.25472782
+
+ Hartree-Fock orbital energies, symmetry 3 ( B2 ),    1 occupied SCF orbitals
+
+        -0.57437615     2.25472782
+
+    E(LUMO) :    -0.02505400   (in symmetry 1)
+  - E(HOMO) :    -0.47879768   (in symmetry 1)
+  --------------------------
+    gap     :     0.45374368
+
+ 2-el. integral transformation level 5: Total CPU and WALL times (sec)       0.000       0.000
+
+ MP2 move   0.160204 electrons to unoccupied HF orbitals
+
+
+@   Hartree-Fock total energy   :           -99.2537207647
+@   + MP2 contribution          :            -0.1729856106
+@   = MP2 second order energy   :           -99.4267063753
+
+ MP2INFO for SOPPA (RHF orbitals) written to SIRIFC
+
+ Natural orbital occupation numbers, symmetry 1 (irrep A1 )
+ Sum =     6.00126911; RHF =     6.00000000; Difference =     0.00126911
+
+         1.99994334     1.99337839     1.87996434     0.12016778     0.00558864
+         0.00193332     0.00029332
+
+ Natural orbital occupation numbers, symmetry 2 (irrep B1 )
+ Sum =     1.99936544; RHF =     2.00000000; Difference =    -0.00063456
+
+         1.98733296     0.01203249
+
+ Natural orbital occupation numbers, symmetry 3 (irrep B2 )
+ Sum =     1.99936544; RHF =     2.00000000; Difference =    -0.00063456
+
+         1.98733296     0.01203249
+
+ Time used for MP2 natural orbitals :       0.001 CPU seconds,       0.000 wall seconds.
+
+ CPU and wall time for MP2 :       0.001       0.000
+
+
+                       .-----------------------------------.
+                       | --- Final results from SIRIUS --- |
+                       `-----------------------------------'
+
+
+@    Spin multiplicity:           1
+@    Spatial symmetry:            1 ( irrep  A1  in C2v )
+@    Total charge of molecule:    0
+
+@    Final HF energy:             -99.253720764730                 
+@    Nuclear repulsion:             2.613629170871
+@    Electronic energy:          -101.867349935601
+
+@    Final gradient norm:           0.000000273924
+
+ 
+     Date and time (Linux)  : Mon Nov 21 19:10:13 2022
+     Host name              : fer                                     
+
+File label for MO orbitals:  21Nov22   MP2SAVE 
+
+ (Only coefficients > 0.0100 are printed.)
+
+ Molecular orbitals for symmetry species 1  (A1 )
+ ------------------------------------------------
+
+    Orbital         1        2        3        4        5        6        7
+   1 H   :1s     0.0010  -0.0040   0.2152  -0.3107  -0.0655   0.0920   1.2702
+   2 H   :1s    -0.0032  -0.0057   0.4569  -0.5388   0.0062   0.2223  -1.1847
+   3 F   :1s    -0.9762   0.2769   0.0094  -0.0197   0.1402  -0.0177  -0.0038
+   4 F   :1s    -0.0980  -0.2533  -0.0111   0.0161  -1.4344   0.2353  -0.1760
+   5 F   :1s     0.0077  -0.8167  -0.0585   0.0991   1.2046  -0.2363   0.3132
+   6 F   :2pz    0.0006  -0.0130  -0.3921  -0.5303  -0.1443  -0.9315   0.0285
+   7 F   :2pz   -0.0009  -0.0107  -0.4319  -0.2876   0.1583   1.0397  -0.2012
+
+ Molecular orbitals for symmetry species 2  (B1 )
+ ------------------------------------------------
+
+    Orbital         1        2
+   1 F   :2px    0.5501  -1.0053
+   2 F   :2px    0.6086   0.9710
+
+ Molecular orbitals for symmetry species 3  (B2 )
+ ------------------------------------------------
+
+    Orbital         1        2
+   1 F   :2py    0.5501  -1.0053
+   2 F   :2py    0.6086   0.9710
+
+  Total CPU  time used in SIRIUS :   0.00 seconds
+  Total wall time used in SIRIUS :   0.00 seconds
+
+ 
+     Date and time (Linux)  : Mon Nov 21 19:10:13 2022
+     Host name              : fer                                     
+
+
+                     .---------------------------------------.
+                     | End of Wave Function Section (SIRIUS) |
+                     `---------------------------------------'
+
+
+
+                 .------------------------------------------------.
+                 | Starting in Dynamic Property Section (RESPONS) |
+                 `------------------------------------------------'
+
+
+ ----------------------------------------------------------------------------------------
+  RESPONSE  -  an MCSCF, MC-srDFT, DFT, SOPPA and SOPPA-srDFT response property program
+ ----------------------------------------------------------------------------------------
+
+
+ -------- OUTPUT FROM RESPONSE INPUT PROCESSING --------
+
+
+
+
+ CHANGES OF DEFAULTS FOR RSPINP:
+ -------------------------------
+
+
+ Higher RPA Polarization Propagator Approximation -- HRPA
+
+ ** CALCULATION OF TRIPLET RESPONSE PROPERTIES  **  TRPFLG = T  TRPLET = T
+
+ Default : Using Fock type decoupling of the two-electron density matrix :
+    Add DV*(FC+FV) instead of DV*FC to E[2] approximate orbital diagonal
+
+
+
+ Linear Response calculation
+ ---------------------------
+
+ Print level                                    : IPRLR  =  32
+ Maximum number of iterations                   : MAXITL =  60
+ Threshold for relative convergence             : THCLR  = 1.000D-03
+ Maximum iterations in optimal orbital algorithm: MAXITO =   5
+
+  1 B-frequencies  0.000000D+00
+
+ General print level in RESPONS is IPRRSP =        32
+
+ NPRLBL=    2 labels in property calculations in RESPONS:
+
+  I      PRPLBL(I), I=1,NPRLBL 
+    1     FC H 001
+    2     FC F 002
+
+ RSPSYM: number of property vectors :
+
+ NGPPP(I) ,I=1,NSYM    0    0    0    0
+ NGPLR(I) ,I=1,NSYM    2    0    0    0
+ NGPC6(I) ,I=1,NSYM    0    0    0    0
+ NAQROP(I),I=1,NSYM    0    0    0    0
+ NBQROP(I),I=1,NSYM    0    0    0    0
+ NCQROP(I),I=1,NSYM    0    0    0    0
+ NASMOP(I),I=1,NSYM    0    0    0    0
+ NBSMOP(I),I=1,NSYM    0    0    0    0
+ NESRS(I) ,I=1,NSYM    0    0    0    0
+ NESRT(I) ,I=1,NSYM    0    0    0    0
+ NACROP(I),I=1,NSYM    0    0    0    0
+ NBCROP(I),I=1,NSYM    0    0    0    0
+ NCCROP(I),I=1,NSYM    0    0    0    0
+ NDCROP(I),I=1,NSYM    0    0    0    0
+ NATMOP(I),I=1,NSYM    0    0    0    0
+ NBTMOP(I),I=1,NSYM    0    0    0    0
+ NCTMOP(I),I=1,NSYM    0    0    0    0
+ NATPOP(I),I=1,NSYM    0    0    0    0
+ NBTPOP(I),I=1,NSYM    0    0    0    0
+
+  SYMMETRY   NO.CONV  NO.START NO.SIMULT
+
+         1         0         0         0
+         2         0         0         0
+         3         0         0         0
+         4         0         0         0
+
+    2 second order properties calculated with symmetry no.    1 and labels:
+
+          FC H 001
+          FC F 002
+
+ Old direct access AO file found, SORTA skipped.
+
+ 2-el. integral transformation level 10: Total CPU and WALL times (sec)       0.000       0.001
+
+ Sorting integrals to Dirac format: Total CPU and WALL times (sec)       0.000       0.000
+
+
+   SCF energy         :      -99.253720764729650
+ -- inactive part     :     -101.867349935601055
+ -- nuclear repulsion :        2.613629170871399
+
+ NISHT,NASHT,NORBT,NBAST,NCREF,IREFSY     5     0    11    11     1     1
+
+ RSPMC : MP2 singlet and triplet correlation coefficients
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6     Column   7     Column   8
+       1      -0.00028550    -0.00060543    -0.00056819     0.00002173    -0.00004991    -0.00017859     0.00027530    -0.00003413
+       2      -0.00003413     0.00018426    -0.00001939    -0.00007794     0.00008351    -0.00106902     0.00027530    -0.00001462
+
+               Column   9     Column  10     Column  11     Column  12     Column  13     Column  14     Column  15     Column  16
+       1      -0.00004030    -0.00004699    -0.00001464    -0.00006609    -0.00017553     0.00023449    -0.00060543    -0.00139500
+       2       0.00015563     0.00000379    -0.00006881     0.00000019    -0.00007665     0.00023449    -0.00004030    -0.00001458
+
+               Column  17     Column  18     Column  19     Column  20     Column  21     Column  22     Column  23     Column  24
+       1      -0.00166249    -0.00106383    -0.00000864    -0.00011888    -0.00009988     0.00018426    -0.00001458    -0.00002523
+       2      -0.00009825     0.00006249     0.00019095    -0.00214002    -0.00009988     0.00015563    -0.00183116    -0.00007708
+
+               Column  25     Column  26     Column  27     Column  28     Column  29     Column  30     Column  31     Column  32
+       1       0.00007510     0.00096254     0.00195718    -0.00261069    -0.00132821    -0.00010028    -0.00028624     0.00288071
+       2       0.00086484     0.00005635     0.00007933    -0.00261069    -0.00099405    -0.00035441     0.00011797    -0.00132821
+
+               Column  33     Column  34     Column  35     Column  36     Column  37     Column  38     Column  39     Column  40
+       1      -0.00099405    -0.00035441     0.00011797    -0.00056819    -0.00166249    -0.02357428    -0.00526161     0.00702115
+       2      -0.00010028    -0.00028624     0.00288071    -0.00004699    -0.00002523    -0.00117027     0.00277047    -0.00301413
+
+               Column  41     Column  42     Column  43     Column  44     Column  45     Column  46     Column  47     Column  48
+       1       0.00297803    -0.00756993    -0.00001939    -0.00009825    -0.00117027    -0.00041203     0.00509436     0.00389517
+       2       0.01238391    -0.00756993     0.00000379    -0.00007708    -0.00043372     0.00193485     0.00125062     0.00046070
+
+               Column  49     Column  50     Column  51     Column  52     Column  53     Column  54     Column  55     Column  56
+       1      -0.00466865     0.00002173    -0.00106383    -0.00526161    -0.00729363     0.00034662    -0.00135599     0.00149016
+       2      -0.00466865    -0.00001464     0.00007510    -0.00041203    -0.00039686    -0.00120646     0.00414184     0.00149016
+
+               Column  57     Column  58     Column  59     Column  60     Column  61     Column  62     Column  63     Column  64
+       1      -0.00007794     0.00006249     0.00277047    -0.00039686    -0.03170851    -0.02596559     0.03410828    -0.00099405
+       2      -0.00006881     0.00086484     0.00193485    -0.01566525    -0.00153794    -0.00077855     0.03410828    -0.00712213
+
+               Column  65     Column  66     Column  67     Column  68     Column  69     Column  70     Column  71     Column  72
+       1      -0.00042501     0.00083852    -0.00576439    -0.00712213     0.00217475    -0.00025673    -0.00004991    -0.00000864
+       2       0.00217475    -0.00025673    -0.00099405    -0.00042501     0.00083852    -0.00576439    -0.00006609     0.00096254
+
+               Column  73     Column  74     Column  75     Column  76     Column  77     Column  78     Column  79     Column  80
+       1       0.00702115     0.00034662    -0.23542359    -0.02410459     0.05815194     0.00008351     0.00019095    -0.00301413
+       2       0.00509436    -0.03170851     0.01701609    -0.00080253     0.05815194     0.00000019     0.00005635     0.00125062
+
+               Column  81     Column  82     Column  83     Column  84     Column  85     Column  86     Column  87     Column  88
+       1      -0.00120646     0.01701609    -0.00107935     0.00272336    -0.00017859    -0.00011888     0.00297803    -0.00135599
+       2      -0.00153794    -0.01631149     0.00010801     0.00272336    -0.00017553     0.00195718     0.00389517    -0.02596559
+
+               Column  89     Column  90     Column  91     Column  92     Column  93     Column  94     Column  95     Column  96
+       1      -0.02410459    -0.02198712     0.03966800    -0.00106902    -0.00214002     0.01238391     0.00414184    -0.00080253
+       2      -0.00107935    -0.00122944     0.03966800    -0.00007665     0.00007933     0.00046070    -0.00077855     0.00010801
+
+               Column  97     Column  98     Column  99     Column 100     Column 101     Column 102     Column 103     Column 104
+       1      -0.00122944     0.00263949    -0.00010028    -0.00274233    -0.00106111    -0.00076430    -0.00042501    -0.02696340
+       2      -0.00513161     0.00263949    -0.00042501    -0.02696340    -0.01490525    -0.00010028    -0.00274233    -0.00106111
+
+               Column 105     Column 106     Column 107     Column 108     Column 109     Column 110     Column 111     Column 112
+       1      -0.01490525    -0.00035441    -0.02696340    -0.00065224     0.00103992     0.00083852    -0.00065224    -0.00025315
+       2      -0.00076430     0.00217475    -0.01671116    -0.00250106    -0.00028624    -0.00106111    -0.00025812     0.00098788
+
+               Column 113     Column 114     Column 115     Column 116     Column 117     Column 118     Column 119     Column 120
+       1       0.00011797    -0.01490525    -0.00025315    -0.00025114    -0.00576439     0.00103992    -0.00025114     0.00027530
+       2      -0.00025673    -0.00250106    -0.00412193     0.00288071    -0.00076430     0.00098788    -0.00809906     0.00023449
+
+               Column 121     Column 122     Column 123     Column 124     Column 125     Column 126     Column 127     Column 128
+       1      -0.00009988    -0.00756993     0.00149016     0.05815194     0.03966800    -0.03637712    -0.00408651    -0.00035441
+       2      -0.00261069    -0.00466865     0.03410828     0.00272336     0.00263949    -0.05232168     0.02003107     0.00217475
+
+               Column 129     Column 130     Column 131     Column 132     Column 133     Column 134     Column 135     Column 136
+       1      -0.02696340    -0.00065224     0.00103992     0.00083852    -0.00065224    -0.00025315     0.00011797    -0.01490525
+       2      -0.01671116    -0.00250106    -0.00028624    -0.00106111    -0.00025812     0.00098788    -0.00025673    -0.00250106
+
+               Column 137     Column 138     Column 139     Column 140     Column 141     Column 142     Column 143     Column 144
+       1      -0.00025315    -0.00025114    -0.00576439     0.00103992    -0.00025114     0.02003107     0.00027530    -0.00009988
+       2      -0.00412193     0.00288071    -0.00076430     0.00098788    -0.00809906    -0.00408651     0.00023449    -0.00261069
+
+               Column 145     Column 146     Column 147     Column 148     Column 149     Column 150     Column 151     Column 152
+       1      -0.00756993     0.00149016     0.05815194     0.03966800    -0.05232168     0.00028550     0.00060543     0.00056819
+       2      -0.00466865     0.03410828     0.00272336     0.00263949    -0.03637712     0.00003413    -0.00018426     0.00003779
+
+               Column 153     Column 154     Column 155     Column 156     Column 157     Column 158     Column 159     Column 160
+       1       0.00110109     0.00004991     0.00006529     0.00014450     0.00003413     0.00004030     0.00002859     0.00007038
+       2       0.00004280     0.00001622    -0.00028535     0.00014450     0.00001462    -0.00015563    -0.00000379     0.00007432
+
+               Column 161     Column 162     Column 163     Column 164     Column 165     Column 166     Column 167     Column 168
+       1      -0.00003364    -0.00006879     0.00011266     0.00060543     0.00139500     0.00053968     0.00106383     0.00012194
+       2      -0.00000019    -0.00001202     0.00011266     0.00004030     0.00001458     0.00004251    -0.00007090     0.00005337
+
+               Column 169     Column 170     Column 171     Column 172     Column 173     Column 174     Column 175     Column 176
+       1       0.00011888    -0.00004535    -0.00018426     0.00001458     0.00006037    -0.00006669     0.00039184     0.00077429
+       2      -0.00059145    -0.00004535    -0.00015563     0.00183116     0.00007157    -0.00086484     0.00003231    -0.00007933
+
+               Column 177     Column 178     Column 179     Column 180     Column 181     Column 182     Column 183     Column 184
+       1      -0.00105024     0.00132821     0.00010028    -0.00006091     0.00078022     0.00099405    -0.00006540     0.00002726
+       2      -0.00105024     0.00099405    -0.00006540     0.00002726     0.00132821     0.00010028    -0.00006091     0.00078022
+
+               Column 185     Column 186     Column 187     Column 188     Column 189     Column 190     Column 191     Column 192
+       1       0.00056819     0.00053968     0.02357428     0.00526161    -0.00702115    -0.00122376     0.00107347     0.00003779
+       2       0.00002859     0.00006037     0.00117027    -0.00277047    -0.00239153     0.01701104     0.00107347    -0.00000379
+
+               Column 193     Column 194     Column 195     Column 196     Column 197     Column 198     Column 199     Column 200
+       1       0.00004251     0.00117027     0.00041203     0.00031130    -0.00049408     0.00099721     0.00110109     0.00106383
+       2       0.00007157     0.00043372    -0.00193485    -0.00125062     0.00087173     0.00099721     0.00007038    -0.00006669
+
+               Column 201     Column 202     Column 203     Column 204     Column 205     Column 206     Column 207     Column 208
+       1       0.00526161     0.00729363    -0.00210090     0.00135599    -0.00032557     0.00004280    -0.00007090    -0.00277047
+       2       0.00041203     0.00039686    -0.00219463     0.01592978    -0.00032557     0.00007432    -0.00086484    -0.00193485
+
+               Column 209     Column 210     Column 211     Column 212     Column 213     Column 214     Column 215     Column 216
+       1       0.00039686     0.00231357     0.00589397    -0.00752650     0.00099405     0.00042501     0.00283293    -0.02081739
+       2       0.01566525     0.00020552     0.00077855    -0.00752650     0.00712213     0.00432170    -0.00090787     0.00099405
+
+               Column 217     Column 218     Column 219     Column 220     Column 221     Column 222     Column 223     Column 224
+       1       0.00712213     0.00432170    -0.00090787     0.00004991     0.00012194    -0.00702115    -0.00210090     0.23542359
+       2       0.00042501     0.00283293    -0.02081739    -0.00003364     0.00039184     0.00031130     0.00231357    -0.01701609
+
+               Column 225     Column 226     Column 227     Column 228     Column 229     Column 230     Column 231     Column 232
+       1       0.02410459    -0.00140838     0.00001622     0.00005337    -0.00239153    -0.00219463    -0.01701609     0.00107935
+       2       0.00080253    -0.00140838    -0.00000019     0.00003231    -0.00125062     0.00020552     0.01631149    -0.00010801
+
+               Column 233     Column 234     Column 235     Column 236     Column 237     Column 238     Column 239     Column 240
+       1      -0.00020038     0.00006529     0.00011888    -0.00122376     0.00135599     0.02410459     0.02198712    -0.00328583
+       2      -0.00020038    -0.00006879     0.00077429    -0.00049408     0.00589397     0.00107935     0.00122944    -0.00328583
+
+               Column 241     Column 242     Column 243     Column 244     Column 245     Column 246     Column 247     Column 248
+       1      -0.00028535    -0.00059145     0.01701104     0.01592978     0.00080253     0.00122944    -0.00037030     0.00010028
+       2      -0.00001202    -0.00007933     0.00087173     0.00077855    -0.00010801     0.00513161    -0.00037030     0.00042501
+
+               Column 249     Column 250     Column 251     Column 252     Column 253     Column 254     Column 255     Column 256
+       1       0.00274233    -0.00146187    -0.00150489     0.00042501    -0.02978016    -0.02147692    -0.00006540    -0.02978016
+       2      -0.02978016    -0.02147692     0.00010028     0.00274233    -0.00146187    -0.00150489     0.00432170     0.01671116
+
+               Column 257     Column 258     Column 259     Column 260     Column 261     Column 262     Column 263     Column 264
+       1       0.00065224    -0.00103992     0.00283293     0.00065224     0.00025315     0.00002726    -0.02147692     0.00025315
+       2       0.00250106    -0.00006091    -0.00146187     0.00025812    -0.00098788    -0.00090787     0.00250106     0.00412193
+
+               Column 265     Column 266     Column 267     Column 268     Column 269     Column 270     Column 271     Column 272
+       1       0.00025114    -0.02081739    -0.00103992     0.00025114     0.00014450    -0.00004535     0.00107347    -0.00032557
+       2       0.00078022    -0.00150489    -0.00098788     0.00809906     0.00011266    -0.00105024     0.00099721    -0.00752650
+
+               Column 273     Column 274     Column 275     Column 276     Column 277     Column 278     Column 279     Column 280
+       1      -0.00140838    -0.00328583     0.03637712     0.00408651    -0.00006540    -0.02978016     0.00065224    -0.00103992
+       2      -0.00020038    -0.00037030     0.00408651     0.02820410     0.00432170     0.01671116     0.00250106    -0.00006091
+
+               Column 281     Column 282     Column 283     Column 284     Column 285     Column 286     Column 287     Column 288
+       1       0.00283293     0.00065224     0.00025315     0.00002726    -0.02147692     0.00025315     0.00025114    -0.02081739
+       2      -0.00146187     0.00025812    -0.00098788    -0.00090787     0.00250106     0.00412193     0.00078022    -0.00150489
+
+               Column 289     Column 290     Column 291     Column 292     Column 293     Column 294     Column 295     Column 296
+       1      -0.00103992     0.00025114     0.02820410     0.00014450    -0.00004535     0.00107347    -0.00032557    -0.00140838
+       2      -0.00098788     0.00809906     0.00408651     0.00011266    -0.00105024     0.00099721    -0.00752650    -0.00020038
+
+               Column 297     Column 298
+       1      -0.00328583     0.00408651
+       2      -0.00037030     0.03637712
+    ==== End of matrix output ====
+
+ RSPMC : MP2 second order density
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6     Column   7     Column   8
+       1       1.99994045     0.00013556    -0.00004132    -0.00004629    -0.00005702     0.00003437     0.00049541     0.00000000
+       2       0.00013556     1.99310472     0.00429069    -0.01062025     0.00159034    -0.00258146     0.00108045     0.00000000
+       3      -0.00004132     0.00429069     1.87208471    -0.11006563     0.03158722     0.03571530    -0.00513932     0.00000000
+       4      -0.00004629    -0.01062025    -0.11006563     0.12308667    -0.00789873     0.01845453    -0.00046741     0.00000000
+       5      -0.00005702     0.00159034     0.03158722    -0.00789873     0.00124652    -0.00046327    -0.00075558     0.00000000
+       6       0.00003437    -0.00258146     0.03571530     0.01845453    -0.00046327     0.00644083     0.00049558     0.00000000
+       7       0.00049541     0.00108045    -0.00513932    -0.00046741    -0.00075558     0.00049558     0.00536521     0.00000000
+       8       0.00000000     0.00000000     0.00000000     0.00000000     0.00000000     0.00000000     0.00000000     1.98733284
+       9       0.00000000     0.00000000     0.00000000     0.00000000     0.00000000     0.00000000     0.00000000     0.00048559
+
+               Column   9     Column  10     Column  11
+       8       0.00048559     0.00000000     0.00000000
+       9       0.01203261     0.00000000     0.00000000
+      10       0.00000000     1.98733284     0.00048559
+      11       0.00000000     0.00048559     0.01203261
+    ==== End of matrix output ====
+
+ **** RSPMC **** MO coefficients read from SIRIFC for symmetry    1
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6     Column   7
+       1       0.00121275    -0.01575461     0.17882808    -0.25169137     1.28818359    -0.05106245     0.10700235
+       2      -0.00287707    -0.02788096     0.43016459    -0.66879912    -1.11192731     0.19842216    -0.20784628
+       3      -0.98171893     0.25603286     0.02009930    -0.02438870    -0.02223105     0.00704333     0.13884971
+       4      -0.09239750    -0.25373105    -0.02479301     0.02022505     0.03551876    -0.03970315    -1.46324143
+       5       0.02403142    -0.81318631    -0.08518899     0.12305053     0.12105088     0.00566958     1.25952649
+       6       0.00069777     0.00063647    -0.39448955    -0.33161773    -0.02289974    -1.02792102     0.04168413
+       7      -0.00082038     0.00696241    -0.47739043    -0.44898155    -0.11168415     0.98454838    -0.06690739
+    ==== End of matrix output ====
+
+ **** RSPMC **** MO coefficients read from SIRIFC for symmetry    2
+
+               Column   1     Column   2
+       1       0.55034268    -1.00515135
+       2       0.60836133     0.97113479
+    ==== End of matrix output ====
+
+ **** RSPMC **** MO coefficients read from SIRIFC for symmetry    3
+
+               Column   1     Column   2
+       1       0.55034268    -1.00515135
+       2       0.60836133     0.97113479
+    ==== End of matrix output ====
+
+ **** RSPMC **** MO coefficients read from SIRIFC for symmetry    4
+    ==== End of matrix output ====
+
+
+                        **********************************
+                        *** SOPPA response calculation ***
+                        **********************************
+
+ ----------------------------------------------------------------
+ ----- Linear response calculation
+ ----- Symmetry of excitation/property operator(s)    1  ( A1 )
+ ----------------------------------------------------------------
+
+ Number of excitations of this symmetry            0
+ Number of response properties of this symmetry    2
+ Number of C6/C8 properties of this symmetry       0
+
+
+ Perturbation symmetry.     KSYMOP:           1
+ p-h variables.             KZWOPT:          14
+ 2p-2h variables.           KZCONF:         177
+ Total number of variables. KZVAR :         191
+
+ T(1) 2p-2h variables.         :          43
+ T(2) 2p-2h variables.         :          61
+ T(3) 2p-2h variables.         :          73
+
+
+ RSPLR -- linear response calculation for symmetry 1  ( A1 )
+ RSPLR -- operator label : FC H 001
+ RSPLR -- operator spin  :   0
+ RSPLR -- frequencies    :     0.000000
+
+
+ Output from PRPCTL:
+ ===================
+
+ Property label = FC H 001
+
+
+PRPCTL test output:  Reference state expectation value for FC H 001
+
+ *** Individual non-zero orbital contributions
+ *** to the expectation value for property FC H 001 :
+
+
+     FC H 001 Hartree-Fock part:     0.00000000
+     FC H 001 second order part:     0.44156265
+     FC H 001 total 2. order   :     0.44156265
+
+ (PRPORS) Z and Y property GP vector in SOPPA approximation
+
+               Column   1     Column   2
+     178      -0.00336594     0.00336594
+     179       0.01026620    -0.01026620
+     180      -0.00016917     0.00016917
+     181       0.00065176    -0.00065176
+     182       0.09880097    -0.09880097
+     183      -0.30755996     0.30755996
+     184       0.00512402    -0.00512402
+     185      -0.01958810     0.01958810
+     186      -1.55535200     1.55535200
+     187       4.69458216    -4.69458216
+     188      -0.07691266     0.07691266
+     189       0.29754291    -0.29754291
+    ==== End of matrix output ====
+
+
+                 Gradient vector in RSPLR for operator FC H 001:
+                 -----------------------------------------------
+
+
+ Norm :   7.0225D+00
+
+               Column   1     Column   2
+     178      -0.00336594     0.00336594
+     179       0.01026620    -0.01026620
+     180      -0.00016917     0.00016917
+     181       0.00065176    -0.00065176
+     182       0.09880097    -0.09880097
+     183      -0.30755996     0.30755996
+     184       0.00512402    -0.00512402
+     185      -0.01958810     0.01958810
+     186      -1.55535200     1.55535200
+     187       4.69458216    -4.69458216
+     188      -0.07691266     0.07691266
+     189       0.29754291    -0.29754291
+    ==== End of matrix output ====
+
+
+
+ ---  SOLVING SETS OF LINEAR EQUATIONS FOR LINEAR RESPONSE PROPERTIES ---
+
+ Operator symmetry = 1  ( A1 ); triplet =   T
+
+
+ MAXIMUM NUMBER OF SIMULTANEOUS TRIAL VECTORS:     120
+
+ MAXIMUM NUMBER OF SIMULTANEOUS TRIAL VECTORS IN RSPNEX:     120
+  LINEQ,RESTPP,ORBSPC T F F
+  FREQ =   0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000     
+
+    I       IBTYP(I)          I=1,NLSIM NLSIM    1
+         1         1
+
+ ** TEST OF Z = Y OR Z = -Y:
+ (Z Y) norm squared = 1.03556649D+01
+ Z + Y norm squared = 0.00000000D+00
+
+ Z = -Y in trial vector no.   1
+ Y component removed.
+
+ RSPORT: b-vector, norm**2:     1 5.17783D+00
+ RSPORT, norm and <ZY/YZ> overlap before S-1/2  1.000000D+00   0.0000000000D+00
+
+ AFTER RSPORT IN LRST
+
+    I       IBTYP(I)          I=1,NLSIM NLSIM=    1
+    1         1
+ AFTER START ROUTINE BINMEM T
+
+ ** RSPCTL MICROITERATION NUMBER    1
+ NSIM,MAXSIM,JEXSIM    1  120    1
+  NCSIM,NOSIM           0           1
+
+
+Output from "RSPOLI". NCSIM,NOSIM=         0         1
+TRPLET,HSROHF,DOHSRDFT,DOMCSRDFT,DFTADD         T         F         F         F         F
+TDHF,NASHT         T         0
+  BEFORE WRITING IBTYP ON LURSP1 LINEQ: T
+
+ TRIAL VECTORS FOR RESTART:    1
+
+ INDEX VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+ IBTYP VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+  1. REDUCED GRADIENT VECTOR (GZ, GY) DIM KZRED    1
+
+               Column   1
+       1       4.27054228
+       2      -4.27054228
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED HESSIAN MATRIX:
+
+               Column   1     Column   2
+       1       0.94206606
+       2       0.08769152     0.94206606
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED METRIC MATRIX:
+
+               Column   1     Column   2
+       1       1.79357837
+       2      -0.00000000    -1.79357837
+    ==== End of matrix output ====
+  AFREQ,KZYRED,IGP   0.0000000000000000                2           1
+
+ REDUCED E(2)-W*S(2) MATRIX:
+
+               Column   1     Column   2
+       1       0.94206606
+       2       0.08769152     0.94206606
+    ==== End of matrix output ====
+ REDUCED GRADIENT VECTORS DIM (2,KZRED)           1
+
+               Column   1
+       1       4.27054228
+       2      -4.27054228
+    ==== End of matrix output ====
+
+ GP * SOLUTION vector at frequency     0.00000 a.u.
+ after    1 linear transformations is      4.26921226D+01
+ INERTIA (POS,ZER,NEG) of reduced matrix is    2    0    0
+ Determinant of reduced matrix is  8.80 * 10 ** -1.0
+
+ REDUCED PROPERTY VECTOR AND REDUCED SOLUTION:
+
+    1   4.270542D+00   4.998443D+00
+    2  -4.270542D+00  -4.998443D+00
+
+ ROOT:  1 RESIDUAL TOT: 4.51657D+00 CONF: 0.00000D+00 ORB: 4.51657D+00
+          BNORM: 7.06887D+00 EIVAL: 0.00000D+00
+
+ ** TEST OF Z = Y OR Z = -Y:
+ (Z Y) norm squared = 1.10083472D+01
+ Z + Y norm squared = 0.00000000D+00
+
+ Z = -Y in trial vector no.   1
+ Y component removed.
+
+ RSPORT: b-vector, norm**2:     1 4.09145D+00
+ RSPORT, norm and <ZY/YZ> overlap before S-1/2  1.000000D+00   0.0000000000D+00
+
+ NUMBER OF TRIAL VECTORS IN THIS LOAD    1   OFFSET FOR THIS LOAD    0
+    1 NON-CONVERGED SOLUTION VECTORS THIS LOAD, TOTAL:    1
+    1 LINEAR INDEPENDENT TRIAL VECTORS ADDED TO PREVIOUS    0
+
+ Convergence of RSP solution vectors, threshold = 1.00D-03
+ ---------------------------------------------------------------
+ (dimension of paired reduced space:    2)
+ RSP solution vector no.    1; norm of residual   6.39D-01
+
+ ** RSPCTL MICROITERATION NUMBER    2
+ NSIM,MAXSIM,JEXSIM    1  120    1
+  NCSIM,NOSIM           0           1
+
+
+Output from "RSPOLI". NCSIM,NOSIM=         0         1
+TRPLET,HSROHF,DOHSRDFT,DOMCSRDFT,DFTADD         T         F         F         F         F
+TDHF,NASHT         T         0
+  BEFORE WRITING IBTYP ON LURSP1 LINEQ: T
+
+ TRIAL VECTORS FOR RESTART:    2
+
+ INDEX VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+ IBTYP VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+  1. REDUCED GRADIENT VECTOR (GZ, GY) DIM KZRED    2
+
+               Column   1     Column   2
+       1       4.27054228     2.50941526
+       2      -4.27054228    -2.50941526
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED HESSIAN MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4
+       1       0.94206606
+       2       0.08769152     0.94206606
+       3       1.08149386    -0.04650367     1.44381043
+       4      -0.04650367     1.08149386     0.05394057     1.44381043
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED METRIC MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4
+       1       1.79357837
+       2      -0.00000000    -1.79357837
+       3       0.06006071     0.00000000     1.82474505
+       4      -0.00000000    -0.06006071    -0.00000000    -1.82474505
+    ==== End of matrix output ====
+  AFREQ,KZYRED,IGP   0.0000000000000000                4           1
+
+ REDUCED E(2)-W*S(2) MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4
+       1       0.94206606
+       2       0.08769152     0.94206606
+       3       1.08149386    -0.04650367     1.44381043
+       4      -0.04650367     1.08149386     0.05394057     1.44381043
+    ==== End of matrix output ====
+ REDUCED GRADIENT VECTORS DIM (2,KZRED)           2
+
+               Column   1     Column   2
+       1       4.27054228     2.50941526
+       2      -4.27054228    -2.50941526
+    ==== End of matrix output ====
+
+ *** INFO, negative eigenvalues in reduced matrix. Symmetry  1,  triplet       T Dimension of reduced matrix =     4
+
+ GP * SOLUTION vector at frequency     0.00000 a.u.
+ after    2 linear transformations is     -1.54316187D+02
+ INERTIA (POS,ZER,NEG) of reduced matrix is    3    0    1
+ Determinant of reduced matrix is -4.00 * 10 ** -2.0
+
+ REDUCED PROPERTY VECTOR AND REDUCED SOLUTION:
+
+    1   4.270542D+00  -3.656719D+01
+    2  -4.270542D+00   3.656719D+01
+
+    3   2.509415D+00   3.148289D+01
+    4  -2.509415D+00  -3.148289D+01
+
+ ROOT:  1 RESIDUAL TOT: 7.94931D+00 CONF: 0.00000D+00 ORB: 7.94931D+00
+          BNORM: 6.82397D+01 EIVAL: 0.00000D+00
+
+ ** TEST OF Z = Y OR Z = -Y:
+ (Z Y) norm squared = 1.87539977D+00
+ Z + Y norm squared = 0.00000000D+00
+
+ Z = -Y in trial vector no.   1
+ Y component removed.
+
+ RSPORT: b-vector, norm**2:     1 9.33119D-01
+ RSPORT, norm and <ZY/YZ> overlap before S-1/2  1.000000D+00   0.0000000000D+00
+
+ NUMBER OF TRIAL VECTORS IN THIS LOAD    1   OFFSET FOR THIS LOAD    0
+    1 NON-CONVERGED SOLUTION VECTORS THIS LOAD, TOTAL:    1
+    1 LINEAR INDEPENDENT TRIAL VECTORS ADDED TO PREVIOUS    0
+
+ Convergence of RSP solution vectors, threshold = 1.00D-03
+ ---------------------------------------------------------------
+ (dimension of paired reduced space:    4)
+ RSP solution vector no.    1; norm of residual   1.16D-01
+
+ ** RSPCTL MICROITERATION NUMBER    3
+ NSIM,MAXSIM,JEXSIM    1  120    1
+  NCSIM,NOSIM           0           1
+
+
+Output from "RSPOLI". NCSIM,NOSIM=         0         1
+TRPLET,HSROHF,DOHSRDFT,DOMCSRDFT,DFTADD         T         F         F         F         F
+TDHF,NASHT         T         0
+  BEFORE WRITING IBTYP ON LURSP1 LINEQ: T
+
+ TRIAL VECTORS FOR RESTART:    3
+
+ INDEX VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+ IBTYP VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+  1. REDUCED GRADIENT VECTOR (GZ, GY) DIM KZRED    3
+
+               Column   1     Column   2     Column   3
+       1       4.27054228     2.50941526     0.04341989
+       2      -4.27054228    -2.50941526    -0.04341989
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED HESSIAN MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1       0.94206606
+       2       0.08769152     0.94206606
+       3       1.08149386    -0.04650367     1.44381043
+       4      -0.04650367     1.08149386     0.05394057     1.44381043
+       5      -0.00062024     0.02542860     0.10381124    -0.04270595     4.52998111
+       6       0.02542860    -0.00062024    -0.04270595     0.10381124     0.11277700     4.52998111
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED METRIC MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1       1.79357837
+       2      -0.00000000    -1.79357837
+       3       0.06006071     0.00000000     1.82474505
+       4      -0.00000000    -0.06006071    -0.00000000    -1.82474505
+       5      -0.00747169     0.00000000     0.00815106     0.00000000     1.93120772
+       6      -0.00000000     0.00747169    -0.00000000    -0.00815106    -0.00000000    -1.93120772
+    ==== End of matrix output ====
+  AFREQ,KZYRED,IGP   0.0000000000000000                6           1
+
+ REDUCED E(2)-W*S(2) MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1       0.94206606
+       2       0.08769152     0.94206606
+       3       1.08149386    -0.04650367     1.44381043
+       4      -0.04650367     1.08149386     0.05394057     1.44381043
+       5      -0.00062024     0.02542860     0.10381124    -0.04270595     4.52998111
+       6       0.02542860    -0.00062024    -0.04270595     0.10381124     0.11277700     4.52998111
+    ==== End of matrix output ====
+ REDUCED GRADIENT VECTORS DIM (2,KZRED)           3
+
+               Column   1     Column   2     Column   3
+       1       4.27054228     2.50941526     0.04341989
+       2      -4.27054228    -2.50941526    -0.04341989
+    ==== End of matrix output ====
+
+ *** INFO, negative eigenvalues in reduced matrix. Symmetry  1,  triplet       T Dimension of reduced matrix =     6
+
+ GP * SOLUTION vector at frequency     0.00000 a.u.
+ after    3 linear transformations is     -1.41466162D+02
+ INERTIA (POS,ZER,NEG) of reduced matrix is    5    0    1
+ Determinant of reduced matrix is -8.81 * 10 ** -1.0
+
+ REDUCED PROPERTY VECTOR AND REDUCED SOLUTION:
+
+    1   4.270542D+00  -3.380627D+01
+    2  -4.270542D+00   3.380627D+01
+
+    3   2.509415D+00   2.936482D+01
+    4  -2.509415D+00  -2.936482D+01
+
+    5   4.341989D-02  -1.163552D+00
+    6  -4.341989D-02   1.163552D+00
+
+ ROOT:  1 RESIDUAL TOT: 1.01463D+00 CONF: 0.00000D+00 ORB: 1.01463D+00
+          BNORM: 6.33484D+01 EIVAL: 0.00000D+00
+
+ ** TEST OF Z = Y OR Z = -Y:
+ (Z Y) norm squared = 3.15176961D-02
+ Z + Y norm squared = 0.00000000D+00
+
+ Z = -Y in trial vector no.   1
+ Y component removed.
+
+ RSPORT: b-vector, norm**2:     1 1.51321D-02
+ RSPORT, norm and <ZY/YZ> overlap before S-1/2  1.000000D+00   0.0000000000D+00
+
+ NUMBER OF TRIAL VECTORS IN THIS LOAD    1   OFFSET FOR THIS LOAD    0
+    1 NON-CONVERGED SOLUTION VECTORS THIS LOAD, TOTAL:    1
+    1 LINEAR INDEPENDENT TRIAL VECTORS ADDED TO PREVIOUS    0
+
+ Convergence of RSP solution vectors, threshold = 1.00D-03
+ ---------------------------------------------------------------
+ (dimension of paired reduced space:    6)
+ RSP solution vector no.    1; norm of residual   1.60D-02
+
+ ** RSPCTL MICROITERATION NUMBER    4
+ NSIM,MAXSIM,JEXSIM    1  120    1
+  NCSIM,NOSIM           0           1
+
+
+Output from "RSPOLI". NCSIM,NOSIM=         0         1
+TRPLET,HSROHF,DOHSRDFT,DOMCSRDFT,DFTADD         T         F         F         F         F
+TDHF,NASHT         T         0
+  BEFORE WRITING IBTYP ON LURSP1 LINEQ: T
+
+ TRIAL VECTORS FOR RESTART:    4
+
+ INDEX VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+ IBTYP VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+  1. REDUCED GRADIENT VECTOR (GZ, GY) DIM KZRED    4
+
+               Column   1     Column   2     Column   3     Column   4
+       1       4.27054228     2.50941526     0.04341989     0.26299100
+       2      -4.27054228    -2.50941526    -0.04341989    -0.26299100
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED HESSIAN MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1       0.94206606
+       2       0.08769152     0.94206606
+       3       1.08149386    -0.04650367     1.44381043
+       4      -0.04650367     1.08149386     0.05394057     1.44381043
+       5      -0.00062024     0.02542860     0.10381124    -0.04270595     4.52998111
+       6       0.02542860    -0.00062024    -0.04270595     0.10381124     0.11277700     4.52998111
+       7       0.00611977     0.03452732    -0.04695790    -0.03802255    -0.06679643     0.15099639
+       8       0.03452732     0.00611977    -0.03802255    -0.04695790     0.15099639    -0.06679643
+
+               Column   7     Column   8
+       7       4.30141117
+       8       0.21847459     4.30141117
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED METRIC MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1       1.79357837
+       2      -0.00000000    -1.79357837
+       3       0.06006071     0.00000000     1.82474505
+       4      -0.00000000    -0.06006071    -0.00000000    -1.82474505
+       5      -0.00747169     0.00000000     0.00815106     0.00000000     1.93120772
+       6      -0.00000000     0.00747169    -0.00000000    -0.00815106    -0.00000000    -1.93120772
+       7      -0.00248849     0.00000000     0.00053565     0.00000000    -0.03253210     0.00000000
+       8      -0.00000000     0.00248849    -0.00000000    -0.00053565    -0.00000000     0.03253210
+
+               Column   7     Column   8
+       7       1.95264528
+       8      -0.00000000    -1.95264528
+    ==== End of matrix output ====
+  AFREQ,KZYRED,IGP   0.0000000000000000                8           1
+
+ REDUCED E(2)-W*S(2) MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1       0.94206606
+       2       0.08769152     0.94206606
+       3       1.08149386    -0.04650367     1.44381043
+       4      -0.04650367     1.08149386     0.05394057     1.44381043
+       5      -0.00062024     0.02542860     0.10381124    -0.04270595     4.52998111
+       6       0.02542860    -0.00062024    -0.04270595     0.10381124     0.11277700     4.52998111
+       7       0.00611977     0.03452732    -0.04695790    -0.03802255    -0.06679643     0.15099639
+       8       0.03452732     0.00611977    -0.03802255    -0.04695790     0.15099639    -0.06679643
+
+               Column   7     Column   8
+       7       4.30141117
+       8       0.21847459     4.30141117
+    ==== End of matrix output ====
+ REDUCED GRADIENT VECTORS DIM (2,KZRED)           4
+
+               Column   1     Column   2     Column   3     Column   4
+       1       4.27054228     2.50941526     0.04341989     0.26299100
+       2      -4.27054228    -2.50941526    -0.04341989    -0.26299100
+    ==== End of matrix output ====
+
+ *** INFO, negative eigenvalues in reduced matrix. Symmetry  1,  triplet       T Dimension of reduced matrix =     8
+
+ GP * SOLUTION vector at frequency     0.00000 a.u.
+ after    4 linear transformations is     -1.41234115D+02
+ INERTIA (POS,ZER,NEG) of reduced matrix is    7    0    1
+ Determinant of reduced matrix is -1.61 * 10 **  1.0
+
+ REDUCED PROPERTY VECTOR AND REDUCED SOLUTION:
+
+    1   4.270542D+00  -3.373386D+01
+    2  -4.270542D+00   3.373386D+01
+
+    3   2.509415D+00   2.930560D+01
+    4  -2.509415D+00  -2.930560D+01
+
+    5   4.341989D-02  -1.169470D+00
+    6  -4.341989D-02   1.169470D+00
+
+    7   2.629910D-01  -1.685432D-01
+    8  -2.629910D-01   1.685432D-01
+
+ ROOT:  1 RESIDUAL TOT: 1.50380D-01 CONF: 0.00000D+00 ORB: 1.50380D-01
+          BNORM: 6.32169D+01 EIVAL: 0.00000D+00
+
+ ** TEST OF Z = Y OR Z = -Y:
+ (Z Y) norm squared = 8.10187582D-04
+ Z + Y norm squared =-1.08420217D-19
+
+ Z = -Y in trial vector no.   1
+ Y component removed.
+
+ RSPORT: b-vector, norm**2:     1 4.02870D-04
+ RSPORT, norm and <ZY/YZ> overlap before S-1/2  1.000000D+00   0.0000000000D+00
+
+ NUMBER OF TRIAL VECTORS IN THIS LOAD    1   OFFSET FOR THIS LOAD    0
+    1 NON-CONVERGED SOLUTION VECTORS THIS LOAD, TOTAL:    1
+    1 LINEAR INDEPENDENT TRIAL VECTORS ADDED TO PREVIOUS    0
+
+ Convergence of RSP solution vectors, threshold = 1.00D-03
+ ---------------------------------------------------------------
+ (dimension of paired reduced space:    8)
+ RSP solution vector no.    1; norm of residual   2.38D-03
+
+ ** RSPCTL MICROITERATION NUMBER    5
+ NSIM,MAXSIM,JEXSIM    1  120    1
+  NCSIM,NOSIM           0           1
+
+
+Output from "RSPOLI". NCSIM,NOSIM=         0         1
+TRPLET,HSROHF,DOHSRDFT,DOMCSRDFT,DFTADD         T         F         F         F         F
+TDHF,NASHT         T         0
+  BEFORE WRITING IBTYP ON LURSP1 LINEQ: T
+
+ TRIAL VECTORS FOR RESTART:    5
+
+ INDEX VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+ IBTYP VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+  1. REDUCED GRADIENT VECTOR (GZ, GY) DIM KZRED    5
+
+               Column   1     Column   2     Column   3     Column   4     Column   5
+       1       4.27054228     2.50941526     0.04341989     0.26299100    -0.10192148
+       2      -4.27054228    -2.50941526    -0.04341989    -0.26299100     0.10192148
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED HESSIAN MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1       0.94206606
+       2       0.08769152     0.94206606
+       3       1.08149386    -0.04650367     1.44381043
+       4      -0.04650367     1.08149386     0.05394057     1.44381043
+       5      -0.00062024     0.02542860     0.10381124    -0.04270595     4.52998111
+       6       0.02542860    -0.00062024    -0.04270595     0.10381124     0.11277700     4.52998111
+       7       0.00611977     0.03452732    -0.04695790    -0.03802255    -0.06679643     0.15099639
+       8       0.03452732     0.00611977    -0.03802255    -0.04695790     0.15099639    -0.06679643
+       9      -0.01239121    -0.00454004    -0.01936268     0.00123789    -0.12921777     0.04293294
+      10      -0.00454004    -0.01239121     0.00123789    -0.01936268     0.04293294    -0.12921777
+
+               Column   7     Column   8     Column   9     Column  10
+       7       4.30141117
+       8       0.21847459     4.30141117
+       9      -0.68796925     0.11261900     3.76408577
+      10       0.11261900    -0.68796925     0.11120487     3.76408577
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED METRIC MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1       1.79357837
+       2      -0.00000000    -1.79357837
+       3       0.06006071     0.00000000     1.82474505
+       4      -0.00000000    -0.06006071    -0.00000000    -1.82474505
+       5      -0.00747169     0.00000000     0.00815106     0.00000000     1.93120772
+       6      -0.00000000     0.00747169    -0.00000000    -0.00815106    -0.00000000    -1.93120772
+       7      -0.00248849     0.00000000     0.00053565     0.00000000    -0.03253210     0.00000000
+       8      -0.00000000     0.00248849    -0.00000000    -0.00053565    -0.00000000     0.03253210
+       9       0.00329819     0.00000000    -0.00283222     0.00000000     0.04315367     0.00000000
+      10      -0.00000000    -0.00329819    -0.00000000     0.00283222    -0.00000000    -0.04315367
+
+               Column   7     Column   8     Column   9     Column  10
+       7       1.95264528
+       8      -0.00000000    -1.95264528
+       9      -0.00288723     0.00000000     1.93147505
+      10      -0.00000000     0.00288723    -0.00000000    -1.93147505
+    ==== End of matrix output ====
+  AFREQ,KZYRED,IGP   0.0000000000000000               10           1
+
+ REDUCED E(2)-W*S(2) MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1       0.94206606
+       2       0.08769152     0.94206606
+       3       1.08149386    -0.04650367     1.44381043
+       4      -0.04650367     1.08149386     0.05394057     1.44381043
+       5      -0.00062024     0.02542860     0.10381124    -0.04270595     4.52998111
+       6       0.02542860    -0.00062024    -0.04270595     0.10381124     0.11277700     4.52998111
+       7       0.00611977     0.03452732    -0.04695790    -0.03802255    -0.06679643     0.15099639
+       8       0.03452732     0.00611977    -0.03802255    -0.04695790     0.15099639    -0.06679643
+       9      -0.01239121    -0.00454004    -0.01936268     0.00123789    -0.12921777     0.04293294
+      10      -0.00454004    -0.01239121     0.00123789    -0.01936268     0.04293294    -0.12921777
+
+               Column   7     Column   8     Column   9     Column  10
+       7       4.30141117
+       8       0.21847459     4.30141117
+       9      -0.68796925     0.11261900     3.76408577
+      10       0.11261900    -0.68796925     0.11120487     3.76408577
+    ==== End of matrix output ====
+ REDUCED GRADIENT VECTORS DIM (2,KZRED)           5
+
+               Column   1     Column   2     Column   3     Column   4     Column   5
+       1       4.27054228     2.50941526     0.04341989     0.26299100    -0.10192148
+       2      -4.27054228    -2.50941526    -0.04341989    -0.26299100     0.10192148
+    ==== End of matrix output ====
+
+ *** INFO, negative eigenvalues in reduced matrix. Symmetry  1,  triplet       T Dimension of reduced matrix =    10
+
+ GP * SOLUTION vector at frequency     0.00000 a.u.
+ after    5 linear transformations is     -1.41228454D+02
+ INERTIA (POS,ZER,NEG) of reduced matrix is    9    0    1
+ Determinant of reduced matrix is -2.14 * 10 **  2.0
+
+ REDUCED PROPERTY VECTOR AND REDUCED SOLUTION:
+
+    1   4.270542D+00  -3.373284D+01
+    2  -4.270542D+00   3.373284D+01
+
+    3   2.509415D+00   2.930446D+01
+    4  -2.509415D+00  -2.930446D+01
+
+    5   4.341989D-02  -1.170816D+00
+    6  -4.341989D-02   1.170816D+00
+
+    7   2.629910D-01  -1.741980D-01
+    8  -2.629910D-01   1.741980D-01
+
+    9  -1.019215D-01  -2.849612D-02
+   10   1.019215D-01   2.849612D-02
+
+ ROOT:  1 RESIDUAL TOT: 1.25377D-02 CONF: 0.00000D+00 ORB: 1.25377D-02
+          BNORM: 6.32148D+01 EIVAL: 0.00000D+00
+
+ NUMBER OF TRIAL VECTORS IN THIS LOAD    1   OFFSET FOR THIS LOAD    0
+    0 NON-CONVERGED SOLUTION VECTORS THIS LOAD, TOTAL:    0
+    0 LINEAR INDEPENDENT TRIAL VECTORS ADDED TO PREVIOUS    0
+
+ *** THE REQUESTED    1 SOLUTION VECTORS CONVERGED
+
+ Convergence of RSP solution vectors, threshold = 1.00D-03
+ ---------------------------------------------------------------
+ (dimension of paired reduced space:   10)
+ RSP solution vector no.    1; norm of residual   1.98D-04
+
+ *** RSPCTL MICROITERATIONS CONVERGED
+
+ EIGENVECTOR NUMBER     1
+
+     The total double excitation out of the pair i,j
+
+   i      j     1  Z oper.  Y oper.  2  Z oper.  Y oper.  3  Z oper.  Y oper.
+  ---    ---   --- -------  ------- --- -------  ------- --- -------  -------
+
+        15 elements with norm less than 0.00D+00 not printed
+
+ The total norm of the excitation out of these elements is 0.0000D+00
+
+ Index(2p2h)    i      j      a      b   Type    Z operator       Y operator
+ -----------   ---    ---    ---    ---  ----  --------------   --------------
+
+      177 elements with absolute value ≤ 0.00D+00 are not printed.
+
+ The numbers in parenthesis give the symmetry of the 2p-2h elements.
+
+     Response orbital operator symmetry = 1
+     (only scaled elements abs greater than   10.00 % of max abs value)
+
+      Index(r,s)      r      s        (r s) operator      (s r) operator      (r s) scaled        (s r) scaled
+      ----------    -----  -----      --------------      --------------      --------------      --------------
+           5         2(1)   4(1)       -1.7689703481        1.7689703481       -2.5017018577        2.5017018577
+           6         2(1)   5(1)        0.1061742602       -0.1061742602        0.1501530787       -0.1501530787
+           7         2(1)   6(1)       -0.1380291364        0.1380291364       -0.1952026766        0.1952026766
+           8         2(1)   7(1)        0.4615425975       -0.4615425975        0.6527198010       -0.6527198010
+           9         3(1)   4(1)       44.5764621292      -44.5764621292       63.0406373057      -63.0406373057
+          10         3(1)   5(1)       -0.1692142372        0.1692142372       -0.2393050692        0.2393050692
+          11         3(1)   6(1)        2.6935588419       -2.6935588419        3.8092674453       -3.8092674453
+          12         3(1)   7(1)       -0.2131936005        0.2131936005       -0.3015012813        0.3015012813
+          13         8(2)   9(2)       -0.3825527257        0.3825527257       -0.5410112530        0.5410112530
+          14        10(3)  11(3)       -0.3825527257        0.3825527257       -0.5410112530        0.5410112530
+
+        4 elements with absolute value ≤ 1.00D-01 not printed.
+
+ The numbers in parenthesis give the orbital symmetry.
+
+
+                 Solution vectors in RSPLR for operator FC H 001:
+                 ------------------------------------------------
+
+
+               Column   1     Column   2
+     178      -0.01123155     0.01123155
+     179      -0.00314245     0.00314245
+     180      -0.00017069     0.00017069
+     181       0.04463369    -0.04463369
+     182      -1.76897035     1.76897035
+     183       0.10617426    -0.10617426
+     184      -0.13802914     0.13802914
+     185       0.46154260    -0.46154260
+     186      44.57646213   -44.57646213
+     187      -0.16921424     0.16921424
+     188       2.69355884    -2.69355884
+     189      -0.21319360     0.21319360
+     190      -0.38255273     0.38255273
+     191      -0.38255273     0.38255273
+    ==== End of matrix output ====
+ Norm:     6.3215D+01
+
+
+                 Residual vectors in RSPLR for operator FC H 001:
+                 ------------------------------------------------
+
+
+               Column   1     Column   2
+     178       0.00019514    -0.00019514
+     179      -0.00719298     0.00719298
+     180      -0.00050485     0.00050485
+     181      -0.00205199     0.00205199
+     182       0.00003136    -0.00003136
+     183       0.00017355    -0.00017355
+     184       0.00253660    -0.00253660
+     185      -0.00085773     0.00085773
+     186      -0.00012776     0.00012776
+     187      -0.00018579     0.00018579
+     188       0.00274772    -0.00274772
+     189       0.00268780    -0.00268780
+     190       0.00040538    -0.00040538
+     191       0.00040538    -0.00040538
+    ==== End of matrix output ====
+ Norm:     1.2538D-02
+
+
+ RSPLR -- linear response calculation for symmetry 1  ( A1 )
+ RSPLR -- operator label : FC F 002
+ RSPLR -- operator spin  :   0
+ RSPLR -- frequencies    :     0.000000
+
+
+ Output from PRPCTL:
+ ===================
+
+ Property label = FC F 002
+
+
+PRPCTL test output:  Reference state expectation value for FC F 002
+
+ *** Individual non-zero orbital contributions
+ *** to the expectation value for property FC F 002 :
+
+
+     FC F 002 Hartree-Fock part:     0.00000000
+     FC F 002 second order part:    -0.30318022
+     FC F 002 total 2. order   :    -0.30318022
+
+ (PRPORS) Z and Y property GP vector in SOPPA approximation
+
+               Column   1     Column   2
+     178      50.10797402   -50.10797402
+     179      57.60127639   -57.60127639
+     180     -21.78998332    21.78998332
+     181    -516.29794810   516.29794810
+     182     -11.81009856    11.81009856
+     183     -13.58384829    13.58384829
+     184       5.13850214    -5.13850214
+     185     121.74791385  -121.74791385
+     186      -0.92835682     0.92835682
+     187      -1.06873209     1.06873209
+     188       0.40426406    -0.40426406
+     189       9.57769399    -9.57769399
+    ==== End of matrix output ====
+
+
+                 Gradient vector in RSPLR for operator FC F 002:
+                 -----------------------------------------------
+
+
+ Norm :   7.5912D+02
+
+               Column   1     Column   2
+     178      50.10797402   -50.10797402
+     179      57.60127639   -57.60127639
+     180     -21.78998332    21.78998332
+     181    -516.29794810   516.29794810
+     182     -11.81009856    11.81009856
+     183     -13.58384829    13.58384829
+     184       5.13850214    -5.13850214
+     185     121.74791385  -121.74791385
+     186      -0.92835682     0.92835682
+     187      -1.06873209     1.06873209
+     188       0.40426406    -0.40426406
+     189       9.57769399    -9.57769399
+    ==== End of matrix output ====
+
+
+
+ ---  SOLVING SETS OF LINEAR EQUATIONS FOR LINEAR RESPONSE PROPERTIES ---
+
+ Operator symmetry = 1  ( A1 ); triplet =   T
+
+
+ MAXIMUM NUMBER OF SIMULTANEOUS TRIAL VECTORS:     120
+
+ MAXIMUM NUMBER OF SIMULTANEOUS TRIAL VECTORS IN RSPNEX:     120
+  LINEQ,RESTPP,ORBSPC T F F
+  FREQ =   0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000        0.0000000000000000     
+
+    I       IBTYP(I)          I=1,NLSIM NLSIM    1
+         1         1
+
+ ** TEST OF Z = Y OR Z = -Y:
+ (Z Y) norm squared = 5.31152720D+02
+ Z + Y norm squared =-1.13686838D-13
+
+ Z = -Y in trial vector no.   1
+ Y component removed.
+
+ RSPORT: b-vector, norm**2:     1 2.65576D+02
+ RSPORT, norm and <ZY/YZ> overlap before S-1/2  1.000000D+00   0.0000000000D+00
+
+ AFTER RSPORT IN LRST
+
+    I       IBTYP(I)          I=1,NLSIM NLSIM=    1
+    1         1
+ AFTER START ROUTINE BINMEM T
+
+ ** RSPCTL MICROITERATION NUMBER    1
+ NSIM,MAXSIM,JEXSIM    1  120    1
+  NCSIM,NOSIM           0           1
+
+
+Output from "RSPOLI". NCSIM,NOSIM=         0         1
+TRPLET,HSROHF,DOHSRDFT,DOMCSRDFT,DFTADD         T         F         F         F         F
+TDHF,NASHT         T         0
+  BEFORE WRITING IBTYP ON LURSP1 LINEQ: T
+
+ TRIAL VECTORS FOR RESTART:    1
+
+ INDEX VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+ IBTYP VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+  1. REDUCED GRADIENT VECTOR (GZ, GY) DIM KZRED    1
+
+               Column   1
+       1     384.94518949
+       2    -384.94518949
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED HESSIAN MATRIX:
+
+               Column   1     Column   2
+       1      21.56950931
+       2       0.26298594    21.56950931
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED METRIC MATRIX:
+
+               Column   1     Column   2
+       1       1.98138653
+       2      -0.00000000    -1.98138653
+    ==== End of matrix output ====
+  AFREQ,KZYRED,IGP   0.0000000000000000                2           1
+
+ REDUCED E(2)-W*S(2) MATRIX:
+
+               Column   1     Column   2
+       1      21.56950931
+       2       0.26298594    21.56950931
+    ==== End of matrix output ====
+ REDUCED GRADIENT VECTORS DIM (2,KZRED)           1
+
+               Column   1
+       1     384.94518949
+       2    -384.94518949
+    ==== End of matrix output ====
+
+ GP * SOLUTION vector at frequency     0.00000 a.u.
+ after    1 linear transformations is      1.39096178D+04
+ INERTIA (POS,ZER,NEG) of reduced matrix is    2    0    0
+ Determinant of reduced matrix is  4.65 * 10 **  2.0
+
+ REDUCED PROPERTY VECTOR AND REDUCED SOLUTION:
+
+    1   3.849452D+02   1.806701D+01
+    2  -3.849452D+02  -1.806701D+01
+
+ ROOT:  1 RESIDUAL TOT: 4.39268D+01 CONF: 0.00000D+00 ORB: 4.39268D+01
+          BNORM: 2.55506D+01 EIVAL: 0.00000D+00
+
+ ** TEST OF Z = Y OR Z = -Y:
+ (Z Y) norm squared = 1.47355407D+01
+ Z + Y norm squared =-3.55271368D-15
+
+ Z = -Y in trial vector no.   1
+ Y component removed.
+
+ RSPORT: b-vector, norm**2:     1 4.99805D+00
+ RSPORT, norm and <ZY/YZ> overlap before S-1/2  1.000000D+00   0.0000000000D+00
+
+ NUMBER OF TRIAL VECTORS IN THIS LOAD    1   OFFSET FOR THIS LOAD    0
+    1 NON-CONVERGED SOLUTION VECTORS THIS LOAD, TOTAL:    1
+    1 LINEAR INDEPENDENT TRIAL VECTORS ADDED TO PREVIOUS    0
+
+ Convergence of RSP solution vectors, threshold = 1.00D-03
+ ---------------------------------------------------------------
+ (dimension of paired reduced space:    2)
+ RSP solution vector no.    1; norm of residual   1.72D+00
+
+ ** RSPCTL MICROITERATION NUMBER    2
+ NSIM,MAXSIM,JEXSIM    1  120    1
+  NCSIM,NOSIM           0           1
+
+
+Output from "RSPOLI". NCSIM,NOSIM=         0         1
+TRPLET,HSROHF,DOHSRDFT,DOMCSRDFT,DFTADD         T         F         F         F         F
+TDHF,NASHT         T         0
+  BEFORE WRITING IBTYP ON LURSP1 LINEQ: T
+
+ TRIAL VECTORS FOR RESTART:    2
+
+ INDEX VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+ IBTYP VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+  1. REDUCED GRADIENT VECTOR (GZ, GY) DIM KZRED    2
+
+               Column   1     Column   2
+       1     384.94518949   265.06191642
+       2    -384.94518949  -265.06191642
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED HESSIAN MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4
+       1      21.56950931
+       2       0.26298594    21.56950931
+       3      15.97769167    -0.01584131    19.88393938
+       4      -0.01584131    15.97769167     0.27156575    19.88393938
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED METRIC MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4
+       1       1.98138653
+       2      -0.00000000    -1.98138653
+       3       0.01992027     0.00000000     1.93663566
+       4      -0.00000000    -0.01992027    -0.00000000    -1.93663566
+    ==== End of matrix output ====
+  AFREQ,KZYRED,IGP   0.0000000000000000                4           1
+
+ REDUCED E(2)-W*S(2) MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4
+       1      21.56950931
+       2       0.26298594    21.56950931
+       3      15.97769167    -0.01584131    19.88393938
+       4      -0.01584131    15.97769167     0.27156575    19.88393938
+    ==== End of matrix output ====
+ REDUCED GRADIENT VECTORS DIM (2,KZRED)           2
+
+               Column   1     Column   2
+       1     384.94518949   265.06191642
+       2    -384.94518949  -265.06191642
+    ==== End of matrix output ====
+
+ GP * SOLUTION vector at frequency     0.00000 a.u.
+ after    2 linear transformations is      1.40597155D+04
+ INERTIA (POS,ZER,NEG) of reduced matrix is    4    0    0
+ Determinant of reduced matrix is  3.00 * 10 **  4.0
+
+ REDUCED PROPERTY VECTOR AND REDUCED SOLUTION:
+
+    1   3.849452D+02   2.042476D+01
+    2  -3.849452D+02  -2.042476D+01
+
+    3   2.650619D+02  -3.140984D+00
+    4  -2.650619D+02   3.140984D+00
+
+ ROOT:  1 RESIDUAL TOT: 5.91341D+00 CONF: 0.00000D+00 ORB: 5.91341D+00
+          BNORM: 2.92245D+01 EIVAL: 0.00000D+00
+
+ ** TEST OF Z = Y OR Z = -Y:
+ (Z Y) norm squared = 6.15938319D-01
+ Z + Y norm squared = 2.22044605D-16
+
+ Z = -Y in trial vector no.   1
+ Y component removed.
+
+ RSPORT: b-vector, norm**2:     1 2.12173D-01
+ RSPORT, norm and <ZY/YZ> overlap before S-1/2  1.000000D+00   0.0000000000D+00
+
+ NUMBER OF TRIAL VECTORS IN THIS LOAD    1   OFFSET FOR THIS LOAD    0
+    1 NON-CONVERGED SOLUTION VECTORS THIS LOAD, TOTAL:    1
+    1 LINEAR INDEPENDENT TRIAL VECTORS ADDED TO PREVIOUS    0
+
+ Convergence of RSP solution vectors, threshold = 1.00D-03
+ ---------------------------------------------------------------
+ (dimension of paired reduced space:    4)
+ RSP solution vector no.    1; norm of residual   2.02D-01
+
+ ** RSPCTL MICROITERATION NUMBER    3
+ NSIM,MAXSIM,JEXSIM    1  120    1
+  NCSIM,NOSIM           0           1
+
+
+Output from "RSPOLI". NCSIM,NOSIM=         0         1
+TRPLET,HSROHF,DOHSRDFT,DOMCSRDFT,DFTADD         T         F         F         F         F
+TDHF,NASHT         T         0
+  BEFORE WRITING IBTYP ON LURSP1 LINEQ: T
+
+ TRIAL VECTORS FOR RESTART:    3
+
+ INDEX VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+ IBTYP VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+  1. REDUCED GRADIENT VECTOR (GZ, GY) DIM KZRED    3
+
+               Column   1     Column   2     Column   3
+       1     384.94518949   265.06191642  -238.59839148
+       2    -384.94518949  -265.06191642   238.59839148
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED HESSIAN MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1      21.56950931
+       2       0.26298594    21.56950931
+       3      15.97769167    -0.01584131    19.88393938
+       4      -0.01584131    15.97769167     0.27156575    19.88393938
+       5     -14.10848948    -0.04340250   -16.68875917     0.05968324    20.46615977
+       6      -0.04340250   -14.10848948     0.05968324   -16.68875917     0.08016235    20.46615977
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED METRIC MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1       1.98138653
+       2      -0.00000000    -1.98138653
+       3       0.01992027     0.00000000     1.93663566
+       4      -0.00000000    -0.01992027    -0.00000000    -1.93663566
+       5      -0.00043561     0.00000000    -0.01533162     0.00000000     1.95307592
+       6      -0.00000000     0.00043561    -0.00000000     0.01533162    -0.00000000    -1.95307592
+    ==== End of matrix output ====
+  AFREQ,KZYRED,IGP   0.0000000000000000                6           1
+
+ REDUCED E(2)-W*S(2) MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1      21.56950931
+       2       0.26298594    21.56950931
+       3      15.97769167    -0.01584131    19.88393938
+       4      -0.01584131    15.97769167     0.27156575    19.88393938
+       5     -14.10848948    -0.04340250   -16.68875917     0.05968324    20.46615977
+       6      -0.04340250   -14.10848948     0.05968324   -16.68875917     0.08016235    20.46615977
+    ==== End of matrix output ====
+ REDUCED GRADIENT VECTORS DIM (2,KZRED)           3
+
+               Column   1     Column   2     Column   3
+       1     384.94518949   265.06191642  -238.59839148
+       2    -384.94518949  -265.06191642   238.59839148
+    ==== End of matrix output ====
+
+ GP * SOLUTION vector at frequency     0.00000 a.u.
+ after    3 linear transformations is      1.40648074D+04
+ INERTIA (POS,ZER,NEG) of reduced matrix is    6    0    0
+ Determinant of reduced matrix is  1.22 * 10 **  6.0
+
+ REDUCED PROPERTY VECTOR AND REDUCED SOLUTION:
+
+    1   3.849452D+02   2.039284D+01
+    2  -3.849452D+02  -2.039284D+01
+
+    3   2.650619D+02  -3.668330D+00
+    4  -2.650619D+02   3.668330D+00
+
+    5  -2.385984D+02  -6.479980D-01
+    6   2.385984D+02   6.479980D-01
+
+ ROOT:  1 RESIDUAL TOT: 4.30688D-01 CONF: 0.00000D+00 ORB: 4.30688D-01
+          BNORM: 2.93170D+01 EIVAL: 0.00000D+00
+
+ ** TEST OF Z = Y OR Z = -Y:
+ (Z Y) norm squared = 6.79636214D-02
+ Z + Y norm squared = 0.00000000D+00
+
+ Z = -Y in trial vector no.   1
+ Y component removed.
+
+ RSPORT: b-vector, norm**2:     1 3.02971D-02
+ RSPORT, norm and <ZY/YZ> overlap before S-1/2  1.000000D+00   0.0000000000D+00
+
+ NUMBER OF TRIAL VECTORS IN THIS LOAD    1   OFFSET FOR THIS LOAD    0
+    1 NON-CONVERGED SOLUTION VECTORS THIS LOAD, TOTAL:    1
+    1 LINEAR INDEPENDENT TRIAL VECTORS ADDED TO PREVIOUS    0
+
+ Convergence of RSP solution vectors, threshold = 1.00D-03
+ ---------------------------------------------------------------
+ (dimension of paired reduced space:    6)
+ RSP solution vector no.    1; norm of residual   1.47D-02
+
+ ** RSPCTL MICROITERATION NUMBER    4
+ NSIM,MAXSIM,JEXSIM    1  120    1
+  NCSIM,NOSIM           0           1
+
+
+Output from "RSPOLI". NCSIM,NOSIM=         0         1
+TRPLET,HSROHF,DOHSRDFT,DOMCSRDFT,DFTADD         T         F         F         F         F
+TDHF,NASHT         T         0
+  BEFORE WRITING IBTYP ON LURSP1 LINEQ: T
+
+ TRIAL VECTORS FOR RESTART:    4
+
+ INDEX VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+ IBTYP VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+  1. REDUCED GRADIENT VECTOR (GZ, GY) DIM KZRED    4
+
+               Column   1     Column   2     Column   3     Column   4
+       1     384.94518949   265.06191642  -238.59839148   100.60155637
+       2    -384.94518949  -265.06191642   238.59839148  -100.60155637
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED HESSIAN MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1      21.56950931
+       2       0.26298594    21.56950931
+       3      15.97769167    -0.01584131    19.88393938
+       4      -0.01584131    15.97769167     0.27156575    19.88393938
+       5     -14.10848948    -0.04340250   -16.68875917     0.05968324    20.46615977
+       6      -0.04340250   -14.10848948     0.05968324   -16.68875917     0.08016235    20.46615977
+       7       6.05887644    -0.01260901     7.88643240     0.07890734    -8.65330403     0.03321113
+       8      -0.01260901     6.05887644     0.07890734     7.88643240     0.03321113    -8.65330403
+
+               Column   7     Column   8
+       7       4.03884009
+       8       0.12151643     4.03884009
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED METRIC MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1       1.98138653
+       2      -0.00000000    -1.98138653
+       3       0.01992027     0.00000000     1.93663566
+       4      -0.00000000    -0.01992027    -0.00000000    -1.93663566
+       5      -0.00043561     0.00000000    -0.01533162     0.00000000     1.95307592
+       6      -0.00000000     0.00043561    -0.00000000     0.01533162    -0.00000000    -1.95307592
+       7      -0.01053945     0.00000000     0.03301631     0.00000000    -0.06561016     0.00000000
+       8      -0.00000000     0.01053945    -0.00000000    -0.03301631    -0.00000000     0.06561016
+
+               Column   7     Column   8
+       7       1.78066912
+       8      -0.00000000    -1.78066912
+    ==== End of matrix output ====
+  AFREQ,KZYRED,IGP   0.0000000000000000                8           1
+
+ REDUCED E(2)-W*S(2) MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1      21.56950931
+       2       0.26298594    21.56950931
+       3      15.97769167    -0.01584131    19.88393938
+       4      -0.01584131    15.97769167     0.27156575    19.88393938
+       5     -14.10848948    -0.04340250   -16.68875917     0.05968324    20.46615977
+       6      -0.04340250   -14.10848948     0.05968324   -16.68875917     0.08016235    20.46615977
+       7       6.05887644    -0.01260901     7.88643240     0.07890734    -8.65330403     0.03321113
+       8      -0.01260901     6.05887644     0.07890734     7.88643240     0.03321113    -8.65330403
+
+               Column   7     Column   8
+       7       4.03884009
+       8       0.12151643     4.03884009
+    ==== End of matrix output ====
+ REDUCED GRADIENT VECTORS DIM (2,KZRED)           4
+
+               Column   1     Column   2     Column   3     Column   4
+       1     384.94518949   265.06191642  -238.59839148   100.60155637
+       2    -384.94518949  -265.06191642   238.59839148  -100.60155637
+    ==== End of matrix output ====
+
+ GP * SOLUTION vector at frequency     0.00000 a.u.
+ after    4 linear transformations is      1.40655046D+04
+ INERTIA (POS,ZER,NEG) of reduced matrix is    8    0    0
+ Determinant of reduced matrix is  5.19 * 10 **  4.0
+
+ REDUCED PROPERTY VECTOR AND REDUCED SOLUTION:
+
+    1   3.849452D+02   2.030246D+01
+    2  -3.849452D+02  -2.030246D+01
+
+    3   2.650619D+02  -3.401513D+00
+    4  -2.650619D+02   3.401513D+00
+
+    5  -2.385984D+02  -1.228040D+00
+    6   2.385984D+02   1.228040D+00
+
+    7   1.006016D+02  -1.729369D+00
+    8  -1.006016D+02   1.729369D+00
+
+ ROOT:  1 RESIDUAL TOT: 2.62357D+00 CONF: 0.00000D+00 ORB: 2.62357D+00
+          BNORM: 2.92663D+01 EIVAL: 0.00000D+00
+
+ ** TEST OF Z = Y OR Z = -Y:
+ (Z Y) norm squared = 1.71360099D-01
+ Z + Y norm squared = 0.00000000D+00
+
+ Z = -Y in trial vector no.   1
+ Y component removed.
+
+ RSPORT: b-vector, norm**2:     1 5.29467D-02
+ RSPORT, norm and <ZY/YZ> overlap before S-1/2  1.000000D+00   0.0000000000D+00
+
+ NUMBER OF TRIAL VECTORS IN THIS LOAD    1   OFFSET FOR THIS LOAD    0
+    1 NON-CONVERGED SOLUTION VECTORS THIS LOAD, TOTAL:    1
+    1 LINEAR INDEPENDENT TRIAL VECTORS ADDED TO PREVIOUS    0
+
+ Convergence of RSP solution vectors, threshold = 1.00D-03
+ ---------------------------------------------------------------
+ (dimension of paired reduced space:    8)
+ RSP solution vector no.    1; norm of residual   8.96D-02
+
+ ** RSPCTL MICROITERATION NUMBER    5
+ NSIM,MAXSIM,JEXSIM    1  120    1
+  NCSIM,NOSIM           0           1
+
+
+Output from "RSPOLI". NCSIM,NOSIM=         0         1
+TRPLET,HSROHF,DOHSRDFT,DOMCSRDFT,DFTADD         T         F         F         F         F
+TDHF,NASHT         T         0
+  BEFORE WRITING IBTYP ON LURSP1 LINEQ: T
+
+ TRIAL VECTORS FOR RESTART:    5
+
+ INDEX VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+ IBTYP VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+  1. REDUCED GRADIENT VECTOR (GZ, GY) DIM KZRED    5
+
+               Column   1     Column   2     Column   3     Column   4     Column   5
+       1     384.94518949   265.06191642  -238.59839148   100.60155637   -36.88318527
+       2    -384.94518949  -265.06191642   238.59839148  -100.60155637    36.88318527
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED HESSIAN MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1      21.56950931
+       2       0.26298594    21.56950931
+       3      15.97769167    -0.01584131    19.88393938
+       4      -0.01584131    15.97769167     0.27156575    19.88393938
+       5     -14.10848948    -0.04340250   -16.68875917     0.05968324    20.46615977
+       6      -0.04340250   -14.10848948     0.05968324   -16.68875917     0.08016235    20.46615977
+       7       6.05887644    -0.01260901     7.88643240     0.07890734    -8.65330403     0.03321113
+       8      -0.01260901     6.05887644     0.07890734     7.88643240     0.03321113    -8.65330403
+       9      -2.24940551     0.01135006    -3.10035725    -0.07130432     3.09932177    -0.05890719
+      10       0.01135006    -2.24940551    -0.07130432    -3.10035725    -0.05890719     3.09932177
+
+               Column   7     Column   8     Column   9     Column  10
+       7       4.03884009
+       8       0.12151643     4.03884009
+       9      -2.29214136     0.03355346     5.89536106
+      10       0.03355346    -2.29214136     0.15955643     5.89536106
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED METRIC MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1       1.98138653
+       2      -0.00000000    -1.98138653
+       3       0.01992027     0.00000000     1.93663566
+       4      -0.00000000    -0.01992027    -0.00000000    -1.93663566
+       5      -0.00043561     0.00000000    -0.01533162     0.00000000     1.95307592
+       6      -0.00000000     0.00043561    -0.00000000     0.01533162    -0.00000000    -1.95307592
+       7      -0.01053945     0.00000000     0.03301631     0.00000000    -0.06561016     0.00000000
+       8      -0.00000000     0.01053945    -0.00000000    -0.03301631    -0.00000000     0.06561016
+       9       0.00304162     0.00000000    -0.02111565     0.00000000    -0.01694119     0.00000000
+      10      -0.00000000    -0.00304162    -0.00000000     0.02111565    -0.00000000     0.01694119
+
+               Column   7     Column   8     Column   9     Column  10
+       7       1.78066912
+       8      -0.00000000    -1.78066912
+       9      -0.03360945     0.00000000     1.89455997
+      10      -0.00000000     0.03360945    -0.00000000    -1.89455997
+    ==== End of matrix output ====
+  AFREQ,KZYRED,IGP   0.0000000000000000               10           1
+
+ REDUCED E(2)-W*S(2) MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1      21.56950931
+       2       0.26298594    21.56950931
+       3      15.97769167    -0.01584131    19.88393938
+       4      -0.01584131    15.97769167     0.27156575    19.88393938
+       5     -14.10848948    -0.04340250   -16.68875917     0.05968324    20.46615977
+       6      -0.04340250   -14.10848948     0.05968324   -16.68875917     0.08016235    20.46615977
+       7       6.05887644    -0.01260901     7.88643240     0.07890734    -8.65330403     0.03321113
+       8      -0.01260901     6.05887644     0.07890734     7.88643240     0.03321113    -8.65330403
+       9      -2.24940551     0.01135006    -3.10035725    -0.07130432     3.09932177    -0.05890719
+      10       0.01135006    -2.24940551    -0.07130432    -3.10035725    -0.05890719     3.09932177
+
+               Column   7     Column   8     Column   9     Column  10
+       7       4.03884009
+       8       0.12151643     4.03884009
+       9      -2.29214136     0.03355346     5.89536106
+      10       0.03355346    -2.29214136     0.15955643     5.89536106
+    ==== End of matrix output ====
+ REDUCED GRADIENT VECTORS DIM (2,KZRED)           5
+
+               Column   1     Column   2     Column   3     Column   4     Column   5
+       1     384.94518949   265.06191642  -238.59839148   100.60155637   -36.88318527
+       2    -384.94518949  -265.06191642   238.59839148  -100.60155637    36.88318527
+    ==== End of matrix output ====
+
+ *** INFO, negative eigenvalues in reduced matrix. Symmetry  1,  triplet       T Dimension of reduced matrix =    10
+
+ GP * SOLUTION vector at frequency     0.00000 a.u.
+ after    5 linear transformations is      1.40634678D+04
+ INERTIA (POS,ZER,NEG) of reduced matrix is    9    0    1
+ Determinant of reduced matrix is -3.65 * 10 **  5.0
+
+ REDUCED PROPERTY VECTOR AND REDUCED SOLUTION:
+
+    1   3.849452D+02   2.057374D+01
+    2  -3.849452D+02  -2.057374D+01
+
+    3   2.650619D+02  -4.196440D+00
+    4  -2.650619D+02   4.196440D+00
+
+    5  -2.385984D+02   5.818743D-01
+    6   2.385984D+02  -5.818743D-01
+
+    7   1.006016D+02   3.870382D+00
+    8  -1.006016D+02  -3.870382D+00
+
+    9  -3.688319D+01   7.115678D-01
+   10   3.688319D+01  -7.115678D-01
+
+ ROOT:  1 RESIDUAL TOT: 1.15887D+00 CONF: 0.00000D+00 ORB: 1.15887D+00
+          BNORM: 3.02230D+01 EIVAL: 0.00000D+00
+
+ ** TEST OF Z = Y OR Z = -Y:
+ (Z Y) norm squared = 2.58027482D-03
+ Z + Y norm squared = 4.33680869D-19
+
+ Z = -Y in trial vector no.   1
+ Y component removed.
+
+ RSPORT: b-vector, norm**2:     1 1.06833D-03
+ RSPORT, norm and <ZY/YZ> overlap before S-1/2  1.000000D+00   0.0000000000D+00
+
+ NUMBER OF TRIAL VECTORS IN THIS LOAD    1   OFFSET FOR THIS LOAD    0
+    1 NON-CONVERGED SOLUTION VECTORS THIS LOAD, TOTAL:    1
+    1 LINEAR INDEPENDENT TRIAL VECTORS ADDED TO PREVIOUS    0
+
+ Convergence of RSP solution vectors, threshold = 1.00D-03
+ ---------------------------------------------------------------
+ (dimension of paired reduced space:   10)
+ RSP solution vector no.    1; norm of residual   3.83D-02
+
+ ** RSPCTL MICROITERATION NUMBER    6
+ NSIM,MAXSIM,JEXSIM    1  120    1
+  NCSIM,NOSIM           0           1
+
+
+Output from "RSPOLI". NCSIM,NOSIM=         0         1
+TRPLET,HSROHF,DOHSRDFT,DOMCSRDFT,DFTADD         T         F         F         F         F
+TDHF,NASHT         T         0
+  BEFORE WRITING IBTYP ON LURSP1 LINEQ: T
+
+ TRIAL VECTORS FOR RESTART:    6
+
+ INDEX VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+ IBTYP VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+  1. REDUCED GRADIENT VECTOR (GZ, GY) DIM KZRED    6
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1     384.94518949   265.06191642  -238.59839148   100.60155637   -36.88318527     2.91306218
+       2    -384.94518949  -265.06191642   238.59839148  -100.60155637    36.88318527    -2.91306218
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED HESSIAN MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1      21.56950931
+       2       0.26298594    21.56950931
+       3      15.97769167    -0.01584131    19.88393938
+       4      -0.01584131    15.97769167     0.27156575    19.88393938
+       5     -14.10848948    -0.04340250   -16.68875917     0.05968324    20.46615977
+       6      -0.04340250   -14.10848948     0.05968324   -16.68875917     0.08016235    20.46615977
+       7       6.05887644    -0.01260901     7.88643240     0.07890734    -8.65330403     0.03321113
+       8      -0.01260901     6.05887644     0.07890734     7.88643240     0.03321113    -8.65330403
+       9      -2.24940551     0.01135006    -3.10035725    -0.07130432     3.09932177    -0.05890719
+      10       0.01135006    -2.24940551    -0.07130432    -3.10035725    -0.05890719     3.09932177
+      11      -0.10742886     0.07266103    -2.34340097    -0.13369515     2.45933043    -0.01279623
+      12       0.07266103    -0.10742886    -0.13369515    -2.34340097    -0.01279623     2.45933043
+
+               Column   7     Column   8     Column   9     Column  10     Column  11     Column  12
+       7       4.03884009
+       8       0.12151643     4.03884009
+       9      -2.29214136     0.03355346     5.89536106
+      10       0.03355346    -2.29214136     0.15955643     5.89536106
+      11      -1.56065278    -0.04021888     3.20281978    -0.04896308    16.05433575
+      12      -0.04021888    -1.56065278    -0.04896308     3.20281978     0.14005271    16.05433575
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED METRIC MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1       1.98138653
+       2      -0.00000000    -1.98138653
+       3       0.01992027     0.00000000     1.93663566
+       4      -0.00000000    -0.01992027    -0.00000000    -1.93663566
+       5      -0.00043561     0.00000000    -0.01533162     0.00000000     1.95307592
+       6      -0.00000000     0.00043561    -0.00000000     0.01533162    -0.00000000    -1.95307592
+       7      -0.01053945     0.00000000     0.03301631     0.00000000    -0.06561016     0.00000000
+       8      -0.00000000     0.01053945    -0.00000000    -0.03301631    -0.00000000     0.06561016
+       9       0.00304162     0.00000000    -0.02111565     0.00000000    -0.01694119     0.00000000
+      10      -0.00000000    -0.00304162    -0.00000000     0.02111565    -0.00000000     0.01694119
+      11       0.01495248     0.00000000    -0.02633530     0.00000000    -0.00101366     0.00000000
+      12      -0.00000000    -0.01495248    -0.00000000     0.02633530    -0.00000000     0.00101366
+
+               Column   7     Column   8     Column   9     Column  10     Column  11     Column  12
+       7       1.78066912
+       8      -0.00000000    -1.78066912
+       9      -0.03360945     0.00000000     1.89455997
+      10      -0.00000000     0.03360945    -0.00000000    -1.89455997
+      11      -0.00078211     0.00000000     0.01261122     0.00000000     1.91030601
+      12      -0.00000000     0.00078211    -0.00000000    -0.01261122    -0.00000000    -1.91030601
+    ==== End of matrix output ====
+  AFREQ,KZYRED,IGP   0.0000000000000000               12           1
+
+ REDUCED E(2)-W*S(2) MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1      21.56950931
+       2       0.26298594    21.56950931
+       3      15.97769167    -0.01584131    19.88393938
+       4      -0.01584131    15.97769167     0.27156575    19.88393938
+       5     -14.10848948    -0.04340250   -16.68875917     0.05968324    20.46615977
+       6      -0.04340250   -14.10848948     0.05968324   -16.68875917     0.08016235    20.46615977
+       7       6.05887644    -0.01260901     7.88643240     0.07890734    -8.65330403     0.03321113
+       8      -0.01260901     6.05887644     0.07890734     7.88643240     0.03321113    -8.65330403
+       9      -2.24940551     0.01135006    -3.10035725    -0.07130432     3.09932177    -0.05890719
+      10       0.01135006    -2.24940551    -0.07130432    -3.10035725    -0.05890719     3.09932177
+      11      -0.10742886     0.07266103    -2.34340097    -0.13369515     2.45933043    -0.01279623
+      12       0.07266103    -0.10742886    -0.13369515    -2.34340097    -0.01279623     2.45933043
+
+               Column   7     Column   8     Column   9     Column  10     Column  11     Column  12
+       7       4.03884009
+       8       0.12151643     4.03884009
+       9      -2.29214136     0.03355346     5.89536106
+      10       0.03355346    -2.29214136     0.15955643     5.89536106
+      11      -1.56065278    -0.04021888     3.20281978    -0.04896308    16.05433575
+      12      -0.04021888    -1.56065278    -0.04896308     3.20281978     0.14005271    16.05433575
+    ==== End of matrix output ====
+ REDUCED GRADIENT VECTORS DIM (2,KZRED)           6
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1     384.94518949   265.06191642  -238.59839148   100.60155637   -36.88318527     2.91306218
+       2    -384.94518949  -265.06191642   238.59839148  -100.60155637    36.88318527    -2.91306218
+    ==== End of matrix output ====
+
+ *** INFO, negative eigenvalues in reduced matrix. Symmetry  1,  triplet       T Dimension of reduced matrix =    12
+
+ GP * SOLUTION vector at frequency     0.00000 a.u.
+ after    6 linear transformations is      1.40635063D+04
+ INERTIA (POS,ZER,NEG) of reduced matrix is   11    0    1
+ Determinant of reduced matrix is -7.30 * 10 **  7.0
+
+ REDUCED PROPERTY VECTOR AND REDUCED SOLUTION:
+
+    1   3.849452D+02   2.057541D+01
+    2  -3.849452D+02  -2.057541D+01
+
+    3   2.650619D+02  -4.186165D+00
+    4  -2.650619D+02   4.186165D+00
+
+    5  -2.385984D+02   5.489272D-01
+    6   2.385984D+02  -5.489272D-01
+
+    7   1.006016D+02   3.760226D+00
+    8  -1.006016D+02  -3.760226D+00
+
+    9  -3.688319D+01   7.120356D-01
+   10   3.688319D+01  -7.120356D-01
+
+   11   2.913062D+00  -3.688104D-02
+   12  -2.913062D+00   3.688104D-02
+
+ ROOT:  1 RESIDUAL TOT: 1.06710D-01 CONF: 0.00000D+00 ORB: 1.06710D-01
+          BNORM: 3.01934D+01 EIVAL: 0.00000D+00
+
+ ** TEST OF Z = Y OR Z = -Y:
+ (Z Y) norm squared = 1.54755854D-04
+ Z + Y norm squared = 5.42101086D-20
+
+ Z = -Y in trial vector no.   1
+ Y component removed.
+
+ RSPORT: b-vector, norm**2:     1 3.20650D-05
+ RSPORT, norm and <ZY/YZ> overlap before S-1/2  1.000000D+00   0.0000000000D+00
+
+ RSPORT: b-vector, norm**2:     1 1.00000D+00
+ RSPORT, norm and <ZY/YZ> overlap before S-1/2  1.000000D+00   0.0000000000D+00
+
+ NUMBER OF TRIAL VECTORS IN THIS LOAD    1   OFFSET FOR THIS LOAD    0
+    1 NON-CONVERGED SOLUTION VECTORS THIS LOAD, TOTAL:    1
+    1 LINEAR INDEPENDENT TRIAL VECTORS ADDED TO PREVIOUS    0
+
+ Convergence of RSP solution vectors, threshold = 1.00D-03
+ ---------------------------------------------------------------
+ (dimension of paired reduced space:   12)
+ RSP solution vector no.    1; norm of residual   3.53D-03
+
+ ** RSPCTL MICROITERATION NUMBER    7
+ NSIM,MAXSIM,JEXSIM    1  120    1
+  NCSIM,NOSIM           0           1
+
+
+Output from "RSPOLI". NCSIM,NOSIM=         0         1
+TRPLET,HSROHF,DOHSRDFT,DOMCSRDFT,DFTADD         T         F         F         F         F
+TDHF,NASHT         T         0
+  BEFORE WRITING IBTYP ON LURSP1 LINEQ: T
+
+ TRIAL VECTORS FOR RESTART:    7
+
+ INDEX VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+ IBTYP VECTOR FOR E(2) TRANSFORMED TRIAL VECTORS
+           1
+
+  1. REDUCED GRADIENT VECTOR (GZ, GY) DIM KZRED    7
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6     Column   7
+       1     384.94518949   265.06191642  -238.59839148   100.60155637   -36.88318527     2.91306218   -30.57627038
+       2    -384.94518949  -265.06191642   238.59839148  -100.60155637    36.88318527    -2.91306218    30.57627038
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED HESSIAN MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1      21.56950931
+       2       0.26298594    21.56950931
+       3      15.97769167    -0.01584131    19.88393938
+       4      -0.01584131    15.97769167     0.27156575    19.88393938
+       5     -14.10848948    -0.04340250   -16.68875917     0.05968324    20.46615977
+       6      -0.04340250   -14.10848948     0.05968324   -16.68875917     0.08016235    20.46615977
+       7       6.05887644    -0.01260901     7.88643240     0.07890734    -8.65330403     0.03321113
+       8      -0.01260901     6.05887644     0.07890734     7.88643240     0.03321113    -8.65330403
+       9      -2.24940551     0.01135006    -3.10035725    -0.07130432     3.09932177    -0.05890719
+      10       0.01135006    -2.24940551    -0.07130432    -3.10035725    -0.05890719     3.09932177
+      11      -0.10742886     0.07266103    -2.34340097    -0.13369515     2.45933043    -0.01279623
+      12       0.07266103    -0.10742886    -0.13369515    -2.34340097    -0.01279623     2.45933043
+      13      -1.85038470     0.03699883    -2.49109149    -0.11280195     1.04583440    -0.01757800
+      14       0.03699883    -1.85038470    -0.11280195    -2.49109149    -0.01757800     1.04583440
+
+               Column   7     Column   8     Column   9     Column  10     Column  11     Column  12
+       7       4.03884009
+       8       0.12151643     4.03884009
+       9      -2.29214136     0.03355346     5.89536106
+      10       0.03355346    -2.29214136     0.15955643     5.89536106
+      11      -1.56065278    -0.04021888     3.20281978    -0.04896308    16.05433575
+      12      -0.04021888    -1.56065278    -0.04896308     3.20281978     0.14005271    16.05433575
+      13      -0.05186665    -0.01616825    -3.87227800    -0.00458442   -17.98255148     0.09825121
+      14      -0.01616825    -0.05186665    -0.00458442    -3.87227800     0.09825121   -17.98255148
+
+               Column  13     Column  14
+      13      29.92503177
+      14       0.08910734    29.92503177
+    ==== End of matrix output ====
+
+ RSPRED: REDUCED METRIC MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1       1.98138653
+       2      -0.00000000    -1.98138653
+       3       0.01992027     0.00000000     1.93663566
+       4      -0.00000000    -0.01992027    -0.00000000    -1.93663566
+       5      -0.00043561     0.00000000    -0.01533162     0.00000000     1.95307592
+       6      -0.00000000     0.00043561    -0.00000000     0.01533162    -0.00000000    -1.95307592
+       7      -0.01053945     0.00000000     0.03301631     0.00000000    -0.06561016     0.00000000
+       8      -0.00000000     0.01053945    -0.00000000    -0.03301631    -0.00000000     0.06561016
+       9       0.00304162     0.00000000    -0.02111565     0.00000000    -0.01694119     0.00000000
+      10      -0.00000000    -0.00304162    -0.00000000     0.02111565    -0.00000000     0.01694119
+      11       0.01495248     0.00000000    -0.02633530     0.00000000    -0.00101366     0.00000000
+      12      -0.00000000    -0.01495248    -0.00000000     0.02633530    -0.00000000     0.00101366
+      13       0.01528210     0.00000000    -0.02664486     0.00000000    -0.00985487     0.00000000
+      14      -0.00000000    -0.01528210    -0.00000000     0.02664486    -0.00000000     0.00985487
+
+               Column   7     Column   8     Column   9     Column  10     Column  11     Column  12
+       7       1.78066912
+       8      -0.00000000    -1.78066912
+       9      -0.03360945     0.00000000     1.89455997
+      10      -0.00000000     0.03360945    -0.00000000    -1.89455997
+      11      -0.00078211     0.00000000     0.01261122     0.00000000     1.91030601
+      12      -0.00000000     0.00078211    -0.00000000    -0.01261122    -0.00000000    -1.91030601
+      13      -0.00314810     0.00000000     0.00776340     0.00000000    -0.01934716     0.00000000
+      14      -0.00000000     0.00314810    -0.00000000    -0.00776340    -0.00000000     0.01934716
+
+               Column  13     Column  14
+      13       1.93863638
+      14      -0.00000000    -1.93863638
+    ==== End of matrix output ====
+  AFREQ,KZYRED,IGP   0.0000000000000000               14           1
+
+ REDUCED E(2)-W*S(2) MATRIX:
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6
+       1      21.56950931
+       2       0.26298594    21.56950931
+       3      15.97769167    -0.01584131    19.88393938
+       4      -0.01584131    15.97769167     0.27156575    19.88393938
+       5     -14.10848948    -0.04340250   -16.68875917     0.05968324    20.46615977
+       6      -0.04340250   -14.10848948     0.05968324   -16.68875917     0.08016235    20.46615977
+       7       6.05887644    -0.01260901     7.88643240     0.07890734    -8.65330403     0.03321113
+       8      -0.01260901     6.05887644     0.07890734     7.88643240     0.03321113    -8.65330403
+       9      -2.24940551     0.01135006    -3.10035725    -0.07130432     3.09932177    -0.05890719
+      10       0.01135006    -2.24940551    -0.07130432    -3.10035725    -0.05890719     3.09932177
+      11      -0.10742886     0.07266103    -2.34340097    -0.13369515     2.45933043    -0.01279623
+      12       0.07266103    -0.10742886    -0.13369515    -2.34340097    -0.01279623     2.45933043
+      13      -1.85038470     0.03699883    -2.49109149    -0.11280195     1.04583440    -0.01757800
+      14       0.03699883    -1.85038470    -0.11280195    -2.49109149    -0.01757800     1.04583440
+
+               Column   7     Column   8     Column   9     Column  10     Column  11     Column  12
+       7       4.03884009
+       8       0.12151643     4.03884009
+       9      -2.29214136     0.03355346     5.89536106
+      10       0.03355346    -2.29214136     0.15955643     5.89536106
+      11      -1.56065278    -0.04021888     3.20281978    -0.04896308    16.05433575
+      12      -0.04021888    -1.56065278    -0.04896308     3.20281978     0.14005271    16.05433575
+      13      -0.05186665    -0.01616825    -3.87227800    -0.00458442   -17.98255148     0.09825121
+      14      -0.01616825    -0.05186665    -0.00458442    -3.87227800     0.09825121   -17.98255148
+
+               Column  13     Column  14
+      13      29.92503177
+      14       0.08910734    29.92503177
+    ==== End of matrix output ====
+ REDUCED GRADIENT VECTORS DIM (2,KZRED)           7
+
+               Column   1     Column   2     Column   3     Column   4     Column   5     Column   6     Column   7
+       1     384.94518949   265.06191642  -238.59839148   100.60155637   -36.88318527     2.91306218   -30.57627038
+       2    -384.94518949  -265.06191642   238.59839148  -100.60155637    36.88318527    -2.91306218    30.57627038
+    ==== End of matrix output ====
+
+ *** INFO, negative eigenvalues in reduced matrix. Symmetry  1,  triplet       T Dimension of reduced matrix =    14
+
+ GP * SOLUTION vector at frequency     0.00000 a.u.
+ after    7 linear transformations is      1.40635073D+04
+ INERTIA (POS,ZER,NEG) of reduced matrix is   13    0    1
+ Determinant of reduced matrix is -4.30 * 10 **  9.0
+
+ REDUCED PROPERTY VECTOR AND REDUCED SOLUTION:
+
+    1   3.849452D+02   2.057722D+01
+    2  -3.849452D+02  -2.057722D+01
+
+    3   2.650619D+02  -4.189748D+00
+    4  -2.650619D+02   4.189748D+00
+
+    5  -2.385984D+02   5.479098D-01
+    6   2.385984D+02  -5.479098D-01
+
+    7   1.006016D+02   3.757430D+00
+    8  -1.006016D+02  -3.757430D+00
+
+    9  -3.688319D+01   7.101505D-01
+   10   3.688319D+01  -7.101505D-01
+
+   11   2.913062D+00  -4.636670D-02
+   12  -2.913062D+00   4.636670D-02
+
+   13  -3.057627D+01  -8.172149D-03
+   14   3.057627D+01   8.172149D-03
+
+ ROOT:  1 RESIDUAL TOT: 2.53201D-02 CONF: 0.00000D+00 ORB: 2.53201D-02
+          BNORM: 3.01961D+01 EIVAL: 0.00000D+00
+
+ NUMBER OF TRIAL VECTORS IN THIS LOAD    1   OFFSET FOR THIS LOAD    0
+    0 NON-CONVERGED SOLUTION VECTORS THIS LOAD, TOTAL:    0
+    0 LINEAR INDEPENDENT TRIAL VECTORS ADDED TO PREVIOUS    0
+
+ *** THE REQUESTED    1 SOLUTION VECTORS CONVERGED
+
+ Convergence of RSP solution vectors, threshold = 1.00D-03
+ ---------------------------------------------------------------
+ (dimension of paired reduced space:   14)
+ RSP solution vector no.    1; norm of residual   8.39D-04
+
+ *** RSPCTL MICROITERATIONS CONVERGED
+
+ EIGENVECTOR NUMBER     1
+
+     The total double excitation out of the pair i,j
+
+   i      j     1  Z oper.  Y oper.  2  Z oper.  Y oper.  3  Z oper.  Y oper.
+  ---    ---   --- -------  ------- --- -------  ------- --- -------  -------
+
+        15 elements with norm less than 0.00D+00 not printed
+
+ The total norm of the excitation out of these elements is 0.0000D+00
+
+ Index(2p2h)    i      j      a      b   Type    Z operator       Y operator
+ -----------   ---    ---    ---    ---  ----  --------------   --------------
+
+      177 elements with absolute value ≤ 0.00D+00 are not printed.
+
+ The numbers in parenthesis give the symmetry of the 2p-2h elements.
+
+     Response orbital operator symmetry = 1
+     (only scaled elements abs greater than   10.00 % of max abs value)
+
+      Index(r,s)      r      s        (r s) operator      (s r) operator      (r s) scaled        (s r) scaled
+      ----------    -----  -----      --------------      --------------      --------------      --------------
+           1         1(1)   4(1)        1.0749365424       -1.0749365424        1.5201898370       -1.5201898370
+           2         1(1)   5(1)        1.1023651891       -1.1023651891        1.5589798011       -1.5589798011
+           3         1(1)   6(1)       -0.3787043747        0.3787043747       -0.5355688628        0.5355688628
+           4         1(1)   7(1)       -9.2523168377        9.2523168377      -13.0847519552       13.0847519552
+           5         2(1)   4(1)       -7.1896364019        7.1896364019      -10.1676813081       10.1676813081
+           6         2(1)   5(1)       -3.4709044541        3.4709044541       -4.9086001527        4.9086001527
+           7         2(1)   6(1)        0.5763273915       -0.5763273915        0.8150500134       -0.8150500134
+           8         2(1)   7(1)       16.2026217316      -16.2026217316       22.9139673988      -22.9139673988
+           9         3(1)   4(1)       -5.7694393026        5.7694393026       -8.1592193091        8.1592193091
+          10         3(1)   5(1)       -0.0957307486        0.0957307486       -0.1353837230        0.1353837230
+          11         3(1)   6(1)        0.8842798346       -0.8842798346        1.2505605350       -1.2505605350
+          12         3(1)   7(1)        1.6410701020       -1.6410701020        2.3208235951       -2.3208235951
+          13         8(2)   9(2)       -1.4858720956        1.4858720956       -2.1013404696        2.1013404696
+          14        10(3)  11(3)       -1.4858720956        1.4858720956       -2.1013404696        2.1013404696
+
+
+                 Solution vectors in RSPLR for operator FC F 002:
+                 ------------------------------------------------
+
+
+               Column   1     Column   2
+     178       1.07493654    -1.07493654
+     179       1.10236519    -1.10236519
+     180      -0.37870437     0.37870437
+     181      -9.25231684     9.25231684
+     182      -7.18963640     7.18963640
+     183      -3.47090445     3.47090445
+     184       0.57632739    -0.57632739
+     185      16.20262173   -16.20262173
+     186      -5.76943930     5.76943930
+     187      -0.09573075     0.09573075
+     188       0.88427983    -0.88427983
+     189       1.64107010    -1.64107010
+     190      -1.48587210     1.48587210
+     191      -1.48587210     1.48587210
+    ==== End of matrix output ====
+ Norm:     3.0196D+01
+
+
+                 Residual vectors in RSPLR for operator FC F 002:
+                 ------------------------------------------------
+
+
+               Column   1     Column   2
+     178      -0.01222151     0.01222151
+     179      -0.01073394     0.01073394
+     180      -0.00607542     0.00607542
+     181      -0.00158994     0.00158994
+     182       0.00131404    -0.00131404
+     183      -0.00095676     0.00095676
+     184       0.00087331    -0.00087331
+     185       0.00050445    -0.00050445
+     186       0.00016343    -0.00016343
+     187       0.00038764    -0.00038764
+     188      -0.00172385     0.00172385
+     189       0.00258101    -0.00258101
+     190      -0.00123747     0.00123747
+     191      -0.00123747     0.00123747
+    ==== End of matrix output ====
+ Norm:     2.5320D-02
+
+
+           Final output of second order properties from linear response
+           ------------------------------------------------------------
+
+
+@ Spin symmetry of operators: triplet
+
+ Note that minus the linear response function: - << A; B >>(omega) is printed.
+ The results are of quadratic accuracy using Sellers formula.
+
+
+ Output from PRPCTL:
+ ===================
+
+ Property label = FC H 001
+
+
+PRPCTL test output:  Reference state expectation value for FC H 001
+
+ *** Individual non-zero orbital contributions
+ *** to the expectation value for property FC H 001 :
+
+
+     FC H 001 Hartree-Fock part:     0.00000000
+     FC H 001 second order part:     0.44156265
+     FC H 001 total 2. order   :     0.44156265
+
+ (PRPORS) Z and Y property GP vector in SOPPA approximation
+
+               Column   1     Column   2
+     178      -0.00336594     0.00336594
+     179       0.01026620    -0.01026620
+     180      -0.00016917     0.00016917
+     181       0.00065176    -0.00065176
+     182       0.09880097    -0.09880097
+     183      -0.30755996     0.30755996
+     184       0.00512402    -0.00512402
+     185      -0.01958810     0.01958810
+     186      -1.55535200     1.55535200
+     187       4.69458216    -4.69458216
+     188      -0.07691266     0.07691266
+     189       0.29754291    -0.29754291
+    ==== End of matrix output ====
+
+
+ Output from PRPCTL:
+ ===================
+
+ Property label = FC F 002
+
+
+PRPCTL test output:  Reference state expectation value for FC F 002
+
+ *** Individual non-zero orbital contributions
+ *** to the expectation value for property FC F 002 :
+
+
+     FC F 002 Hartree-Fock part:     0.00000000
+     FC F 002 second order part:    -0.30318022
+     FC F 002 total 2. order   :    -0.30318022
+
+ (PRPORS) Z and Y property GP vector in SOPPA approximation
+
+               Column   1     Column   2
+     178      50.10797402   -50.10797402
+     179      57.60127639   -57.60127639
+     180     -21.78998332    21.78998332
+     181    -516.29794810   516.29794810
+     182     -11.81009856    11.81009856
+     183     -13.58384829    13.58384829
+     184       5.13850214    -5.13850214
+     185     121.74791385  -121.74791385
+     186      -0.92835682     0.92835682
+     187      -1.06873209     1.06873209
+     188       0.40426406    -0.40426406
+     189       9.57769399    -9.57769399
+    ==== End of matrix output ====
+
+@ FREQUENCY INDEPENDENT SECOND ORDER PROPERTIES
+
+@ -<< FC H 001 ; FC H 001 >> = -1.412284541681E+02
+@ -<< FC H 001 ; FC F 002 >> =  1.797616947302E+01
+@ -<< FC F 002 ; FC F 002 >> =  1.406350732339E+04
+
+
+ Time used in linear response calculation is      0.00 CPU seconds for symmetry 1
+
+  Total CPU  time used in RESPONSE:   0.01 seconds
+  Total wall time used in RESPONSE:   0.01 seconds
+
+
+                   .-------------------------------------------.
+                   | End of Dynamic Property Section (RESPONS) |
+                   `-------------------------------------------'
+
+  Total CPU  time used in DALTON:   0.02 seconds
+  Total wall time used in DALTON:   0.03 seconds
+
+ 
+     Date and time (Linux)  : Mon Nov 21 19:10:13 2022
+     Host name              : fer                                     

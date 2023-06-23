@@ -16,15 +16,15 @@ class Cloppa:
     e.g Foster-Boys, Pipek-Mezey, etc, using the CLOPPA method.
     This method follows: Molecular Physics 91: 1, 105-112
     """
-
-    mo_coeff_loc = attr.ib(
-        default=None, type=np.array, validator=attr.validators.instance_of(np.ndarray)
+    mo_coeff_loc = attr.ib(default=None, type=np.array,
+                validator=attr.validators.instance_of(np.ndarray)
     )
     mol_loc = attr.ib(
         default=None, validator=attr.validators.instance_of(gto.mole.Mole)
     )
     mo_occ_loc = attr.ib(
-        default=None, type=np.array, validator=attr.validators.instance_of(np.ndarray)
+        default=None, type=np.array,
+        validator=attr.validators.instance_of(np.ndarray)
     )
 
     def __attrs_post_init__(self):
@@ -61,11 +61,11 @@ class Cloppa:
 
 
         Args:
-                        triplet (bool, optional): defines if the response is triplet (TRUE)
-                        or singlet (FALSE), that changes the Matrix M. Defaults is True.
+            triplet (bool, optional): defines if the response is triplet (TRUE)
+            or singlet (FALSE), that changes the Matrix M. Defaults is True.
 
         Returns:
-                                numpy.ndarray: M matrix in localized basis
+                    numpy.ndarray: M matrix in localized basis
         """
         m = np.zeros((self.nocc, self.nvir, self.nocc, self.nvir))
         fock = self.fock_matrix_canonical
@@ -142,10 +142,10 @@ class Cloppa:
         """PSO perturbator in a LMO basis
 
         Args:
-                        atmlst (list): list with the atom in with is centered the perturbator
+            atmlst (list): list with the atom in with is centered the perturbator
 
         Returns:
-                        list: pso perturbator in LMO basis
+            list: pso perturbator in LMO basis
         """
         orbo = self.orbo
         orbv = self.orbv
@@ -190,25 +190,25 @@ class Cloppa:
         and a set of virtuals LMOs.
 
         Args:
-                princ_prop (numpy.array): principal propagator
-                n_atom1 (int): atom 1 id
-                occ_atom1 (int): occupied atom corresponding to atom 1
-                vir_atom1 (int): virtual atom corresponding to atom 1
-                n_atom2 (int): atom 2 id
-                occ_atom2 (int): set of occupied atom corresponding to atom 2
-                vir_atom2 (int): set of virtual atom corresponding to atom 1
-                all_pathways (bool): If True, calculate pso response with all
-                                                                                occupied and virtual LMOs
-                elements (bool): If True, return the perturbators and principal
-                                                                                propagator of a specific pathway.
+            princ_prop (numpy.array): principal propagator
+            n_atom1 (int): atom 1 id
+            occ_atom1 (int): occupied atom corresponding to atom 1
+            vir_atom1 (int): virtual atom corresponding to atom 1
+            n_atom2 (int): atom 2 id
+            occ_atom2 (int): set of occupied atom corresponding to atom 2
+            vir_atom2 (int): set of virtual atom corresponding to atom 1
+            all_pathways (bool): If True, calculate pso response with all
+                                occupied and virtual LMOs
+            elements (bool): If True, return the perturbators and principal
+                            propagator of a specific pathway.
 
         Returns:
-                numpy.array: PSO response
+            numpy.array: PSO response
         """
         nvir = self.nvir
         nocc = self.nocc
 
-        if princ_prop.all() == None:
+        if princ_prop.all() is None:
             m = self.M(triplet=False)
             p = np.linalg.inv(m)
             p = -p.reshape(nocc, nvir, nocc, nvir)
@@ -223,11 +223,11 @@ class Cloppa:
         h2 = np.asarray(h2).reshape(1, 3, nvir, nocc)
         h2_pathway = np.zeros(h2.shape)
 
-        if all_pathways == True:
+        if all_pathways is True:
             h1_pathway[0, :, :, :] += h1[0, :, :, :]
             h2_pathway[0, :, :, :] += h2[0, :, :, :]
 
-        elif vir_atom1 == None:
+        elif vir_atom1 is None:
             h1_pathway[0, :, :, occ_atom1] += h1[0, :, :, occ_atom1]
             h2_pathway[0, :, :, occ_atom2] += h2[0, :, :, occ_atom2]
 
@@ -242,10 +242,10 @@ class Cloppa:
         para = []
         e = np.einsum("iax,iajb,jby->xy", h1_pathway[0].T, p, h2_pathway[0].T)
         para.append(e * 4)  # *4 for +c.c. and double occupnacy
-        pso = np.asarray(para) * nist.ALPHA**4
-        if elements == False:
+        pso = np.asarray(para) * nist.ALPHA ** 4
+        if elements is False:
             return pso
-        elif elements == True:
+        elif elements is True:
             return h1_pathway[0].T, p, h2_pathway[0].T
 
     def pp_fcsd_pathways(
@@ -265,25 +265,25 @@ class Cloppa:
         and a set of virtuals LMOs.
 
         Args:
-                        princ_prop (numpy.array): principal propagator
-                        n_atom1 (int): atom 1 id
-                        occ_atom1 (list): set of occupied atom corresponding to atom 1
-                        vir_atom1 (list): set of virtual atom corresponding to atom 1
-                        n_atom2 (int): atom 2 id
-                        occ_atom2 (list): set of occupied atom corresponding to atom 2
-                        vir_atom2 (list): set of virtual atom corresponding to atom 1
-                        all_pathways (bool): If True, calculate FCSD response with all
-                                                                                        occupied and virtual LMOs
-                        elements (bool): If True, return the perturbators and principal
-                                                                        propagator of a specific pathway.
+            princ_prop (numpy.array): principal propagator
+            n_atom1 (int): atom 1 id
+            occ_atom1 (list): set of occupied atom corresponding to atom 1
+            vir_atom1 (list): set of virtual atom corresponding to atom 1
+            n_atom2 (int): atom 2 id
+            occ_atom2 (list): set of occupied atom corresponding to atom 2
+            vir_atom2 (list): set of virtual atom corresponding to atom 1
+            all_pathways (bool): If True, calculate FCSD response with all
+                                occupied and virtual LMOs
+            elements (bool): If True, return the perturbators and principal
+                            propagator of a specific pathway.
 
         Returns:
-                numpy.array: FCSD response
+            numpy.array: FCSD response
         """
         nvir = self.nvir
         nocc = self.nocc
 
-        if princ_prop.all() == None:
+        if princ_prop.all() is None:
             m = self.M(triplet=True)
             p = np.linalg.inv(m)
             p = -p.reshape(nocc, nvir, nocc, nvir)
@@ -298,10 +298,10 @@ class Cloppa:
         h2 = np.asarray(h2).reshape(-1, 3, 3, nvir, nocc)
         h2_pathway = np.zeros((1, 3, 3, nvir, nocc))
 
-        if all_pathways == True:
+        if all_pathways is True:
             h1_pathway[0, :, :, :] += h1[0, :, :, :]
             h2_pathway[0, :, :, :] += h2[0, :, :, :]
-        elif vir_atom1 == None:
+        elif vir_atom1 is None:
             h1_pathway[0, :, :, :, occ_atom1] += h1[0, :, :, :, occ_atom1]
             h2_pathway[0, :, :, :, occ_atom2] += h2[0, :, :, :, occ_atom2]
         else:
@@ -315,10 +315,10 @@ class Cloppa:
         para = []
         e = np.einsum("iawx,iajb,jbwy->xy", h1_pathway[0].T, p, h2_pathway[0].T)
         para.append(e * 4)
-        fcsd = np.asarray(para) * nist.ALPHA**4
-        if elements == False:
+        fcsd = np.asarray(para) * nist.ALPHA ** 4
+        if elements is False:
             return fcsd
-        elif elements == True:
+        elif elements is True:
             return h1_pathway[0].T, p, h2_pathway[0].T
 
     def pp_fc_pathways(
@@ -338,24 +338,24 @@ class Cloppa:
         and a set of virtuals LMOs.
 
         Args:
-                princ_prop (numpy.array): principal propagator
-                n_atom1 (int): atom 1 id
-                occ_atom1 (list): set of occupied atom corresponding to atom 1
-                vir_atom1 (list): set of virtual atom corresponding to atom 1
-                n_atom2 (int): atom 2 id
-                occ_atom2 (list): set of occupied atom corresponding to atom 2
-                vir_atom2 (list): set of virtual atom corresponding to atom 1
-                all_pathways (bool): If True, calculate FC response with all
-                                                                                occupied and virtual LMOs
-                elements (bool): If True, return the perturbators and principal
-                                                                                propagator of a specific pathway.
+            princ_prop (numpy.array): principal propagator
+            n_atom1 (int): atom 1 id
+            occ_atom1 (list): set of occupied atom corresponding to atom 1
+            vir_atom1 (list): set of virtual atom corresponding to atom 1
+            n_atom2 (int): atom 2 id
+            occ_atom2 (list): set of occupied atom corresponding to atom 2
+            vir_atom2 (list): set of virtual atom corresponding to atom 1
+            all_pathways (bool): If True, calculate FC response with all
+                                occupied and virtual LMOs
+            elements (bool): If True, return the perturbators and principal
+                            propagator of a specific pathway.
 
         Returns:
-                numpy.array: FC response
+            numpy.array: FC response
         """
         nvir = self.nvir
         nocc = self.nocc
-        if princ_prop.all() == None:
+        if princ_prop.all() is None:
             m = self.M(triplet=True)
             p = np.linalg.inv(m)
             p = -p.reshape(nocc, nvir, nocc, nvir)
@@ -367,10 +367,10 @@ class Cloppa:
         h2 = self.pert_fc(n_atom2)
         h1_pathway = np.zeros(h1[0].shape)
         h2_pathway = np.zeros(h2[0].shape)
-        if all_pathways == True:
+        if all_pathways is True:
             h1_pathway[:, :] += h1[0][:, :]
             h2_pathway[:, :] += h2[0][:, :]
-        elif vir_atom1 == None:
+        elif vir_atom1 is None:
             h1_pathway[:, occ_atom1] += h1[0][:, occ_atom1]
             h2_pathway[:, occ_atom2] += h2[0][:, occ_atom2]
         else:
@@ -384,10 +384,10 @@ class Cloppa:
         para = []
         e = np.einsum("ia,iajb,jb", h1_pathway.T, p, h2_pathway.T)
         para.append(e * 4)  # *4 for +c.c. and for double occupancy
-        fc = np.einsum(",k,xy->kxy", nist.ALPHA**4, para, np.eye(3))
-        if elements == False:
+        fc = np.einsum(",k,xy->kxy", nist.ALPHA ** 4, para, np.eye(3))
+        if elements is False:
             return fc
-        elif elements == True:
+        elif elements is True:
             return h1_pathway.T, p, h2_pathway.T
 
     def obtain_atom_order(self, atom):
@@ -395,14 +395,14 @@ class Cloppa:
         given the atom label
 
         Args:
-                atom (str): atom label
+            atom (str): atom label
 
         Returns:
-                int: atom orden in the mol
+            int: atom orden in the mol
         """
         for i in range(self.mol_loc.natm):
             atom_ = self.mol_loc.atom_symbol(i)
-            if atom_ == atom:
+            if atom_ is atom:
                 return i
 
     def ssc_pathway(
@@ -422,23 +422,23 @@ class Cloppa:
         """Spin Spin Coupling mechanisms between two nuclei,
 
         Args:
-                        FC (bool, optional): if True, calculate the FC SSC. Defaults to
-                                                                                                        False.
-                        FCSD (bool, optional): if True, calculate the FC+SD SSC.
-                                                                                                                        Defaults to True.
-                        PSO (bool, optional): if True, calculate the FC+SD SSC.
-                                                                                                                        Defaults to False.
-                        princ_prop (numpy.array, optional): Principal Propagator.
-                        Must be obtained with whe M function. Defaults to None.
-                        n_atom1 (str): Atom1 name
-                        vir_atom1 (list): set of virtual atom corresponding to atom 1
-                        n_atom2 (int): atom 2 id
-                        occ_atom2 (list): set of occupied atom corresponding to atom 2
-                        vir_atom2 (list): set of virtual atom corresponding to atom 1
-                        all_pathways (bool): If True, calculate FC response with all
-                                                                                                        occupied and virtual LMOs
+            FC (bool, optional): if True, calculate the FC SSC. Defaults to
+                                False.
+            FCSD (bool, optional): if True, calculate the FC+SD SSC.
+                                Defaults to True.
+            PSO (bool, optional): if True, calculate the FC+SD SSC.
+                                Defaults to False.
+            princ_prop (numpy.array, optional): Principal Propagator.
+            Must be obtained with whe M function. Defaults to None.
+            n_atom1 (str): Atom1 name
+            vir_atom1 (list): set of virtual atom corresponding to atom 1
+            n_atom2 (int): atom 2 id
+            occ_atom2 (list): set of occupied atom corresponding to atom 2
+            vir_atom2 (list): set of virtual atom corresponding to atom 1
+            all_pathways (bool): If True, calculate FC response with all
+                                occupied and virtual LMOs
         Returns:
-                        real: isotropic ssc mechanism
+            real: isotropic ssc mechanism
         """
         n_atom1 = [self.obtain_atom_order(atom1)]
         n_atom2 = [self.obtain_atom_order(atom2)]
@@ -447,13 +447,13 @@ class Cloppa:
         if FC == FCSD == PSO:
             raise Exception("you can only calculate one mechanisms at a time")
 
-        if FC == FCSD == True:
+        if FC == FCSD is True:
             raise Exception("you can only calculate one mechanisms at a time")
 
-        if FC == PSO == True:
+        if FC == PSO is True:
             raise Exception("you can only calculate one mechanisms at a time")
 
-        if FCSD == PSO == True:
+        if FCSD == PSO is True:
             raise Exception("you can only calculate one mechanisms at a time")
 
         if FC:
@@ -495,7 +495,7 @@ class Cloppa:
 
         nuc_magneton = 0.5 * (nist.E_MASS / nist.PROTON_MASS)  # e*hbar/2m
         au2Hz = nist.HARTREE2J / nist.PLANCK
-        unit = au2Hz * nuc_magneton**2
+        unit = au2Hz * nuc_magneton ** 2
         iso_ssc = unit * np.einsum("kii->k", prop) / 3
 
         gyro1 = [get_nuc_g_factor(self.mol_loc.atom_symbol(n_atom1[0]))]
@@ -521,35 +521,35 @@ class Cloppa:
         propagator of a definite coupling pathway
 
         Args:
-                        FC (bool, optional): if True, calculate the FC SSC. Defaults to
-                                                                                                        False.
-                        FCSD (bool, optional): if True, calculate the FC+SD SSC.
-                                                                                                                        Defaults to True.
-                        PSO (bool, optional): if True, calculate the FC+SD SSC.
-                                                                                                                        Defaults to False.
-                        princ_prop (numpy.array, optional): Principal Propagator.
-                        Must be obtained with whe M function. Defaults to None.
-                        atom1 (str): Atom1 name
-                        vir_atom1 (int): virtual atom corresponding to atom 1
-                        atom2 (str): atom2 name
-                        occ_atom2 (int): occupied atom corresponding to atom 2
-                        vir_atom2 (int): virtual atom corresponding to atom 1
+            FC (bool, optional): if True, calculate the FC SSC. Defaults to
+                                False.
+            FCSD (bool, optional): if True, calculate the FC+SD SSC.
+                                Defaults to True.
+            PSO (bool, optional): if True, calculate the FC+SD SSC.
+                                Defaults to False.
+            princ_prop (numpy.array, optional): Principal Propagator.
+            Must be obtained with whe M function. Defaults to None.
+            atom1 (str): Atom1 name
+            vir_atom1 (int): virtual atom corresponding to atom 1
+            atom2 (str): atom2 name
+            occ_atom2 (int): occupied atom corresponding to atom 2
+            vir_atom2 (int): virtual atom corresponding to atom 1
         Returns:
-                        real: perturbators and principal propagator, in case of PSO or
-                        FC+SD returns the perturbator trace
+            real: perturbators and principal propagator, in case of PSO or
+            FC+SD returns the perturbator trace
         """
 
-        if occ_atom1 == occ_atom2 == None:
+        if occ_atom1 == occ_atom2 is None:
             raise Exception(
                 """in order to calculate a definite coupling 
 			pathway, you must choose a couple atoms  """
             )
-        if vir_atom1 == vir_atom2 == None:
+        if vir_atom1 == vir_atom2 is None:
             raise Exception(
                 """in order to calculate a definite coupling 
 							pathway, you must choose a virtual LMOs"""
             )
-        if occ_atom1 == occ_atom2 == None:
+        if occ_atom1 == occ_atom2 is None:
             raise Exception(
                 """in order to calculate a definite coupling 
 							pathway, you must choose a occupied LMOs"""
