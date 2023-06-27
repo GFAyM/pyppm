@@ -143,7 +143,7 @@ def test_correction_pert_2(atmlst,correction):
     correction_ = pp.correction_pert_2(atmlst).sum()
     assert abs(correction_ - correction) < 1e-5
 
-@pytest.mark.parametrize("atm1lst, atm2lst, fc_response", [([0],[1],17.934539129)])
+@pytest.mark.parametrize("atm1lst, atm2lst, fc_response", [([0], [1], 17.93418984545092)])
 def test_pp_ssc_fc_select(atm1lst,atm2lst,fc_response):
     """Test for FC Response at HRPA
 

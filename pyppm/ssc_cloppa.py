@@ -84,6 +84,7 @@ class Cloppa:
                             m[i, a, j, b] -= orbo[:, i].T @ fock @ orbo[:, j]
                         if i == j:
                             m[i, a, j, b] += orbv[:, a].T @ fock @ orbv[:, b]
+        print(m.reshape((nocc * nvir, nocc * nvir)))
         eri_mo = ao2mo.general(mol_loc, [mo, mo, mo, mo], compact=False)
         eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
         m -= np.einsum("ijba->iajb", eri_mo[:nocc, :nocc, nocc:, nocc:])
@@ -363,21 +364,21 @@ class Cloppa:
             p = princ_prop
             p = -p.reshape(nocc, nvir, nocc, nvir)
 
-        h1 = self.pert_fc(n_atom1)
-        h2 = self.pert_fc(n_atom2)
-        h1_pathway = np.zeros(h1[0].shape)
-        h2_pathway = np.zeros(h2[0].shape)
+        h1 = .5*self.pert_fc(n_atom1)[0][nocc:, :nocc]
+        h2 = .5*self.pert_fc(n_atom2)[0][nocc:, :nocc]
+        h1_pathway = np.zeros(h1.shape)
+        h2_pathway = np.zeros(h2.shape)
         if all_pathways is True:
-            h1_pathway[:, :] += h1[0][:, :]
-            h2_pathway[:, :] += h2[0][:, :]
+            h1_pathway[:, :] += h1[:, :]
+            h2_pathway[:, :] += h2[:, :]
         elif vir_atom1 is None:
-            h1_pathway[:, occ_atom1] += h1[0][:, occ_atom1]
-            h2_pathway[:, occ_atom2] += h2[0][:, occ_atom2]
+            h1_pathway[:, occ_atom1] += h1[:, occ_atom1]
+            h2_pathway[:, occ_atom2] += h2[:, occ_atom2]
         else:
-            h1_pathway[vir_atom1 - nocc, occ_atom1] += h1[0][
+            h1_pathway[vir_atom1 - nocc, occ_atom1] += h1[
                 vir_atom1 - nocc, occ_atom1
             ]
-            h2_pathway[vir_atom2 - nocc, occ_atom2] += h2[0][
+            h2_pathway[vir_atom2 - nocc, occ_atom2] += h2[
                 vir_atom2 - nocc, occ_atom2
             ]
 
