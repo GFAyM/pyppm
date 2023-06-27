@@ -110,9 +110,9 @@ class Cloppa:
         coords = mol.atom_coords()
         ao = numint.eval_ao(mol, coords)
         mo = ao.dot(mo_coeff)
-        orbo = mo[:, mo_occ > 0]
-        orbv = mo[:, mo_occ == 0]
-        fac = 8 * np.pi / 3 * 0.5  # *.5 due to s = 1/2 * pauli-matrix
+        orbo = mo[:, :]
+        orbv = mo[:, :]
+        fac = 8 * np.pi / 3# * 0.5  # *.5 due to s = 1/2 * pauli-matrix
         h1 = []
         for ia in atmlst:
             h1.append(fac * np.einsum("p,i->pi", orbv[ia], orbo[ia]))
@@ -402,7 +402,7 @@ class Cloppa:
         """
         for i in range(self.mol_loc.natm):
             atom_ = self.mol_loc.atom_symbol(i)
-            if atom_ is atom:
+            if atom_ == atom:
                 return i
 
     def ssc_pathway(
