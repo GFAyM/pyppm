@@ -1,5 +1,4 @@
-from pyscf import gto, scf
-from pyscf.gto import Mole
+from pyscf import scf
 import numpy
 from pyscf import lib
 import attr
@@ -7,8 +6,7 @@ from pyscf import ao2mo
 from pyscf.dft import numint
 from pyscf.data import nist
 from pyscf.data.gyro import get_nuc_g_factor
-from pyscf import tools
-import sys
+
 from functools import reduce
 
 
@@ -100,14 +98,13 @@ class Prop_pol:
                 h1 = list with the perturbator
         """
         mo_coeff = self.mo_coeff
-        mo_occ = self.mo_occ
         mol = self.mol
         coords = mol.atom_coords()
         ao = numint.eval_ao(mol, coords)
         mo = ao.dot(mo_coeff)
-        orbo = mo[:, mo_occ > 0]
-        orbv = mo[:, mo_occ == 0]
-        fac = 8 * numpy.pi / 3 * 0.5  # *.5 due to s = 1/2 * pauli-matrix
+        orbo = mo[:, :]
+        orbv = mo[:, :]
+        fac = 8 * numpy.pi / 3  # *.5 due to s = 1/2 * pauli-matrix
         h1 = []
         for ia in atmlst:
             h1.append(fac * numpy.einsum("p,i->pi", orbv[ia], orbo[ia]))
@@ -128,17 +125,17 @@ class Prop_pol:
         nvir = self.nvir
         nocc = self.nocc
 
-        h1 = self.pert_fc(atom1)
-        h2 = self.pert_fc(atom2)
+        h1 = 0.5 * self.pert_fc(atom1)[0][nocc:, :nocc]
+        h2 = 0.5 * self.pert_fc(atom2)[0][nocc:, :nocc]
         m = self.M(triplet=True)
         p = numpy.linalg.inv(m)
         p = -p.reshape(nocc, nvir, nocc, nvir)
         para = []
-        e = numpy.einsum("ia,iajb,jb", h1[0].T, p, h2[0].T)
+        e = numpy.einsum("ia,iajb,jb", h1.T, p, h2.T)
         # print(e)
         para.append(e * 4)  # *4 for +c.c. and for double occupancy
 
-        fc = numpy.einsum(",k,xy->kxy", nist.ALPHA**4, para, numpy.eye(3))
+        fc = numpy.einsum(",k,xy->kxy", nist.ALPHA ** 4, para, numpy.eye(3))
         return fc
 
     def pert_fcsd(self, atmlst):
@@ -247,7 +244,7 @@ class Prop_pol:
 
         e = numpy.einsum("iax,iajb,jby->xy", h1[0].T, p, h2[0].T)
         para.append(e * 4)  # *4 for +c.c. and double occupnacy
-        pso = numpy.asarray(para) * nist.ALPHA**4
+        pso = numpy.asarray(para) * nist.ALPHA ** 4
         return pso
 
     def pp_fcsd(self, atom1, atom2):
@@ -276,7 +273,7 @@ class Prop_pol:
         para = []
         e = numpy.einsum("iawx,iajb,jbwy->xy", h1[0].T, p, h2[0].T)
         para.append(e * 4)
-        fcsd = numpy.asarray(para) * nist.ALPHA**4
+        fcsd = numpy.asarray(para) * nist.ALPHA ** 4
         return fcsd
 
     def ssc(self, FC=True, FCSD=False, PSO=False, atom1=None, atom2=None):
@@ -309,7 +306,7 @@ class Prop_pol:
 
         nuc_magneton = 0.5 * (nist.E_MASS / nist.PROTON_MASS)  # e*hbar/2m
         au2Hz = nist.HARTREE2J / nist.PLANCK
-        unit = au2Hz * nuc_magneton**2
+        unit = au2Hz * nuc_magneton ** 2
         iso_ssc = unit * numpy.einsum("kii->k", prop) / 3
         gyro1 = [get_nuc_g_factor(self.mol.atom_symbol(atom1_[0]))]
         gyro2 = [get_nuc_g_factor(self.mol.atom_symbol(atom2_[0]))]

@@ -11,7 +11,6 @@ class extra_functions:
     )
 
     def __attrs_post_init__(self):
-
         (
             self.mol,
             mo_energy,
@@ -55,8 +54,10 @@ class extra_functions:
             lim1 (int): inferior limit of the hibridization range
             lim2 (int): superior limit of the hibridization range
             cart (bool, optional): If the MOs are in cartesian coordinates,
-            use True in cart. Otherwise, let unchange this value. Defaults to False.
-            orth_method (str): The localization method to generated orthogonal AO upon which the AO contribution
+            use True in cart. Otherwise, let unchange this value.
+            Defaults to False.
+            orth_method (str): The localization method to generated orthogonal
+            AO upon which the AO contribution
             are computed. It can be one of ‘meta_lowdin’, ‘lowdin’ or ‘nao’.
         Returns:
             list : atm-id, hibridization coeff
