@@ -60,9 +60,6 @@ class HRPA(Prop_pol):
 
         Oddershede 1984, eq C.7
 
-        But, this follows Andy's program, the terms i==j and a==b are not seted
-        to zero in order to get to the right values
-
         Args:
             I (integral): 1 or 2.
 
@@ -70,6 +67,7 @@ class HRPA(Prop_pol):
             numpy.ndarray: (nocc,nvir,nocc,nvir) array with \kappa
         """
         nocc = self.nocc
+        nvir = self.nvir
         occidx = self.occidx
         viridx = self.viridx
         mo_energy = self.mo_energy
@@ -85,14 +83,15 @@ class HRPA(Prop_pol):
         c = numpy.sqrt((2 * I) - 1)
         K = (int1 - (((-1) ** I) * int2)) / e_iajb
         K = K * c
-        # for i in range(nocc):
-        #    for j in range(nocc):
-        #        if i==j:
-        #            K[i,:,j,:]=0
-        # for a in range(nvir):
-        #    for b in range(nvir):
-        #        if a==b:
-        #            K[:,a,:,b]=0
+        if I==2:
+            for i in range(nocc):
+                for j in range(nocc):
+                    if i==j:
+                        K[i,:,j,:]=0
+            for a in range(nvir):
+                for b in range(nvir):
+                    if a==b:
+                        K[:,a,:,b]=0
         return K
 
     @property
@@ -352,7 +351,7 @@ class HRPA(Prop_pol):
                 pert[m, alfa] = t
         pert = numpy.einsum("ai->ia", pert)
         return pert
-
+    
     def pp_ssc_fc_select(self, atom1, atom2):
         """Method that obtain the linear response between two FC perturbation at
         HRPA level of approach between two nuclei
@@ -387,3 +386,101 @@ class HRPA(Prop_pol):
         #para.append(e)
         # fc = numpy.einsum(',k,xy->kxy', nist.ALPHA**4, para, numpy.eye(3))
         return e
+
+    def correction_pert_pso(self,atmlst):
+        """
+        Method with eq. C.25, which is the first correction to PSO perturbator
+
+        Args:
+            atmlst (list): Nuclei to which will calculate the correction
+
+        Returns:
+            numpy.ndarray: array with first correction to Perturbator (nocc,nvir)
+        """
+
+        nocc = self.nocc
+        nvir = self.nvir
+        ntot = nocc + nvir   
+        h1 = self.pert_pso(atmlst)
+        h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)
+        h1 = h1[0]
+        kappa = self.kappa_2
+        pert = numpy.zeros((3,nvir,nocc))
+        for alfa in range(self.nocc):
+            for m in range(self.nvir):
+                p_virt = h1[:,nocc:,nocc:]
+                pert[:,m,alfa] += numpy.einsum('n,xn->x', kappa[alfa,:],p_virt[:,m,:])
+                p_occ = h1[:,:nocc,:nocc]
+                pert[:,m,alfa] -= numpy.einsum('b,xb->x', kappa[:,m],p_occ[:,:,alfa])
+        pert = numpy.einsum('xai->xia', pert)
+        return pert
+
+    
+    def correction_pert_2_pso(self,atmlst):
+        mo = numpy.hstack((self.orbo,self.orbv))
+        nmo = self.nocc + self.nvir
+        nocc = self.nocc
+        nvir = self.nvir
+        ntot = nocc + nvir   
+        eri_mo = ao2mo.general(self.mol, [mo,mo,mo,mo], compact=False)
+        eri_mo = eri_mo.reshape(nmo,nmo,nmo,nmo)
+        int1 = eri_mo[:nocc,nocc:,:nocc,nocc:]
+        c1 = numpy.sqrt(3)
+        k_1 = self.kappa(1)
+        k_2 = self.kappa(2)
+        e_iajb = lib.direct_sum('i+j-a-b->iajb',
+                                self.mo_energy[self.occidx], 
+                                self.mo_energy[self.occidx],
+                                self.mo_energy[self.viridx], 
+                                self.mo_energy[self.viridx])
+        h1 = self.pert_pso(atmlst)
+        h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)
+        h1 = h1[0]
+        pert = numpy.zeros((3,nvir,nocc))
+        
+        h1 = h1[:,nocc:,:nocc]
+        for alfa in range(nocc):
+            for m in range(nvir):    
+                t = numpy.einsum('dapb,xd,apb->x',int1[:,:,:,:]/e_iajb[:,:,:,:], h1[:,m,:],
+                                    (k_1[alfa,:,:,:]+c1*k_2[alfa,:,:,:]))
+                t += numpy.einsum('dapb,xb,pda->x',int1[:,:,:,:]/e_iajb[:,:,:,:],h1[:,:,alfa],
+                                    (k_1[:,m,:,:]+c1*k_2[:,m,:,:]))
+                t = -t#*numpy.sqrt(2)/2  
+                pert[:,m,alfa] = t
+        pert = numpy.einsum('xai->xia', pert)
+        return pert
+
+
+
+    def pp_ssc_pso_select(self,atom1,atom2):
+        
+        nvir = self.nvir
+        nocc = self.nocc
+        ntot = nocc + nvir        
+        h1 = self.pert_pso(atom1)
+        h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)
+        h1 = h1[0][:,:nocc,nocc:]
+        h2 = self.pert_pso(atom2)
+        h2 = numpy.asarray(h2).reshape(1, 3, ntot, ntot)
+        h2 = h2[0][:,:nocc,nocc:]
+
+        h1_corr1 = self.correction_pert_pso(atom1)
+        h1_corr2 = self.correction_pert_2_pso(atom1)
+        h2_corr1 = self.correction_pert_pso(atom2)
+        h2_corr2 = self.correction_pert_2_pso(atom2)
+
+        h1 = (-2*h1) + h1_corr1 + h1_corr2
+        h2 = (-2*h2) + h2_corr1 + h2_corr2
+        m = self.M(triplet=False)
+        m = m.reshape(nocc, nvir, nocc, nvir)
+        m += self.part_a2
+        m += self.part_b2(0)
+        m += self.S2
+        m = m.reshape(nocc*nvir,nocc*nvir)
+        p = numpy.linalg.inv(m)
+        p = p.reshape(nocc,nvir,nocc,nvir)
+        para = []
+        e = numpy.einsum('xia,iajb,yjb->xy', h1, p , h2)
+        para.append(e)
+        return para
+
