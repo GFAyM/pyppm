@@ -53,7 +53,7 @@ def test_pert_fc(atm_id, pert_fc_sum):
     assert pert_fc_sum - pert[0].sum() < 1e-5
 
 
-@pytest.mark.parametrize(" atm_id, pert_pso_squared_sum ", [([1], [38.983022])])
+@pytest.mark.parametrize(" atm_id, pert_pso_squared_sum ", [([0], [0.5583537])])
 def test_pert_pso(atm_id, pert_pso_squared_sum):
     """Test for the PSO perturbator
     It uses the sum of squared of the perturbator in one direction because
@@ -65,8 +65,10 @@ def test_pert_pso(atm_id, pert_pso_squared_sum):
     HF_mol = gto.M(atom="""H 0 0 0; F 1 0 0""", basis="cc-pvdz", unit="angstrom")
     mf = scf.RHF(HF_mol)
     mf.kernel()
-    pert_pso = Prop_pol(mf).pert_pso(atm_id)
-    pert_pso_squared_sum_ = (pert_pso[0][2] * pert_pso[0][2]).sum()
+    pp = Prop_pol(mf)
+    pert_pso = pp.pert_pso(atm_id)
+    nocc = pp.nocc
+    pert_pso_squared_sum_ = (pert_pso[2][:nocc,nocc:]**2).sum()
     assert pert_pso_squared_sum - pert_pso_squared_sum_ < 1e-3
 
 @pytest.mark.parametrize(" atm_id, fcsd_integrals ", [(1, [1842.4910058456317])])

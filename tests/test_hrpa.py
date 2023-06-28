@@ -125,6 +125,24 @@ def test_correction_pert(atmlst,correction):
     correction_ = pp.correction_pert(atmlst).sum()
     assert abs(correction_ - correction) < 1e-5
 
+@pytest.mark.parametrize("atmlst, correction", [([0], 0.32347835225943505)])
+def test_correction_pert_pso(atmlst,correction):
+    """Test for first correction to PSO perturbation
+
+    Args:
+        atmlst (list): atom list
+        correction (real): sum of correction
+    """
+    mol = gto.M(atom='''
+    F     0.0000000000    0.0000000000     0.1319629808
+    H     0.0000000000    0.0000000000    -1.6902522555
+    ''', basis='3-21g', unit='angstrom')
+
+    mf = mol.RHF().run()
+    pp = HRPA(mf)
+    correction_ = (pp.correction_pert_pso(atmlst)[0]**2).sum()
+    assert abs(correction_ - correction) < 1e-5
+
 @pytest.mark.parametrize("atmlst, correction", [([0], -2.475781384137429)])
 def test_correction_pert_2(atmlst,correction):
     """Test for second correction to perturbation
@@ -143,7 +161,25 @@ def test_correction_pert_2(atmlst,correction):
     correction_ = pp.correction_pert_2(atmlst).sum()
     assert abs(correction_ - correction) < 1e-5
 
-@pytest.mark.parametrize("atm1lst, atm2lst, fc_response", [([0], [1], 17.93418984545092)])
+@pytest.mark.parametrize("atmlst, correction", [([0], 1.192706252508168)])
+def test_correction_pert_2_pso(atmlst,correction):
+    """Test for second correction to PSO perturbation
+
+    Args:
+        atmlst (list): atom list
+        correction (real): sum of correction
+    """
+    mol = gto.M(atom='''
+    F     0.0000000000    0.0000000000     0.1319629808
+    H     0.0000000000    0.0000000000    -1.6902522555
+    ''', basis='3-21g', unit='angstrom')
+
+    mf = mol.RHF().run()
+    pp = HRPA(mf)
+    correction_ = (pp.correction_pert_2_pso(atmlst)[0]**2).sum()
+    assert abs(correction_ - correction) < 1e-5
+
+@pytest.mark.parametrize("atm1lst, atm2lst, fc_response", [([0], [1], 17.93453912954908)])
 def test_pp_ssc_fc_select(atm1lst,atm2lst,fc_response):
     """Test for FC Response at HRPA
 
@@ -161,3 +197,22 @@ def test_pp_ssc_fc_select(atm1lst,atm2lst,fc_response):
     pp = HRPA(mf)
     fc_ = pp.pp_ssc_fc_select(atm1lst,atm2lst)
     assert abs(fc_ - fc_response) < 1e-5
+
+@pytest.mark.parametrize("atm1lst, atm2lst, pso_response", [([0], [1], -1.59064175697)])
+def test_pp_ssc_pso_select(atm1lst,atm2lst,pso_response):
+    """Test for PSO Response at HRPA
+
+    Args:
+        atm1lst (list): atom list in which is centered first perturbator
+        atm2lst (list): atom list in which is centered second perturbator
+        correction (real): PSO response value
+    """
+    mol = gto.M(atom='''
+    F     0.0000000000    0.0000000000     0.1319629808
+    H     0.0000000000    0.0000000000    -1.6902522555
+    ''', basis='3-21g', unit='angstrom')
+
+    mf = mol.RHF().run()
+    pp = HRPA(mf)
+    pso_ = pp.pp_ssc_pso_select(atm1lst,atm2lst)[0][0][0]
+    assert abs(pso_ - pso_response) < 1e-5

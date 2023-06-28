@@ -192,14 +192,12 @@ class Prop_pol:
         Returns:
                 list: pso perturbator
         """
-        orbo = self.orbo
-        orbv = self.orbv
-
+        mo = self.mo_coeff
         h1 = []
         for ia in atmlst:
             self.mol.set_rinv_origin(self.mol.atom_coord(ia))
             h1ao = -self.mol.intor_asymmetric("int1e_prinvxp", 3)
-            h1 += [reduce(numpy.dot, (orbv.T.conj(), x, orbo)) for x in h1ao]
+            h1 += [reduce(numpy.dot, (mo.T.conj(), x, mo)) for x in h1ao]
         return h1
 
     def obtain_atom_order(self, atom):
@@ -232,17 +230,17 @@ class Prop_pol:
         para = []
         nvir = self.nvir
         nocc = self.nocc
-
+        ntot = nocc + nvir
         m = self.M(triplet=False)
         p = numpy.linalg.inv(m)
-
         p = -p.reshape(nocc, nvir, nocc, nvir)
         h1 = self.pert_pso(atom1)
-        h1 = numpy.asarray(h1).reshape(1, 3, nvir, nocc)
+        h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)
+        h1 = h1[0][:,:nocc,nocc:]
         h2 = self.pert_pso(atom2)
-        h2 = numpy.asarray(h2).reshape(1, 3, nvir, nocc)
-
-        e = numpy.einsum("iax,iajb,jby->xy", h1[0].T, p, h2[0].T)
+        h2 = numpy.asarray(h2).reshape(1, 3, ntot, ntot)
+        h2 = h2[0][:,:nocc,nocc:]
+        e = numpy.einsum("xia,iajb,yjb->xy", h1, p, h2)
         para.append(e * 4)  # *4 for +c.c. and double occupnacy
         pso = numpy.asarray(para) * nist.ALPHA ** 4
         return pso
