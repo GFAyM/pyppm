@@ -84,7 +84,41 @@ class Cloppa:
                             m[i, a, j, b] -= orbo[:, i].T @ fock @ orbo[:, j]
                         if i == j:
                             m[i, a, j, b] += orbv[:, a].T @ fock @ orbv[:, b]
-        print(m.reshape((nocc * nvir, nocc * nvir)))
+        #print(m.reshape((nocc * nvir, nocc * nvir)))
+        eri_mo = ao2mo.general(mol_loc, [mo, mo, mo, mo], compact=False)
+        eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+        m -= np.einsum("ijba->iajb", eri_mo[:nocc, :nocc, nocc:, nocc:])
+        if triplet:
+            m -= np.einsum("jaib->iajb", eri_mo[:nocc, nocc:, :nocc, nocc:])
+        elif not triplet:
+            m += np.einsum("jaib->iajb", eri_mo[:nocc, nocc:, :nocc, nocc:])
+        m = m.reshape((nocc * nvir, nocc * nvir))
+        return m
+
+    def M_sin_a0(self, triplet=True):
+        """Principal Propagator Inverse, defined as M = A + B without A(0)
+
+        A[i,a,j,b] =  + (ia||bj)
+        B[i,a,j,b] = (ia||jb)
+
+        ref: Molecular Physics 91: 1, 105-112
+
+
+        Args:
+            triplet (bool, optional): defines if the response is triplet (TRUE)
+            or singlet (FALSE), that changes the Matrix M. Defaults is True.
+
+        Returns:
+                    numpy.ndarray: M matrix in localized basis
+        """
+        m = np.zeros((self.nocc, self.nvir, self.nocc, self.nvir))
+        orbo = self.orbo
+        orbv = self.orbv
+        nocc = self.nocc
+        nvir = self.nvir
+        nmo = self.nmo
+        mol_loc = self.mol_loc
+        mo = self.mo
         eri_mo = ao2mo.general(mol_loc, [mo, mo, mo, mo], compact=False)
         eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
         m -= np.einsum("ijba->iajb", eri_mo[:nocc, :nocc, nocc:, nocc:])

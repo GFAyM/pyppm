@@ -24,7 +24,7 @@ def test_ssc_pathway(atom1,atom2,value):
     ssc_path = cloppa_obj.ssc_pathway(atom1=atom1, atom2=atom2, occ_atom1=3, 
                            vir_atom1=16, occ_atom2=4, vir_atom2=19, FC=False
                            ,PSO=True, FCSD=False)
-    assert value - ssc_path < 1e-10
+    assert abs(value - ssc_path) < 1e-10
 
 @pytest.mark.parametrize("atom1, atom2, value", 
                          [('H3', 'H7', 12.4891868569)])
@@ -43,7 +43,7 @@ def test_ssc_pathway(atom1,atom2,value):
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
     ssc = cloppa_obj.ssc_pathway(atom1=atom1, atom2=atom2,  
                             FC=True, PSO=False, FCSD=False, all_pathways=True)
-    assert value - ssc < 1e-5
+    assert abs(value - ssc) < 1e-5
 
 @pytest.mark.parametrize("atom1, atom2, value_p1, value_m, value_p2", 
                          [('H3', 'H7', 5.099783349336234e-06, 
@@ -66,9 +66,9 @@ def test_pathway_elements(atom1,atom2, value_p1, value_m, value_p2):
     p1, m, p2 = cloppa_obj.pathway_elements(FC=False, FCSD=True, PSO=False,
                         atom1='H3', occ_atom1=1, vir_atom1=10,
                         atom2='H7', occ_atom2=2, vir_atom2=12)
-    assert value_p1-p1 < 1e-10
-    assert value_p2-p2 < 1e-10
-    assert value_m - m < 1e-10
+    assert abs(value_p1-p1) < 1e-10
+    assert abs(value_p2-p2) < 1e-10
+    assert abs(value_m - m) < 1e-10
 
 @pytest.mark.parametrize("Element, I", [("H3", 2)])
 def test_obtain_atom_order(Element, I):
@@ -105,7 +105,7 @@ def test_pp_fc_pathways(n_atom1,n_atom2,value):
                     occ_atom1=None, vir_atom1=None, occ_atom2=None,
                     vir_atom2=None, elements=False, 
                     princ_prop=np.full((2,2), None))
-    assert value - pp_fc[0][0][0] < 1e-14
+    assert abs(value - pp_fc[0][0][0]) < 1e-14
 
 
 @pytest.mark.parametrize("n_atom1, n_atom2, value", 
@@ -128,7 +128,7 @@ def test_pp_fcsd_pathways(n_atom1,n_atom2,value):
                     occ_atom1=None, vir_atom1=None, occ_atom2=None,
                     vir_atom2=None, elements=False, 
                     princ_prop=np.full((2,2), None))
-    assert value - pp_fcsd[0][0][0] < 1e-14
+    assert abs(value - pp_fcsd[0][0][0]) < 1e-14
 
 @pytest.mark.parametrize("n_atom1, n_atom2, value", 
                          [([2], [6], -1.1600129557380199e-10)])
@@ -149,7 +149,7 @@ def test_pp_pso_pathways(n_atom1,n_atom2,value):
                     occ_atom1=None, vir_atom1=None, occ_atom2=None,
                     vir_atom2=None, elements=False, 
                     princ_prop=np.full((2,2), None))
-    assert value - pp_pso[0][0][0] < 1e-14
+    assert abs(value - pp_pso[0][0][0]) < 1e-14
 
 @pytest.mark.parametrize(" atm_id, pert_fcsd_squared_sum ", [([1], [31.832289675231266])])
 def test_pert_fcsd(atm_id, pert_fcsd_squared_sum):
@@ -165,9 +165,9 @@ def test_pert_fcsd(atm_id, pert_fcsd_squared_sum):
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
     pert = cloppa_obj.pert_fcsd(atm_id)
     #pert_fcsd_squared_sum_ = (pert_fcsd[0][1] * pert_fcsd[0][1]).sum()
-    assert pert_fcsd_squared_sum - pert[0].sum() < 1e-5
+    assert abs(pert_fcsd_squared_sum - pert[0].sum()) < 1e-5
 
-@pytest.mark.parametrize(" atm_id, pert_fc_sum ", [([1], [31.72787890490904])])
+@pytest.mark.parametrize(" atm_id, pert_fc_sum ", [([1], [354.24817683077976])])
 def test_pert_fc(atm_id, pert_fc_sum):
     """
     Test for Perturbator using localized molecular orbitals
@@ -182,7 +182,7 @@ def test_pert_fc(atm_id, pert_fc_sum):
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
     pert = cloppa_obj.pert_fc(atm_id)
-    assert pert_fc_sum - pert[0].sum() < 1e-5
+    assert abs(pert_fc_sum - pert[0].sum()) < 1e-5
 
 @pytest.mark.parametrize("atm_id, pert_pso", [([1], [-0.0038919427255503375])])
 def test_pert_PSO(atm_id, pert_pso):
@@ -199,7 +199,7 @@ def test_pert_PSO(atm_id, pert_pso):
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
     pert = cloppa_obj.pert_pso(atm_id)
-    assert pert_pso - pert[0].sum() < 1e-5
+    assert abs(pert_pso - pert[0].sum()) < 1e-5
 
 @pytest.mark.parametrize(" atm_id, fcsd_integrals ", [(1, [220.39783593117323])])
 def test_get_integrals_fcsd(atm_id, fcsd_integrals):
@@ -213,7 +213,7 @@ def test_get_integrals_fcsd(atm_id, fcsd_integrals):
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
     fcsd_integrals_ = cloppa_obj._get_integrals_fcsd(atm_id)
-    assert fcsd_integrals - fcsd_integrals_[0].sum() < 1e-5
+    assert abs(fcsd_integrals - fcsd_integrals_[0].sum()) < 1e-5
 
 @pytest.mark.parametrize(" Triplet, M_trace ", [(True, [1825.752538356537])])
 def test_M(Triplet, M_trace):
@@ -231,11 +231,11 @@ def test_M(Triplet, M_trace):
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
     m = cloppa_obj.M(triplet=Triplet)
-    assert M_trace - m.trace() < 1e-5
+    assert abs(M_trace - m.trace()) < 1e-5
 
 
 
-@pytest.mark.parametrize(" M_trace ", [([-101.40711350439749])])
+@pytest.mark.parametrize(" M_trace ", [([1837.9110906360743])])
 def test_M(M_trace):
     """
     Test for Inverse of the Principal Propagator Matrix using Localized 
@@ -251,4 +251,4 @@ def test_M(M_trace):
                             molden_file=molden).extraer_coeff
     cloppa_obj = Cloppa(mo_coeff_loc=mo_coeff, mol_loc=mol, mo_occ_loc=mo_occ)
     m = cloppa_obj.M(triplet=False)
-    assert M_trace - m.trace() < 1e-5
+    assert abs(M_trace - m.trace()) < 1e-5

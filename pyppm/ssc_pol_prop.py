@@ -44,7 +44,6 @@ class Prop_pol:
 
         self.atm1dic, self.atm2dic = uniq_atoms(nuc_pair=self.nuc_pair)
 
-    # @property
     def M(self, triplet=True):
         """Principal Propagator Inverse, defined as M = A+B
 
@@ -63,11 +62,11 @@ class Prop_pol:
         """
         mo = numpy.hstack((self.orbo, self.orbv))
         nmo = self.nocc + self.nvir
-
         e_ia = lib.direct_sum(
             "a-i->ia", self.mo_energy[self.viridx], self.mo_energy[self.occidx]
         )
         a = numpy.diag(e_ia.ravel()).reshape(self.nocc, self.nvir, self.nocc, self.nvir)
+        #a = numpy.zeros((nocc,nvir,nocc,nvir))
         b = numpy.zeros_like(a)
 
         eri_mo = ao2mo.general(self.mol, [self.orbo, mo, mo, mo], compact=False)
@@ -87,6 +86,48 @@ class Prop_pol:
         m = m.reshape(self.nocc * self.nvir, self.nocc * self.nvir, order="C")
 
         return m
+
+    def M_sin_a0(self, triplet=True):
+        """Principal Propagator Inverse, defined as M = A+B without A(0) matrix
+
+        A[i,a,j,b] = (ia||bj)
+        B[i,a,j,b] = (ia||jb)
+
+        ref: G.A Aucar  https://doi.org/10.1002/cmr.a.20108
+
+
+        Args:
+                triplet (bool, optional): defines if the response is triplet (TRUE)
+                or singlet (FALSE), that changes the Matrix M. Defaults is True.
+
+        Returns:
+                numpy.ndarray: M matrix
+        """
+        orbo = self.orbo
+        orbv = self.orbv
+        mo = numpy.hstack((orbo, orbv))
+        nmo = self.nocc + self.nvir
+        nocc = self.nocc
+        nvir = self.nvir
+        a = numpy.zeros((nocc,nvir,nocc,nvir))
+        b = numpy.zeros_like(a)
+        eri_mo = ao2mo.general(self.mol, [self.orbo, mo, mo, mo], compact=False)
+        eri_mo = eri_mo.reshape(self.nocc, nmo, nmo, nmo)
+        a -= numpy.einsum(
+            "ijba->iajb", eri_mo[: self.nocc, : self.nocc, self.nocc :, self.nocc :]
+        )
+        if triplet:
+            b -= numpy.einsum(
+                "jaib->iajb", eri_mo[: self.nocc, self.nocc :, : self.nocc, self.nocc :]
+            )
+        elif not triplet:
+            b += numpy.einsum(
+                "jaib->iajb", eri_mo[: self.nocc, self.nocc :, : self.nocc, self.nocc :]
+            )
+        m = a + b
+        m = m.reshape(self.nocc * self.nvir, self.nocc * self.nvir, order="C")
+        return m
+
 
     def pert_fc(self, atmlst):
         """Perturbator for the response Fermi-Contact
@@ -125,16 +166,14 @@ class Prop_pol:
         nvir = self.nvir
         nocc = self.nocc
 
-        h1 = 0.5 * self.pert_fc(atom1)[0][nocc:, :nocc]
-        h2 = 0.5 * self.pert_fc(atom2)[0][nocc:, :nocc]
+        h1 = 0.5 * self.pert_fc(atom1)[0][:nocc, nocc:]
+        h2 = 0.5 * self.pert_fc(atom2)[0][:nocc, nocc:]
         m = self.M(triplet=True)
         p = numpy.linalg.inv(m)
         p = -p.reshape(nocc, nvir, nocc, nvir)
         para = []
-        e = numpy.einsum("ia,iajb,jb", h1.T, p, h2.T)
-        # print(e)
+        e = numpy.einsum("ia,iajb,jb", h1, p, h2)
         para.append(e * 4)  # *4 for +c.c. and for double occupancy
-
         fc = numpy.einsum(",k,xy->kxy", nist.ALPHA ** 4, para, numpy.eye(3))
         return fc
 
