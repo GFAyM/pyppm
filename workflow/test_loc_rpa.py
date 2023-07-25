@@ -14,6 +14,8 @@ from pyscf import scf, gto
 import numpy as np
 
 mol, mo_coeff_loc, mo_occ = extra_functions(molden_file='C2H6_ccpvdz_Pipek_Mezey.molden').extraer_coeff
+mol, mo_coeff_loc, mo_occ = extra_functions(molden_file='ethane.molden').extraer_coeff
+
 mf = scf.RHF(mol)
 mf.kernel()
 pp = Prop_pol(mf)
@@ -29,7 +31,7 @@ total = np.einsum('ij,ab->iajb',c_occ,c_vir)
 total = total.reshape(nocc*nvir,nocc*nvir)
 p = np.linalg.inv(m)
 p = p.reshape(nocc, nvir, nocc, nvir)
-m_loc = total @ m @ total.T
+m_loc = total.T @ m @ total
 #m = m.reshape(nocc, nvir, nocc, nvir)
 #m_loc = np.einsum('ij,ab,iajb,ji,ba->iajb',c_occ,c_vir,m,c_occ.T,c_vir.T)
 #m_loc = np.einsum('iajb,iajb,aibj->iajb',total,m,total.T)
@@ -39,15 +41,12 @@ p_loc = np.linalg.inv(m_loc)
 p_loc = p_loc.reshape(nocc, nvir, nocc, nvir)
 #print(np.diag(m_loc).sum())
 #print(np.diag(m).sum())
-print(pp.pert_pso([2])[1].shape)
 h1 = pp.pert_pso([2])[2][:nocc,nocc:]
 h2 = pp.pert_pso([4])[2][:nocc,nocc:]
 
 #print((h1**2).sum())
-h1_loc = c_occ@h1@c_vir.T
-#print((h1_loc**2).sum())
-
-h2_loc = c_occ@h2@c_vir.T
+h1_loc = c_occ.T@h1@c_vir
+h2_loc = c_occ.T@h2@c_vir
 
 p = np.einsum('ia,iajb,jb', h1, p, h2)
 p_loc = np.einsum('ia,iajb,jb',h1_loc,p_loc,h2_loc)

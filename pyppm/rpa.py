@@ -19,7 +19,7 @@ def uniq_atoms(nuc_pair):
 
 
 @attr.s
-class Prop_pol:
+class RPA:
     """
     Full-featured class for computing non-relativistic singlet and triplet
     Spin-Spin coupling mechanisms for RPA approach
@@ -41,7 +41,10 @@ class Prop_pol:
         self.orbo = self.mo_coeff[:, self.occidx]
         self.nvir = self.orbv.shape[1]
         self.nocc = self.orbo.shape[1]
-
+        mo = numpy.hstack((self.orbo, self.orbv))
+        nmo = self.nocc + self.nvir
+        eri_mo = ao2mo.general(self.mol, [self.orbo, mo, mo, mo], compact=False)
+        self.eri_mo = eri_mo.reshape(self.nocc, nmo, nmo, nmo)
         self.atm1dic, self.atm2dic = uniq_atoms(nuc_pair=self.nuc_pair)
 
     def M(self, triplet=True):
@@ -60,17 +63,14 @@ class Prop_pol:
         Returns:
                 numpy.ndarray: M matrix
         """
-        mo = numpy.hstack((self.orbo, self.orbv))
-        nmo = self.nocc + self.nvir
+        eri_mo = self.eri_mo
         e_ia = lib.direct_sum(
             "a-i->ia", self.mo_energy[self.viridx], self.mo_energy[self.occidx]
         )
         a = numpy.diag(e_ia.ravel()).reshape(self.nocc, self.nvir, self.nocc, self.nvir)
-        #a = numpy.zeros((nocc,nvir,nocc,nvir))
+        #a = numpy.zeros((self.nocc,self.nvir,self.nocc,self.nvir))
         b = numpy.zeros_like(a)
 
-        eri_mo = ao2mo.general(self.mol, [self.orbo, mo, mo, mo], compact=False)
-        eri_mo = eri_mo.reshape(self.nocc, nmo, nmo, nmo)
         a -= numpy.einsum(
             "ijba->iajb", eri_mo[: self.nocc, : self.nocc, self.nocc :, self.nocc :]
         )
@@ -151,7 +151,7 @@ class Prop_pol:
             h1.append(fac * numpy.einsum("p,i->pi", orbv[ia], orbo[ia]))
         return h1
 
-    def pp_fc(self, atom1, atom2):
+    def pp_fc(self, atom1, atom2, elements=False):
         """Fermi Contact Response, calculated as
         ^{FC}J = sum_{ia,jb} ^{FC}P_{ia}(atom1) ^3M_{iajb} ^{FC}P_{jb}(atom2)
 
@@ -169,13 +169,17 @@ class Prop_pol:
         h1 = 0.5 * self.pert_fc(atom1)[0][:nocc, nocc:]
         h2 = 0.5 * self.pert_fc(atom2)[0][:nocc, nocc:]
         m = self.M(triplet=True)
-        p = numpy.linalg.inv(m)
-        p = -p.reshape(nocc, nvir, nocc, nvir)
-        para = []
-        e = numpy.einsum("ia,iajb,jb", h1, p, h2)
-        para.append(e * 4)  # *4 for +c.c. and for double occupancy
-        fc = numpy.einsum(",k,xy->kxy", nist.ALPHA ** 4, para, numpy.eye(3))
-        return fc
+        if elements:
+            return h1,m,h2
+        else:
+            p = numpy.linalg.inv(m)
+            p = -p.reshape(nocc, nvir, nocc, nvir)
+            para = []
+            e = numpy.einsum("ia,iajb,jb", h1, p, h2)
+            para.append(e * 4)  # *4 for +c.c. and for double occupancy
+            fc = numpy.einsum(",k,xy->kxy", nist.ALPHA ** 4, para, numpy.eye(3))
+            #print(fc)
+            return fc
 
     def pert_fcsd(self, atmlst):
         """Perturbator for the response Fermi-Contact + Spin-Dependent
@@ -186,9 +190,11 @@ class Prop_pol:
         Returns:
                 h1 = list with the perturbator
         """
-        orbo = self.mo_coeff[:, self.mo_occ > 0]
-        orbv = self.mo_coeff[:, self.mo_occ == 0]
-
+        #orbo = self.mo_coeff[:, self.mo_occ > 0]
+        #orbv = self.mo_coeff[:, self.mo_occ == 0]
+        orbo = self.mo_coeff[:, :]
+        orbv = self.mo_coeff[:, :]
+        
         h1 = []
         for ia in atmlst:
             h1ao = self.get_integrals_fcsd(ia)
@@ -254,7 +260,7 @@ class Prop_pol:
             if atom_ == atom:
                 return i
 
-    def pp_pso(self, atom1, atom2):
+    def pp_pso(self, atom1, atom2, elements=False):
         """
         Paramagnetic spin orbital response, calculated as
         ^{PSO}J = sum_{ia,jb} ^{PSO}P_{ia}(atom1) ^1M_{iajb} ^{PSO}P_{jb}(atom2)
@@ -271,20 +277,23 @@ class Prop_pol:
         nocc = self.nocc
         ntot = nocc + nvir
         m = self.M(triplet=False)
-        p = numpy.linalg.inv(m)
-        p = -p.reshape(nocc, nvir, nocc, nvir)
         h1 = self.pert_pso(atom1)
         h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)
         h1 = h1[0][:,:nocc,nocc:]
         h2 = self.pert_pso(atom2)
         h2 = numpy.asarray(h2).reshape(1, 3, ntot, ntot)
         h2 = h2[0][:,:nocc,nocc:]
-        e = numpy.einsum("xia,iajb,yjb->xy", h1, p, h2)
-        para.append(e * 4)  # *4 for +c.c. and double occupnacy
-        pso = numpy.asarray(para) * nist.ALPHA ** 4
-        return pso
+        if elements:
+            return h1, m, h2
+        else:
+            p = numpy.linalg.inv(m)
+            p = -p.reshape(nocc, nvir, nocc, nvir)
+            e = numpy.einsum("xia,iajb,yjb->xy", h1, p, h2)
+            para.append(e * 4)  # *4 for +c.c. and double occupnacy
+            pso = numpy.asarray(para) * nist.ALPHA ** 4
+            return pso
 
-    def pp_fcsd(self, atom1, atom2):
+    def pp_fcsd(self, atom1, atom2, elements=False):
         """Fermi Contact Response, calculated as
 
         ^{FC+SD}J = sum_{ia,jb} ^{FC+SD}P_{ia}(atom1) ^3M_{iajb} ^{FC+SD}P_{jb}(atom2)
@@ -299,18 +308,21 @@ class Prop_pol:
         """
         nvir = self.nvir
         nocc = self.nocc
-
+        ntot = nocc + nvir
         h1 = self.pert_fcsd(atom1)
-        h1 = numpy.asarray(h1).reshape(-1, 3, 3, nvir, nocc)
+        h1 = numpy.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0,:,:,:nocc, nocc:]
         h2 = self.pert_fcsd(atom2)
-        h2 = numpy.asarray(h2).reshape(-1, 3, 3, nvir, nocc)
+        h2 = numpy.asarray(h2).reshape(-1, 3, 3, ntot, ntot)[0,:,:,:nocc, nocc:]
         m = self.M(triplet=True)
-        p = numpy.linalg.inv(m)
-        p = -p.reshape(nocc, nvir, nocc, nvir)
-        para = []
-        e = numpy.einsum("iawx,iajb,jbwy->xy", h1[0].T, p, h2[0].T)
-        para.append(e * 4)
-        fcsd = numpy.asarray(para) * nist.ALPHA ** 4
+        if elements:
+            return h1, m, h2
+        else:
+            p = numpy.linalg.inv(m)
+            p = -p.reshape(nocc, nvir, nocc, nvir)
+            para = []
+            e = numpy.einsum("wxia,iajb,wyjb->xy", h1, p, h2)
+            para.append(e * 4)
+            fcsd = numpy.asarray(para) * nist.ALPHA ** 4
         return fcsd
 
     def ssc(self, FC=True, FCSD=False, PSO=False, atom1=None, atom2=None):
@@ -349,3 +361,23 @@ class Prop_pol:
         gyro2 = [get_nuc_g_factor(self.mol.atom_symbol(atom2_[0]))]
         jtensor = numpy.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)
         return jtensor[0]
+
+    def elements(self, atom1, atom2, FC=False, FCSD=False, PSO=False):
+        """_summary_
+
+        Args:
+            FC (bool, optional): _description_. Defaults to False.
+            FCSD (bool, optional): _description_. Defaults to False.
+            PSO (bool, optional): _description_. Defaults to False.
+            atom1 (_type_, optional): _description_. Defaults to None.
+            atom2 (_type_, optional): _description_. Defaults to None.
+        """
+
+        
+        if FC:
+            h1, m, h2 = self.pp_fc(atom1=atom1, atom2=atom2, elements=True)
+        if PSO:
+            h1, m, h2 = self.pp_pso(atom1=atom1, atom2=atom2, elements=True)
+        elif FCSD:
+            h1, m, h2 = self.pp_fcsd(atom1=atom1, atom2=atom2, elements=True)
+        return h1, m, h2

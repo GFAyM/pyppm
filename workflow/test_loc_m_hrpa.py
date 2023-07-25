@@ -17,11 +17,9 @@ import numpy as np
 mol, mo_coeff_loc, mo_occ = extra_functions(molden_file='C2H6_ccpvdz_Pipek_Mezey.molden').extraer_coeff
 mf = scf.RHF(mol)
 mf.kernel()
-pp = HRPA(mf)
-nocc = pp.nocc
-nvir = pp.nvir
-
-h1, m, h2 = pp.pp_ssc_pso_select_elements([2], [4])
+hrpa = HRPA(mf)
+nocc = hrpa.nocc
+nvir = hrpa.nvir
 
 can_inv = np.linalg.inv(mf.mo_coeff.T)
 c_occ = (mo_coeff_loc[:,:nocc].T.dot(can_inv[:,:nocc])).T
@@ -29,18 +27,14 @@ c_occ = (mo_coeff_loc[:,:nocc].T.dot(can_inv[:,:nocc])).T
 c_vir = (mo_coeff_loc[:,nocc:].T.dot(can_inv[:,nocc:])).T
 total = np.einsum('ij,ab->iajb',c_occ,c_vir)
 total = total.reshape(nocc*nvir,nocc*nvir)
-p = np.linalg.inv(m)
-p = p.reshape(nocc, nvir, nocc, nvir)
+
+m = hrpa.communicator_matrix_hrpa(triplet=True)
+
+#print(m)
+
 m_loc = total.T @ m @ total
-p_loc = np.linalg.inv(m_loc)
-p_loc = p_loc.reshape(nocc, nvir, nocc, nvir)
-h1_loc = c_occ.T@h1@c_vir
-h2_loc = c_occ.T@h2@c_vir
-
-p = np.einsum('xia,iajb,yjb->xy', h1, p , h2)
-p_loc = np.einsum('xia,iajb,yjb->xy', h1_loc, p_loc , h2_loc)
-
-print(p_loc)
-print(p)
 
 print(m_loc)
+m_loc = m_loc.reshape(nocc,nvir,nocc,nvir)
+print(m_loc[0,1,3,6])
+print(m_loc[4,1,3,6])

@@ -87,6 +87,8 @@ class Cloppa:
         #print(m.reshape((nocc * nvir, nocc * nvir)))
         eri_mo = ao2mo.general(mol_loc, [mo, mo, mo, mo], compact=False)
         eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+        #m = np.zeros((self.nocc, self.nvir, self.nocc, self.nvir))
+        
         m -= np.einsum("ijba->iajb", eri_mo[:nocc, :nocc, nocc:, nocc:])
         if triplet:
             m -= np.einsum("jaib->iajb", eri_mo[:nocc, nocc:, :nocc, nocc:])

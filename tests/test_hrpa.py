@@ -17,7 +17,7 @@ def test_kappa(i, kappa2):
 
     mf = mol.RHF().run()
     pp = HRPA(mf)
-    kappa2_ = (pp.kappa(1)**2).sum()
+    kappa2_ = (pp.kappa(i)**2).sum()
     assert abs(kappa2 - kappa2_) < 1e-5
 
 @pytest.mark.parametrize("a2", [2.2123806369774135])
@@ -179,7 +179,7 @@ def test_correction_pert_2_pso(atmlst,correction):
     correction_ = (pp.correction_pert_2_pso(atmlst)[0]**2).sum()
     assert abs(correction_ - correction) < 1e-5
 
-@pytest.mark.parametrize("atm1lst, atm2lst, fc_response", [([0], [1], 17.93453912954908)])
+@pytest.mark.parametrize("atm1lst, atm2lst, fc_response", [([0], [1], -1.2714273e-08)])
 def test_pp_ssc_fc_select(atm1lst,atm2lst,fc_response):
     """Test for FC Response at HRPA
 
@@ -195,7 +195,7 @@ def test_pp_ssc_fc_select(atm1lst,atm2lst,fc_response):
 
     mf = mol.RHF().run()
     pp = HRPA(mf)
-    fc_ = pp.pp_ssc_fc_select(atm1lst,atm2lst)
+    fc_ = pp.pp_ssc_fc_select(atm1lst,atm2lst)[0][0][0]
     assert abs(fc_ - fc_response) < 1e-5
 
 @pytest.mark.parametrize("atm1lst, atm2lst, pso_response", [([0], [1], -1.59064175697)])

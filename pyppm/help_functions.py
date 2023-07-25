@@ -71,6 +71,45 @@ class extra_functions:
                 orbital = np.append(orbital, (i, c))
         return orbital
 
+    def mo_hibridization_2(self, mo_label, lim1, lim2,vir):
+        """This function gives the orbital index of the MOs that are in the
+        hibridization range
+
+        Args:
+            mo_label (str): Which AO i watn to know the composition
+            lim1 (int): inferior limit of the hibridization range
+            lim2 (int): superior limit of the hibridization range
+            cart (bool, optional): If the MOs are in cartesian coordinates,
+            use True in cart. Otherwise, let unchange this value.
+            Defaults to False.
+            orth_method (str): The localization method to generated orthogonal
+            AO upon which the AO contribution
+            are computed. It can be one of ‘meta_lowdin’, ‘lowdin’ or ‘nao’.
+        Returns:
+            list : atm-id, hibridization coeff
+        """
+        orbital = []
+        if vir:
+            mo_coeff = self.mo_coeff[:,self.nocc:]
+            comp = mo_mapping.mo_comps(
+                mo_label, self.mol, mo_coeff, orth_method="meta_lowdin"
+            )
+
+            for i, c in enumerate(comp):
+                if lim1 < c < lim2:
+                    orbital.append(i+self.nocc)
+            return orbital
+        else:
+            mo_coeff = self.mo_coeff[:,:self.nocc]
+            comp = mo_mapping.mo_comps(
+                mo_label, self.mol, mo_coeff, orth_method="meta_lowdin"
+            )
+            for i, c in enumerate(comp):
+                if lim1 < c < lim2:
+                    orbital.append(i)
+            return orbital
+        
+
     def mo_hibridization_fixed(self, mo_label, fixed_orbital, lim1, lim2):
         """Evaluate the 'mo_label' composition of a fixed orbital of the molden
           file between two limits
