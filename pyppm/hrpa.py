@@ -13,7 +13,7 @@ from itertools import product
 
 
 @attr.s
-class HRPA(RPA):
+class HRPA:
     """Class to perform calculations of $J^{FC}$ mechanism at HRPA level of
     of approach. This is the p-h part of SOPPA level of approah. The HRPA class
     enherits from RPA of pyppm.rpa because they share several methods
@@ -43,11 +43,11 @@ class HRPA(RPA):
         self.nocc = self.orbo.shape[1]
         self.mo = numpy.hstack((self.orbo, self.orbv))
         self.nmo = self.nocc + self.nvir
-        mol = self.mol
-        mo = self.mo
-        nmo = self.nmo
-        eri_mo = ao2mo.general(mol, [mo, mo, mo, mo], compact=False)
-        self.eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+
+        self.rpa_obj = RPA(mf=self.mf)
+        self.eri_mo = self.rpa_obj.eri_mo
+        #eri_mo = ao2mo.general(mol, [mo, mo, mo, mo], compact=False)
+        #self.eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
         self.occ = [i for i in range(self.nocc)]
         self.vir = [i for i in range(self.nvir)]    
 
@@ -292,7 +292,7 @@ class HRPA(RPA):
         occ = self.occ
         vir = self.vir
         if FC:
-            h1 = self.pert_fc(atmlst)[0]
+            h1 = self.rpa_obj.pert_fc(atmlst)[0]
             pert = numpy.zeros((nvir, nocc))
             for alfa, m in list(product(occ,vir)):
                 p_virt = h1[nocc:, nocc:]
@@ -301,7 +301,7 @@ class HRPA(RPA):
                 pert[m, alfa] -= lib.einsum("b,b->", kappa[:, m], p_occ[:, alfa])
             pert = lib.einsum("ai->ia", pert)
         if PSO:
-            h1 = self.pert_pso(atmlst)
+            h1 = self.rpa_obj.pert_pso(atmlst)
             h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)[0]
             pert = numpy.zeros((3,nvir,nocc))
             for alfa, m in list(product(occ,vir)):
@@ -311,7 +311,7 @@ class HRPA(RPA):
                 pert[:,m,alfa] -= lib.einsum('b,xb->x', kappa[:,m],p_occ[:,:,alfa])
             pert = lib.einsum('xai->xia', pert)
         elif FCSD:
-            h1 = self.pert_fcsd(atmlst)
+            h1 = self.rpa_obj.pert_fcsd(atmlst)
             h1 = numpy.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0,:,:,:,:]
             pert = numpy.zeros((3,3,nvir,nocc))
             for alfa, m in list(product(occ,vir)):
@@ -352,7 +352,7 @@ class HRPA(RPA):
             self.mo_energy[self.viridx],
         )
         if FC:
-            h1 = self.pert_fc(atmlst)[0]
+            h1 = self.rpa_obj.pert_fc(atmlst)[0]
             pert = numpy.zeros((nvir, nocc))
 
             h1 = h1[nocc:, :nocc]
@@ -373,7 +373,7 @@ class HRPA(RPA):
                 pert[m, alfa] = t
             pert = lib.einsum("ai->ia", pert)
         if PSO:
-            h1 = self.pert_pso(atmlst)
+            h1 = self.rpa_obj.pert_pso(atmlst)
             h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)
             h1 = h1[0]
             pert = numpy.zeros((3,nvir,nocc))
@@ -388,7 +388,7 @@ class HRPA(RPA):
                 pert[:,m,alfa] = t
             pert = lib.einsum('xai->xia', pert)
         elif FCSD:
-            h1 = self.pert_fcsd(atmlst)
+            h1 = self.rpa_obj.pert_fcsd(atmlst)
             h1 = numpy.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0,:,:,nocc:,:nocc]
             pert = numpy.zeros((3,3,nvir,nocc))
             for alfa, m in list(product(occ,vir)):
@@ -401,7 +401,7 @@ class HRPA(RPA):
             pert = lib.einsum('wxai->wxia', pert)
         return pert
     
-    def communicator_matrix_hrpa(self, triplet):
+    def Communicator(self, triplet):
         """Function for obtain Communicator matrix, i.e., the principal propagator 
         inverse without the A(0) matrix
 
@@ -425,7 +425,7 @@ class HRPA(RPA):
         m = m.reshape(nocc * nvir, nocc * nvir)
         return m
 
-    def pp_ssc_fc_select(self, atom1=None, atom2=None, elements=False):
+    def pp_ssc_fc(self, atom1=None, atom2=None, elements=False):
         """Method that obtain the linear response between two FC perturbation at
         HRPA level of approach between two nuclei
         Args:
@@ -437,8 +437,8 @@ class HRPA(RPA):
         """
         nvir = self.nvir
         nocc = self.nocc
-        h1 = self.pert_fc(atom1)[0][:nocc, nocc:]
-        h2 = self.pert_fc(atom2)[0][:nocc, nocc:]
+        h1 = self.rpa_obj.pert_fc(atom1)[0][:nocc, nocc:]
+        h2 = self.rpa_obj.pert_fc(atom2)[0][:nocc, nocc:]
         h1_corr1 = self.correction_pert(atmlst=atom1, FC=True)
         h1_corr2 = self.correction_pert_2(atmlst=atom1, FC=True)
         h2_corr1 = self.correction_pert(atmlst=atom2, FC=True)
@@ -446,7 +446,7 @@ class HRPA(RPA):
 
         h1 = (2 * h1) + h1_corr1 + h1_corr2
         h2 = (2 * h2) + h2_corr1 + h2_corr2
-        m = self.M(triplet=True)
+        m = self.rpa_obj.M(triplet=True)
         m = m.reshape(nocc, nvir, nocc, nvir)
         m += self.part_a2
         m -= self.part_b2(1)
@@ -463,7 +463,7 @@ class HRPA(RPA):
             fc = lib.einsum(',k,xy->kxy', nist.ALPHA**4, para, numpy.eye(3))
             return fc
 
-    def pp_ssc_pso_select(self, atom1, atom2, elements=False):
+    def pp_ssc_pso(self, atom1, atom2, elements=False):
         """Method that obtain the linear response between PSO perturbation at
         HRPA level of approach between two nuclei
         Args:
@@ -476,10 +476,10 @@ class HRPA(RPA):
         nvir = self.nvir
         nocc = self.nocc
         ntot = nocc + nvir        
-        h1 = self.pert_pso(atom1)
+        h1 = self.rpa_obj.pert_pso(atom1)
         h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)
         h1 = h1[0][:,:nocc,nocc:]
-        h2 = self.pert_pso(atom2)
+        h2 = self.rpa_obj.pert_pso(atom2)
         h2 = numpy.asarray(h2).reshape(1, 3, ntot, ntot)
         h2 = h2[0][:,:nocc,nocc:]
 
@@ -490,7 +490,7 @@ class HRPA(RPA):
 
         h1 = (-2*h1) + h1_corr1 + h1_corr2
         h2 = (-2*h2) + h2_corr1 + h2_corr2
-        m = self.M(triplet=False)
+        m = self.rpa_obj.M(triplet=False)
         m = m.reshape(nocc, nvir, nocc, nvir)
         m += self.part_a2
         m += self.part_b2(0)
@@ -507,7 +507,7 @@ class HRPA(RPA):
             pso = numpy.asarray(para) * nist.ALPHA ** 4
             return pso
 
-    def pp_ssc_fcsd_select(self, atom1=None, atom2=None, elements=False):
+    def pp_ssc_fcsd(self, atom1=None, atom2=None, elements=False):
         """Method that obtain the linear response between two FC perturbation at
         HRPA level of approach between two nuclei
         Args:
@@ -520,9 +520,9 @@ class HRPA(RPA):
         nvir = self.nvir
         nocc = self.nocc
         ntot = nocc + nvir 
-        h1 = self.pert_fcsd(atom1)
+        h1 = self.rpa_obj.pert_fcsd(atom1)
         h1 = numpy.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0,:,:,:nocc, nocc:]
-        h2 = self.pert_fcsd(atom2)
+        h2 = self.rpa_obj.pert_fcsd(atom2)
         h2 = numpy.asarray(h2).reshape(-1, 3, 3, ntot, ntot)[0,:,:,:nocc, nocc:]
         h1_corr1 = self.correction_pert(atmlst=atom1, FCSD=True)
         h1_corr2 = self.correction_pert_2(atmlst=atom1, FCSD=True)
@@ -531,7 +531,7 @@ class HRPA(RPA):
 
         h1 = (2 * h1) + h1_corr1 + h1_corr2
         h2 = (2 * h2) + h2_corr1 + h2_corr2
-        m = self.M(triplet=True)
+        m = self.rpa_obj.M(triplet=True)
         m = m.reshape(nocc, nvir, nocc, nvir)
         m += self.part_a2
         m -= self.part_b2(1)
@@ -549,16 +549,17 @@ class HRPA(RPA):
             fcsd = numpy.asarray(para) * nist.ALPHA ** 4
             return fcsd    
 
-    def ssc_hrpa(self, FC=True, FCSD=False, PSO=False, atom1=None, atom2=None):
+    def ssc(self, FC=True, FCSD=False, PSO=False, atom1=None, atom2=None):
 
-        atom1_ = [self.obtain_atom_order(atom1)]
-        atom2_ = [self.obtain_atom_order(atom2)]
+
+        atom1_ = [self.rpa_obj.obtain_atom_order(atom1)]
+        atom2_ = [self.rpa_obj.obtain_atom_order(atom2)]
         if FC:
-            prop = self.pp_ssc_fc_select(atom1=atom1_, atom2=atom2_)
+            prop = self.pp_ssc_fc(atom1=atom1_, atom2=atom2_)
         if PSO:
-            prop = self.pp_ssc_pso_select(atom1=atom1_, atom2=atom2_)
+            prop = self.pp_ssc_pso(atom1=atom1_, atom2=atom2_)
         elif FCSD:
-            prop = self.pp_ssc_fcsd_select(atom1=atom1_, atom2=atom2_)
+            prop = self.pp_ssc_fcsd(atom1=atom1_, atom2=atom2_)
         nuc_magneton = 0.5 * (nist.E_MASS / nist.PROTON_MASS)  # e*hbar/2m
         au2Hz = nist.HARTREE2J / nist.PLANCK
         unit = au2Hz * nuc_magneton ** 2
@@ -581,9 +582,9 @@ class HRPA(RPA):
 
         
         if FC:
-            h1,m,h2 = self.pp_ssc_fc_select(atom1=atom1, atom2=atom2, elements=True)
+            h1,m,h2 = self.pp_ssc_fc(atom1=atom1, atom2=atom2, elements=True)
         if PSO:
-            h1,m,h2 = self.pp_ssc_pso_select(atom1, atom2, elements=True)
+            h1,m,h2 = self.pp_ssc_pso(atom1, atom2, elements=True)
         elif FCSD:
-            h1,m,h2 = self.pp_ssc_fcsd_select(atom1=atom1, atom2=atom2, elements=True)
+            h1,m,h2 = self.pp_ssc_fcsd(atom1=atom1, atom2=atom2, elements=True)
         return h1,m,h2

@@ -1,5 +1,7 @@
 import numpy as np
-from pyscf import gto, ao2mo
+from pyscf import scf
+from pyppm.hrpa import HRPA
+from pyppm.rpa import RPA
 import attr
 
 
@@ -14,9 +16,10 @@ class entropy:
     It can be use the single or the triplet inverse of principal propagator.
     Ref: Aucar G.A., Concepts in Magnetic Resonance,2008,doi:10.1002/cmr.a.20108
 
-    mo_coeff [np.array] = Localized molecular coefficients
-    mol [gto.Mole] = mole of the molecule.
-
+    mf = RHF object 
+    m = communicator matrix at any level of approach (RPA of HRPA). This matrix 
+    is the principal propagator inverse without the A(0) term.
+    
     triplet [bool]. If True, it use the triplet principal propagator inverse,
     if false, use the singlet.
 
@@ -26,71 +29,77 @@ class entropy:
     vir [list] = Order number of the set of virtual LMOs in the localized
     mo_coeff coefficient matrix with which you want to form the system
 
-    The order is very important in order to calculate the quantum entanglement
+    The order of occ and vir list is very important in order to calculate the 
+    quantum entanglement
     between two virtual excitations that are in diferent bonds.
     In both list you must put the number order of LMOs centered in one bond,
     and then in the other bond, in such a way that both list are divided in two,
     with number orders that correspond to one bond, and another.
 
     Returns:
-        numpy.ndarray: Communicator matrix
+        numpy.ndarray: Communicator matrix of the chosen system
     """
 
     occ = attr.ib(type=list)
     vir = attr.ib(type=list)
-    mo_coeff = attr.ib(type=np.ndarray)
-    mol = attr.ib(type=gto.Mole)
-    triplet = attr.ib(default=True, type=bool)
-
+    mo_coeff_loc = attr.ib(type=np.ndarray)
+    elec_corr = attr.ib(type=str, default='RPA', 
+                        validator=attr.validators.instance_of(str))
+    mf = attr.ib(
+        default=None, type=scf.hf.RHF, validator=attr.validators.instance_of(scf.hf.RHF)
+    )
+    triplet = attr.ib(        
+            default=True, type=bool, validator=attr.validators.instance_of(bool))
     def __attrs_post_init__(self):
-        self.orbo = self.mo_coeff[:, self.occ]
-        self.orbv = self.mo_coeff[:, self.vir]
 
-        self.nocc = self.orbo.shape[1]
-        self.nvir = self.orbv.shape[1]
+        occ = self.occ
+        vir = self.vir
+        nocc_loc = len(occ)
+        nvir_loc = len(vir)
+        mf = self.mf       
+        mo_coeff_loc = self.mo_coeff_loc
+        nocc = np.count_nonzero(mf.mo_occ > 0)    
+        nvir = np.count_nonzero(mf.mo_occ == 0)
+        if self.elec_corr == 'RPA':
+            m = RPA(mf=self.mf).Communicator(triplet=self.triplet)
+        elif self.elec_corr == 'HRPA':
+            m = HRPA(mf=self.mf).Communicator(triplet=self.triplet)
+        else:
+            raise Exception('Only RPA and HRPA are implemented in this code')
+        can_inv = np.linalg.inv(mf.mo_coeff.T)
+        c_occ = (mo_coeff_loc[:,:nocc].T.dot(can_inv[:,:nocc])).T
 
-        self.mo = np.hstack((self.orbo, self.orbv))
-
-        self.nmo = self.nocc + self.nvir
-
-        eri_mo = ao2mo.general(
-            self.mol, [self.mo, self.mo, self.mo, self.mo], compact=False
-        )
-        eri_mo = eri_mo.reshape(self.nmo, self.nmo, self.nmo, self.nmo)
-        self.m = np.zeros((self.nocc, self.nvir, self.nocc, self.nvir))
-        self.m -= np.einsum(
-            "ijba->iajb", eri_mo[: self.nocc, : self.nocc, self.nocc :, self.nocc :]
-        )
-        if self.triplet:
-            self.m -= np.einsum(
-                "jaib->iajb", eri_mo[: self.nocc, self.nocc :, : self.nocc, self.nocc :]
-            )
-        elif not self.triplet:
-            self.m += np.einsum(
-                "jaib->iajb", eri_mo[: self.nocc, self.nocc :, : self.nocc, self.nocc :]
-            )
-
-        self.m = self.m.reshape((self.nocc * self.nvir, self.nocc * self.nvir))
-        m = self.m
-        m_iajb = np.zeros((m.shape[0] // 2, m.shape[0] // 2))
-        m_iajb[m_iajb.shape[0] // 2 :, : m_iajb.shape[0] // 2] += m[
-            int(m.shape[0] * 3 / 4) :, : int(m.shape[0] * 1 / 4)
+        c_vir = (mo_coeff_loc[:,nocc:].T.dot(can_inv[:,nocc:])).T
+        total = np.einsum('ij,ab->iajb',c_occ,c_vir)
+        total = total.reshape(nocc*nvir,nocc*nvir)
+        m_loc = total.T @ m @ total
+        m_loc = m_loc.reshape(nocc,nvir,nocc,nvir)
+        m_loc_red = np.zeros((nocc_loc,nvir_loc,nocc_loc,nvir_loc))
+        for i,ii in enumerate(occ):
+            for j,jj in enumerate(occ):
+                for a,aa in enumerate(vir):
+                    for b,bb in enumerate(vir):
+                        m_loc_red[i,a,j,b] = m_loc[ii,aa-nocc,jj,bb-nocc]
+        m_loc_red = m_loc_red.reshape((nocc_loc * nvir_loc, nocc_loc * nvir_loc))
+        m_iajb = np.zeros((m_loc_red.shape[0] // 2, m_loc_red.shape[0] // 2))
+        m_iajb[m_iajb.shape[0] // 2 :, : m_iajb.shape[0] // 2] += m_loc_red[
+            int(m_loc_red.shape[0] * 3 / 4) :, : int(m_loc_red.shape[0] * 1 / 4)
         ]
-        m_iajb[: m_iajb.shape[0] // 2, m_iajb.shape[0] // 2 :] += m[
-            : int(m.shape[0] * 1 / 4), int(m.shape[0] * 3 / 4) :
+        m_iajb[: m_iajb.shape[0] // 2, m_iajb.shape[0] // 2 :] += m_loc_red[
+            : int(m_loc_red.shape[0] * 1 / 4), int(m_loc_red.shape[0] * 3 / 4) :
         ]
-        m_iajb[: m_iajb.shape[0] // 2, : m_iajb.shape[0] // 2] += m[
-            : int(m.shape[0] * 1 / 4), : int(m.shape[0] * 1 / 4)
+        m_iajb[: m_iajb.shape[0] // 2, : m_iajb.shape[0] // 2] += m_loc_red[
+            : int(m_loc_red.shape[0] * 1 / 4), : int(m_loc_red.shape[0] * 1 / 4)
         ]
-        m_iajb[m_iajb.shape[0] // 2 :, m_iajb.shape[0] // 2 :] += m[
-            int(m.shape[0] * 3 / 4) :, int(m.shape[0] * 3 / 4) :
+        m_iajb[m_iajb.shape[0] // 2 :, m_iajb.shape[0] // 2 :] += m_loc_red[
+            int(m_loc_red.shape[0] * 3 / 4) :, int(m_loc_red.shape[0] * 3 / 4) :
         ]
 
         self.eigenvalues = np.linalg.eigvals(m_iajb)
         self.Z = 0
         for i in self.eigenvalues:
             self.Z += np.exp(i)
-        #print(self.m)
+        self.m = m_loc_red
         return self.m
 
     @property

@@ -15,7 +15,6 @@ def test_entropy_ab(ent_ab):
     """
     molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
-
     cloppa_obj = entropy(mo_coeff=mo_coeff, mol=mol,
                         occ=[2,3], vir=[10,11,14,17])
     ent_ab_ = cloppa_obj.entropy_ab

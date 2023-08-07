@@ -10,19 +10,11 @@ from pyscf.data.gyro import get_nuc_g_factor
 from functools import reduce
 
 
-def uniq_atoms(nuc_pair):
-    atm1lst = sorted(set([i for i, j in nuc_pair]))
-    atm2lst = sorted(set([j for i, j in nuc_pair]))
-    atm1dic = dict([(ia, k) for k, ia in enumerate(atm1lst)])
-    atm2dic = dict([(ia, k) for k, ia in enumerate(atm2lst)])
-    return atm1dic, atm2dic
-
-
 @attr.s
 class RPA:
     """
     Full-featured class for computing non-relativistic singlet and triplet
-    Spin-Spin coupling mechanisms for RPA approach
+    Spin-Spin coupling mechanisms for RPA level of approach
     """
 
     mf = attr.ib(
@@ -41,11 +33,24 @@ class RPA:
         self.orbo = self.mo_coeff[:, self.occidx]
         self.nvir = self.orbv.shape[1]
         self.nocc = self.orbo.shape[1]
-        mo = numpy.hstack((self.orbo, self.orbv))
-        nmo = self.nocc + self.nvir
-        eri_mo = ao2mo.general(self.mol, [self.orbo, mo, mo, mo], compact=False)
-        self.eri_mo = eri_mo.reshape(self.nocc, nmo, nmo, nmo)
-        self.atm1dic, self.atm2dic = uniq_atoms(nuc_pair=self.nuc_pair)
+        self.mo = numpy.hstack((self.orbo, self.orbv))
+        self.nmo = self.nocc + self.nvir
+        #eri_mo = ao2mo.general(self.mol, [self.orbo, mo, mo, mo], compact=False)
+        #self.eri_mo = eri_mo.reshape(self.nocc, nmo, nmo, nmo)        
+
+
+    @property
+    def eri_mo(self):
+        """Property with all 2-electron Molecular orbital integrals
+
+        Returns:
+            numpy.array: eri_mo, (nmo,nmo,nmo,nmo) shape
+        """
+        mo = self.mo
+        nmo = self.nmo
+        eri_mo = ao2mo.general(self.mol, [mo, mo, mo, mo], compact=False)
+        eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+        return eri_mo
 
     def M(self, triplet=True):
         """Principal Propagator Inverse, defined as M = A+B
@@ -68,7 +73,6 @@ class RPA:
             "a-i->ia", self.mo_energy[self.viridx], self.mo_energy[self.occidx]
         )
         a = numpy.diag(e_ia.ravel()).reshape(self.nocc, self.nvir, self.nocc, self.nvir)
-        #a = numpy.zeros((self.nocc,self.nvir,self.nocc,self.nvir))
         b = numpy.zeros_like(a)
 
         a -= numpy.einsum(
@@ -87,7 +91,7 @@ class RPA:
 
         return m
 
-    def M_sin_a0(self, triplet=True):
+    def Communicator(self, triplet=True):
         """Principal Propagator Inverse, defined as M = A+B without A(0) matrix
 
         A[i,a,j,b] = (ia||bj)
@@ -185,16 +189,13 @@ class RPA:
         """Perturbator for the response Fermi-Contact + Spin-Dependent
         contribution
         Args:
-                atmlst (lsit): atom order in wich the perturbator is centered
+            atmlst (lsit): atom order in wich the perturbator is centered
 
         Returns:
-                h1 = list with the perturbator
+            h1 = list with the perturbator
         """
-        #orbo = self.mo_coeff[:, self.mo_occ > 0]
-        #orbv = self.mo_coeff[:, self.mo_occ == 0]
         orbo = self.mo_coeff[:, :]
         orbv = self.mo_coeff[:, :]
-        
         h1 = []
         for ia in atmlst:
             h1ao = self.get_integrals_fcsd(ia)
@@ -232,10 +233,10 @@ class RPA:
         """PSO perturbator
 
         Args:
-                atmlst (list): list with the atom in with is centered the perturbator
+            atmlst (list): list with the atom in with is centered the perturbator
 
         Returns:
-                list: pso perturbator
+            list: pso perturbator
         """
         mo = self.mo_coeff
         h1 = []
@@ -255,6 +256,11 @@ class RPA:
         Returns:
             int: atom orden in the mol
         """
+        atoms = []
+        for i in range(self.mol.natm):
+            atoms.append(self.mol.atom[i][0])
+        if atom not in atoms:
+            raise Exception(f'{atom} must be one of the labels {atoms}')
         for i in range(self.mol.natm):
             atom_ = self.mol.atom_symbol(i)
             if atom_ == atom:
@@ -298,13 +304,12 @@ class RPA:
 
         ^{FC+SD}J = sum_{ia,jb} ^{FC+SD}P_{ia}(atom1) ^3M_{iajb} ^{FC+SD}P_{jb}(atom2)
 
-
         Args:
-                atom1 (list): list with atom1 order
-                atom2 (list): list with atom2 order
+            atom1 (list): list with atom1 order
+            atom2 (list): list with atom2 order
 
         Returns:
-                fc = numpy.ndarray with FC+SD matrix response
+            fc = numpy.ndarray with FC+SD matrix response
         """
         nvir = self.nvir
         nocc = self.nocc
@@ -333,14 +338,14 @@ class RPA:
 
 
         Args:
-                FC (bool, optional): _description_. Defaults to True.
-                PSO (bool, optional): _description_. Defaults to False.
-                FCSD (bool, optional): Defaults to False
-                atom1 (str): atom1 name
-                atom2 (str): atom2 name
+            FC (bool, optional): _description_. Defaults to True.
+            PSO (bool, optional): _description_. Defaults to False.
+            FCSD (bool, optional): Defaults to False
+            atom1 (str): atom1 name
+            atom2 (str): atom2 name
 
         Returns:
-                jtensor: numpy.ndarray, FC, FC+SD or PSO contribution to J coupling
+            jtensor: numpy.ndarray, FC, FC+SD or PSO contribution to J coupling
         """
 
         atom1_ = [self.obtain_atom_order(atom1)]
@@ -373,11 +378,12 @@ class RPA:
             atom2 (_type_, optional): _description_. Defaults to None.
         """
 
-        
         if FC:
             h1, m, h2 = self.pp_fc(atom1=atom1, atom2=atom2, elements=True)
+            h1 = h1*2
+            h2 = h2*2
         if PSO:
             h1, m, h2 = self.pp_pso(atom1=atom1, atom2=atom2, elements=True)
         elif FCSD:
             h1, m, h2 = self.pp_fcsd(atom1=atom1, atom2=atom2, elements=True)
-        return h1, m, h2
+        return h1*2, m, h2*2
