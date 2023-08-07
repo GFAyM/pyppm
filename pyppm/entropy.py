@@ -104,7 +104,7 @@ class entropy:
 
     @property
     def entropy_iaia(self):
-        """Entanglement of the M_{ia,jb} matrix:
+        """Entanglement of the M_{ia,ia} matrix:
         M = (M_{ia,ia}  )
 
         Returns
@@ -137,7 +137,7 @@ class entropy:
         m = self.m
         self.m_jbjb = m[
             int(m.shape[0] * 3 / 4) :, int(m.shape[0] * 3 / 4) :
-        ]  # * np.sum(np.diag(self.m_iaia))
+        ] 
         eigenvalues = np.linalg.eigvals(self.m_jbjb)
         Z = 0
         for i in eigenvalues:

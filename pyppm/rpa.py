@@ -155,7 +155,7 @@ class RPA:
             h1.append(fac * numpy.einsum("p,i->pi", orbv[ia], orbo[ia]))
         return h1
 
-    def pp_fc(self, atom1, atom2, elements=False):
+    def pp_fc(self, atm1lst, atm2lst, elements=False):
         """Fermi Contact Response, calculated as
         ^{FC}J = sum_{ia,jb} ^{FC}P_{ia}(atom1) ^3M_{iajb} ^{FC}P_{jb}(atom2)
 
@@ -170,8 +170,8 @@ class RPA:
         nvir = self.nvir
         nocc = self.nocc
 
-        h1 = 0.5 * self.pert_fc(atom1)[0][:nocc, nocc:]
-        h2 = 0.5 * self.pert_fc(atom2)[0][:nocc, nocc:]
+        h1 = 0.5 * self.pert_fc(atm1lst)[0][:nocc, nocc:]
+        h2 = 0.5 * self.pert_fc(atm2lst)[0][:nocc, nocc:]
         m = self.M(triplet=True)
         if elements:
             return h1,m,h2
@@ -258,7 +258,7 @@ class RPA:
         """
         atoms = []
         for i in range(self.mol.natm):
-            atoms.append(self.mol.atom[i][0])
+            atoms.append(self.mol._atom[i][0])
         if atom not in atoms:
             raise Exception(f'{atom} must be one of the labels {atoms}')
         for i in range(self.mol.natm):
@@ -266,7 +266,7 @@ class RPA:
             if atom_ == atom:
                 return i
 
-    def pp_pso(self, atom1, atom2, elements=False):
+    def pp_pso(self, atm1lst, atm2lst, elements=False):
         """
         Paramagnetic spin orbital response, calculated as
         ^{PSO}J = sum_{ia,jb} ^{PSO}P_{ia}(atom1) ^1M_{iajb} ^{PSO}P_{jb}(atom2)
@@ -283,10 +283,10 @@ class RPA:
         nocc = self.nocc
         ntot = nocc + nvir
         m = self.M(triplet=False)
-        h1 = self.pert_pso(atom1)
+        h1 = self.pert_pso(atm1lst)
         h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)
         h1 = h1[0][:,:nocc,nocc:]
-        h2 = self.pert_pso(atom2)
+        h2 = self.pert_pso(atm2lst)
         h2 = numpy.asarray(h2).reshape(1, 3, ntot, ntot)
         h2 = h2[0][:,:nocc,nocc:]
         if elements:
@@ -299,7 +299,7 @@ class RPA:
             pso = numpy.asarray(para) * nist.ALPHA ** 4
             return pso
 
-    def pp_fcsd(self, atom1, atom2, elements=False):
+    def pp_fcsd(self, atm1lst, atm2lst, elements=False):
         """Fermi Contact Response, calculated as
 
         ^{FC+SD}J = sum_{ia,jb} ^{FC+SD}P_{ia}(atom1) ^3M_{iajb} ^{FC+SD}P_{jb}(atom2)
@@ -314,9 +314,9 @@ class RPA:
         nvir = self.nvir
         nocc = self.nocc
         ntot = nocc + nvir
-        h1 = self.pert_fcsd(atom1)
+        h1 = self.pert_fcsd(atm1lst)
         h1 = numpy.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0,:,:,:nocc, nocc:]
-        h2 = self.pert_fcsd(atom2)
+        h2 = self.pert_fcsd(atm2lst)
         h2 = numpy.asarray(h2).reshape(-1, 3, 3, ntot, ntot)[0,:,:,:nocc, nocc:]
         m = self.M(triplet=True)
         if elements:
@@ -330,7 +330,7 @@ class RPA:
             fcsd = numpy.asarray(para) * nist.ALPHA ** 4
         return fcsd
 
-    def ssc(self, FC=True, FCSD=False, PSO=False, atom1=None, atom2=None):
+    def ssc(self, FC=False, FCSD=False, PSO=False, atom1=None, atom2=None):
         """
         Function for call the response and multiplicate it by the correspondent
         constants in order to obtain isotropical J-coupling between two nuclei
@@ -348,26 +348,26 @@ class RPA:
             jtensor: numpy.ndarray, FC, FC+SD or PSO contribution to J coupling
         """
 
-        atom1_ = [self.obtain_atom_order(atom1)]
-        atom2_ = [self.obtain_atom_order(atom2)]
+        atm1lst = [self.obtain_atom_order(atom1)]
+        atm2lst = [self.obtain_atom_order(atom2)]
 
         if FC:
-            prop = self.pp_fc(atom1_, atom2_)
+            prop = self.pp_fc(atm1lst, atm2lst)
         if PSO:
-            prop = self.pp_pso(atom1_, atom2_)
+            prop = self.pp_pso(atm1lst, atm2lst)
         elif FCSD:
-            prop = self.pp_fcsd(atom1_, atom2_)
+            prop = self.pp_fcsd(atm1lst, atm2lst)
 
         nuc_magneton = 0.5 * (nist.E_MASS / nist.PROTON_MASS)  # e*hbar/2m
         au2Hz = nist.HARTREE2J / nist.PLANCK
         unit = au2Hz * nuc_magneton ** 2
         iso_ssc = unit * numpy.einsum("kii->k", prop) / 3
-        gyro1 = [get_nuc_g_factor(self.mol.atom_symbol(atom1_[0]))]
-        gyro2 = [get_nuc_g_factor(self.mol.atom_symbol(atom2_[0]))]
+        gyro1 = [get_nuc_g_factor(self.mol.atom_symbol(atm1lst[0]))]
+        gyro2 = [get_nuc_g_factor(self.mol.atom_symbol(atm2lst[0]))]
         jtensor = numpy.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)
         return jtensor[0]
 
-    def elements(self, atom1, atom2, FC=False, FCSD=False, PSO=False):
+    def elements(self, atm1lst, atm2lst, FC=False, FCSD=False, PSO=False):
         """_summary_
 
         Args:
@@ -379,11 +379,11 @@ class RPA:
         """
 
         if FC:
-            h1, m, h2 = self.pp_fc(atom1=atom1, atom2=atom2, elements=True)
+            h1, m, h2 = self.pp_fc(atm1lst, atm2lst, elements=True)
             h1 = h1*2
             h2 = h2*2
         if PSO:
-            h1, m, h2 = self.pp_pso(atom1=atom1, atom2=atom2, elements=True)
+            h1, m, h2 = self.pp_pso(atm1lst, atm2lst, elements=True)
         elif FCSD:
-            h1, m, h2 = self.pp_fcsd(atom1=atom1, atom2=atom2, elements=True)
+            h1, m, h2 = self.pp_fcsd(atm1lst, atm2lst, elements=True)
         return h1*2, m, h2*2

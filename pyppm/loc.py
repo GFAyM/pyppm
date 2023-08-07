@@ -1,15 +1,12 @@
-from pyscf import gto, scf
-from pyscf.gto import Mole
+from pyscf import scf
 import numpy
 from pyscf import lib
 import attr
 from pyscf.data.gyro import get_nuc_g_factor
-from functools import reduce
 from pyppm.hrpa import HRPA
 from pyppm.rpa import RPA
 from pyscf.data import nist
 import numpy
-from pyscf import ao2mo
 from itertools import product
 
 
@@ -21,7 +18,7 @@ class Loc:
     attributes:
     mf = RHF object
     mo_coeff_loc = localized molecular orbitals
-    elec_corr = str with RPA or HRPA. This defines if the correlation is RPA or HRPA.
+    elec_corr = str with RPA or HRPA. This defines if the correlation level is RPA or HRPA.
     """
     mf = attr.ib(
         default=None, type=scf.hf.RHF, validator=attr.validators.instance_of(scf.hf.RHF)

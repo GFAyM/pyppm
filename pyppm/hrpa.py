@@ -414,7 +414,7 @@ class HRPA:
         """
         nvir = self.nvir
         nocc = self.nocc
-        m = self.M_sin_a0(triplet=triplet)
+        m = self.rpa_obj.Communicator(triplet=triplet)
         m = m.reshape(nocc, nvir, nocc, nvir)
         m += self.part_a2
         m += self.S2
@@ -425,24 +425,24 @@ class HRPA:
         m = m.reshape(nocc * nvir, nocc * nvir)
         return m
 
-    def pp_ssc_fc(self, atom1=None, atom2=None, elements=False):
+    def pp_ssc_fc(self, atm1lst, atm2lst, elements=False):
         """Method that obtain the linear response between two FC perturbation at
         HRPA level of approach between two nuclei
         Args:
-            atom1 (list): First nuclei
-            atom2 (list): Second nuclei
+            atm1lst (list): First nuclei
+            atm2lst (list): Second nuclei
 
         Returns:
             real: FC response at HRPA level of approach
         """
         nvir = self.nvir
         nocc = self.nocc
-        h1 = self.rpa_obj.pert_fc(atom1)[0][:nocc, nocc:]
-        h2 = self.rpa_obj.pert_fc(atom2)[0][:nocc, nocc:]
-        h1_corr1 = self.correction_pert(atmlst=atom1, FC=True)
-        h1_corr2 = self.correction_pert_2(atmlst=atom1, FC=True)
-        h2_corr1 = self.correction_pert(atmlst=atom2, FC=True)
-        h2_corr2 = self.correction_pert_2(atmlst=atom2, FC=True)
+        h1 = self.rpa_obj.pert_fc(atm1lst)[0][:nocc, nocc:]
+        h2 = self.rpa_obj.pert_fc(atm2lst)[0][:nocc, nocc:]
+        h1_corr1 = self.correction_pert(atmlst=atm1lst, FC=True)
+        h1_corr2 = self.correction_pert_2(atmlst=atm1lst, FC=True)
+        h2_corr1 = self.correction_pert(atmlst=atm2lst, FC=True)
+        h2_corr2 = self.correction_pert_2(atmlst=atm2lst, FC=True)
 
         h1 = (2 * h1) + h1_corr1 + h1_corr2
         h2 = (2 * h2) + h2_corr1 + h2_corr2
@@ -463,12 +463,12 @@ class HRPA:
             fc = lib.einsum(',k,xy->kxy', nist.ALPHA**4, para, numpy.eye(3))
             return fc
 
-    def pp_ssc_pso(self, atom1, atom2, elements=False):
+    def pp_ssc_pso(self, atm1lst, atm2lst, elements=False):
         """Method that obtain the linear response between PSO perturbation at
         HRPA level of approach between two nuclei
         Args:
-            atom1 (list): First nuclei
-            atom2 (list): Second nuclei
+            atm1lst (list): First nuclei
+            atm2lst (list): Second nuclei
 
         Returns:
             real: PSO response at HRPA level of approach
@@ -476,17 +476,17 @@ class HRPA:
         nvir = self.nvir
         nocc = self.nocc
         ntot = nocc + nvir        
-        h1 = self.rpa_obj.pert_pso(atom1)
+        h1 = self.rpa_obj.pert_pso(atm1lst)
         h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)
         h1 = h1[0][:,:nocc,nocc:]
-        h2 = self.rpa_obj.pert_pso(atom2)
+        h2 = self.rpa_obj.pert_pso(atm2lst)
         h2 = numpy.asarray(h2).reshape(1, 3, ntot, ntot)
         h2 = h2[0][:,:nocc,nocc:]
 
-        h1_corr1 = self.correction_pert(atmlst=atom1, PSO=True)
-        h1_corr2 = self.correction_pert_2(atmlst=atom1, PSO=True)
-        h2_corr1 = self.correction_pert(atmlst=atom2, PSO=True)
-        h2_corr2 = self.correction_pert_2(atmlst=atom2, PSO=True)
+        h1_corr1 = self.correction_pert(atmlst=atm1lst, PSO=True)
+        h1_corr2 = self.correction_pert_2(atmlst=atm1lst, PSO=True)
+        h2_corr1 = self.correction_pert(atmlst=atm2lst, PSO=True)
+        h2_corr2 = self.correction_pert_2(atmlst=atm2lst, PSO=True)
 
         h1 = (-2*h1) + h1_corr1 + h1_corr2
         h2 = (-2*h2) + h2_corr1 + h2_corr2
@@ -507,27 +507,27 @@ class HRPA:
             pso = numpy.asarray(para) * nist.ALPHA ** 4
             return pso
 
-    def pp_ssc_fcsd(self, atom1=None, atom2=None, elements=False):
-        """Method that obtain the linear response between two FC perturbation at
+    def pp_ssc_fcsd(self, atm1lst, atm2lst, elements=False):
+        """Method that obtain the linear response between two FC+SD perturbation at
         HRPA level of approach between two nuclei
         Args:
-            atom1 (list): First nuclei
-            atom2 (list): Second nuclei
+            atm1lst (list): First nuclei
+            atm2lst (list): Second nuclei
 
         Returns:
-            real: FC response at HRPA level of approach
+            real: FC+SD response at HRPA level of approach
         """
         nvir = self.nvir
         nocc = self.nocc
         ntot = nocc + nvir 
-        h1 = self.rpa_obj.pert_fcsd(atom1)
+        h1 = self.rpa_obj.pert_fcsd(atm1lst)
         h1 = numpy.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0,:,:,:nocc, nocc:]
-        h2 = self.rpa_obj.pert_fcsd(atom2)
+        h2 = self.rpa_obj.pert_fcsd(atm2lst)
         h2 = numpy.asarray(h2).reshape(-1, 3, 3, ntot, ntot)[0,:,:,:nocc, nocc:]
-        h1_corr1 = self.correction_pert(atmlst=atom1, FCSD=True)
-        h1_corr2 = self.correction_pert_2(atmlst=atom1, FCSD=True)
-        h2_corr1 = self.correction_pert(atmlst=atom2, FCSD=True)
-        h2_corr2 = self.correction_pert_2(atmlst=atom2, FCSD=True)
+        h1_corr1 = self.correction_pert(atmlst=atm1lst, FCSD=True)
+        h1_corr2 = self.correction_pert_2(atmlst=atm1lst, FCSD=True)
+        h2_corr1 = self.correction_pert(atmlst=atm2lst, FCSD=True)
+        h2_corr2 = self.correction_pert_2(atmlst=atm2lst, FCSD=True)
 
         h1 = (2 * h1) + h1_corr1 + h1_corr2
         h2 = (2 * h2) + h2_corr1 + h2_corr2
@@ -549,17 +549,30 @@ class HRPA:
             fcsd = numpy.asarray(para) * nist.ALPHA ** 4
             return fcsd    
 
-    def ssc(self, FC=True, FCSD=False, PSO=False, atom1=None, atom2=None):
+    def ssc(self, atom1, atom2, FC=False, FCSD=False, PSO=False):
+        """Function for Spin-Spin Coupling calculation at HRPA level of
+        approach. It take the value of the responses and multiplicates it 
+        for the constants. 
 
+        Args:
+            FC (bool, optional): Fermi Contact. Defaults to False.
+            FCSD (bool, optional): FC+SD. Defaults to False.
+            PSO (bool, optional): PSO. Defaults to False.
+            atom1 (str): Atom1 nuclei
+            atom2 (str): Atom2 nuclei.
+
+        Returns:
+            ssc: Real. SSC value, in Hertz.
+        """
 
         atom1_ = [self.rpa_obj.obtain_atom_order(atom1)]
         atom2_ = [self.rpa_obj.obtain_atom_order(atom2)]
         if FC:
-            prop = self.pp_ssc_fc(atom1=atom1_, atom2=atom2_)
+            prop = self.pp_ssc_fc(atm1lst=atom1_, atm2lst=atom2_)
         if PSO:
-            prop = self.pp_ssc_pso(atom1=atom1_, atom2=atom2_)
+            prop = self.pp_ssc_pso(atm1lst=atom1_, atm2lst=atom2_)
         elif FCSD:
-            prop = self.pp_ssc_fcsd(atom1=atom1_, atom2=atom2_)
+            prop = self.pp_ssc_fcsd(atm1lst=atom1_, atm2lst=atom2_)
         nuc_magneton = 0.5 * (nist.E_MASS / nist.PROTON_MASS)  # e*hbar/2m
         au2Hz = nist.HARTREE2J / nist.PLANCK
         unit = au2Hz * nuc_magneton ** 2
@@ -569,22 +582,26 @@ class HRPA:
         jtensor = lib.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)
         return jtensor[0]
 
-    def elements(self, atom1, atom2, FC=False, FCSD=False, PSO=False):
-        """_summary_
+    def elements(self, atm1lst, atom2lst, FC=False, FCSD=False, PSO=False):
+        """Function that return perturbators and principal propagators
+        of a selected mechanism
 
         Args:
-            FC (bool, optional): _description_. Defaults to False.
-            FCSD (bool, optional): _description_. Defaults to False.
-            PSO (bool, optional): _description_. Defaults to False.
-            atom1 (_type_, optional): _description_. Defaults to None.
-            atom2 (_type_, optional): _description_. Defaults to None.
-        """
+            atm1lst (list): atom1 list in which is centered h1
+            atom2lst (list): atom2 list in which is centered h2
+            FC (bool, optional): FC mechanims. Defaults to False.
+            FCSD (bool, optional): FC+SD mechanisms. Defaults to False.
+            PSO (bool, optional): PSO mechanism. Defaults to False.
 
+        Returns:
+            numpy.ndarray, numpy.ndarray, numpy.ndarray: 
+            perturbator h1, principal propagator inverse, perturbator 2
+        """
         
         if FC:
-            h1,m,h2 = self.pp_ssc_fc(atom1=atom1, atom2=atom2, elements=True)
+            h1,m,h2 = self.pp_ssc_fc(atm1lst, atom2lst, elements=True)
         if PSO:
-            h1,m,h2 = self.pp_ssc_pso(atom1, atom2, elements=True)
+            h1,m,h2 = self.pp_ssc_pso(atm1lst, atom2lst, elements=True)
         elif FCSD:
-            h1,m,h2 = self.pp_ssc_fcsd(atom1=atom1, atom2=atom2, elements=True)
+            h1,m,h2 = self.pp_ssc_fcsd(atm1lst, atom2lst, elements=True)
         return h1,m,h2

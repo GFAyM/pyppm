@@ -34,6 +34,21 @@ def test_mo_hibridization(atm_id, hibridization_coeff):
     assert hibri[0] == atm_id
     assert hibri[1] - hibridization_coeff < 1e-8    
 
+@pytest.mark.parametrize("atm_id", 
+                         [(3)])
+def test_mo_hibridization_2(atm_id):
+    """testing mo_hibridization_2 function
+
+    Args:
+        atm_id (int): Atom ID of the atom with the requiered hibridization
+        hibridization_coeff (real): hibridization coeff
+    """
+    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
+    extra_func_obj = extra_functions(molden_file=molden)
+
+    hibri = extra_func_obj.mo_hibridization_2(mo_label='H3',lim1=0.3,lim2=8,vir=False)
+    assert hibri[0] == atm_id
+
 @pytest.mark.parametrize("atm_id, hibridization_coeff", 
                          [(36, 0.45948969)])
 

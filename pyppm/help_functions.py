@@ -47,7 +47,7 @@ class extra_functions:
 
     def mo_hibridization(self, mo_label, lim1, lim2):
         """This function gives the orbital index of the MOs that are in the
-        hibridization range
+        hibridization range and the contribution
 
         Args:
             mo_label (str): Which AO i watn to know the composition
@@ -71,22 +71,18 @@ class extra_functions:
                 orbital = np.append(orbital, (i, c))
         return orbital
 
-    def mo_hibridization_2(self, mo_label, lim1, lim2,vir):
-        """This function gives the orbital index of the MOs that are in the
-        hibridization range
+    def mo_hibridization_2(self, mo_label, lim1, lim2, vir):
+        """This function gives a lit with a set of orbital index of the MOs 
+        that are in the hibridization range.
 
         Args:
-            mo_label (str): Which AO i watn to know the composition
+            mo_label (str): Which AO label you want to know the composition
             lim1 (int): inferior limit of the hibridization range
             lim2 (int): superior limit of the hibridization range
-            cart (bool, optional): If the MOs are in cartesian coordinates,
-            use True in cart. Otherwise, let unchange this value.
-            Defaults to False.
-            orth_method (str): The localization method to generated orthogonal
-            AO upon which the AO contribution
-            are computed. It can be one of ‘meta_lowdin’, ‘lowdin’ or ‘nao’.
+            vir (bool, optional): If true, analize virtual orbitals
+            Use False for analyze the occupied set.
         Returns:
-            list : atm-id, hibridization coeff
+            list : atm-ids
         """
         orbital = []
         if vir:
