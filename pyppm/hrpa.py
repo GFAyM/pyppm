@@ -43,8 +43,6 @@ class HRPA:
 
         self.rpa_obj = RPA(mf=self.mf)
         self.eri_mo = self.rpa_obj.eri_mo
-        # eri_mo = ao2mo.general(mol, [mo, mo, mo, mo], compact=False)
-        # self.eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
         self.occ = [i for i in range(self.nocc)]
         self.vir = [i for i in range(self.nvir)]
 
