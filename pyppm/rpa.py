@@ -35,9 +35,8 @@ class RPA:
         self.nocc = self.orbo.shape[1]
         self.mo = numpy.hstack((self.orbo, self.orbv))
         self.nmo = self.nocc + self.nvir
-        #eri_mo = ao2mo.general(self.mol, [self.orbo, mo, mo, mo], compact=False)
-        #self.eri_mo = eri_mo.reshape(self.nocc, nmo, nmo, nmo)        
-
+        # eri_mo = ao2mo.general(self.mol, [self.orbo, mo, mo, mo], compact=False)
+        # self.eri_mo = eri_mo.reshape(self.nocc, nmo, nmo, nmo)
 
     @property
     def eri_mo(self):
@@ -113,7 +112,7 @@ class RPA:
         nmo = self.nocc + self.nvir
         nocc = self.nocc
         nvir = self.nvir
-        a = numpy.zeros((nocc,nvir,nocc,nvir))
+        a = numpy.zeros((nocc, nvir, nocc, nvir))
         b = numpy.zeros_like(a)
         eri_mo = ao2mo.general(self.mol, [self.orbo, mo, mo, mo], compact=False)
         eri_mo = eri_mo.reshape(self.nocc, nmo, nmo, nmo)
@@ -131,7 +130,6 @@ class RPA:
         m = a + b
         m = m.reshape(self.nocc * self.nvir, self.nocc * self.nvir, order="C")
         return m
-
 
     def pert_fc(self, atmlst):
         """Perturbator for the response Fermi-Contact
@@ -174,15 +172,15 @@ class RPA:
         h2 = 0.5 * self.pert_fc(atm2lst)[0][:nocc, nocc:]
         m = self.M(triplet=True)
         if elements:
-            return h1,m,h2
+            return h1, m, h2
         else:
             p = numpy.linalg.inv(m)
             p = -p.reshape(nocc, nvir, nocc, nvir)
             para = []
             e = numpy.einsum("ia,iajb,jb", h1, p, h2)
             para.append(e * 4)  # *4 for +c.c. and for double occupancy
-            fc = numpy.einsum(",k,xy->kxy", nist.ALPHA ** 4, para, numpy.eye(3))
-            #print(fc)
+            fc = numpy.einsum(",k,xy->kxy", nist.ALPHA**4, para, numpy.eye(3))
+            # print(fc)
             return fc
 
     def pert_fcsd(self, atmlst):
@@ -260,7 +258,7 @@ class RPA:
         for i in range(self.mol.natm):
             atoms.append(self.mol._atom[i][0])
         if atom not in atoms:
-            raise Exception(f'{atom} must be one of the labels {atoms}')
+            raise Exception(f"{atom} must be one of the labels {atoms}")
         for i in range(self.mol.natm):
             atom_ = self.mol.atom_symbol(i)
             if atom_ == atom:
@@ -285,10 +283,10 @@ class RPA:
         m = self.M(triplet=False)
         h1 = self.pert_pso(atm1lst)
         h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)
-        h1 = h1[0][:,:nocc,nocc:]
+        h1 = h1[0][:, :nocc, nocc:]
         h2 = self.pert_pso(atm2lst)
         h2 = numpy.asarray(h2).reshape(1, 3, ntot, ntot)
-        h2 = h2[0][:,:nocc,nocc:]
+        h2 = h2[0][:, :nocc, nocc:]
         if elements:
             return h1, m, h2
         else:
@@ -296,7 +294,7 @@ class RPA:
             p = -p.reshape(nocc, nvir, nocc, nvir)
             e = numpy.einsum("xia,iajb,yjb->xy", h1, p, h2)
             para.append(e * 4)  # *4 for +c.c. and double occupnacy
-            pso = numpy.asarray(para) * nist.ALPHA ** 4
+            pso = numpy.asarray(para) * nist.ALPHA**4
             return pso
 
     def pp_fcsd(self, atm1lst, atm2lst, elements=False):
@@ -315,9 +313,9 @@ class RPA:
         nocc = self.nocc
         ntot = nocc + nvir
         h1 = self.pert_fcsd(atm1lst)
-        h1 = numpy.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0,:,:,:nocc, nocc:]
+        h1 = numpy.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0, :, :, :nocc, nocc:]
         h2 = self.pert_fcsd(atm2lst)
-        h2 = numpy.asarray(h2).reshape(-1, 3, 3, ntot, ntot)[0,:,:,:nocc, nocc:]
+        h2 = numpy.asarray(h2).reshape(-1, 3, 3, ntot, ntot)[0, :, :, :nocc, nocc:]
         m = self.M(triplet=True)
         if elements:
             return h1, m, h2
@@ -327,7 +325,7 @@ class RPA:
             para = []
             e = numpy.einsum("wxia,iajb,wyjb->xy", h1, p, h2)
             para.append(e * 4)
-            fcsd = numpy.asarray(para) * nist.ALPHA ** 4
+            fcsd = numpy.asarray(para) * nist.ALPHA**4
         return fcsd
 
     def ssc(self, FC=False, FCSD=False, PSO=False, atom1=None, atom2=None):
@@ -360,7 +358,7 @@ class RPA:
 
         nuc_magneton = 0.5 * (nist.E_MASS / nist.PROTON_MASS)  # e*hbar/2m
         au2Hz = nist.HARTREE2J / nist.PLANCK
-        unit = au2Hz * nuc_magneton ** 2
+        unit = au2Hz * nuc_magneton**2
         iso_ssc = unit * numpy.einsum("kii->k", prop) / 3
         gyro1 = [get_nuc_g_factor(self.mol.atom_symbol(atm1lst[0]))]
         gyro2 = [get_nuc_g_factor(self.mol.atom_symbol(atm2lst[0]))]
@@ -380,10 +378,10 @@ class RPA:
 
         if FC:
             h1, m, h2 = self.pp_fc(atm1lst, atm2lst, elements=True)
-            h1 = h1*2
-            h2 = h2*2
+            h1 = h1 * 2
+            h2 = h2 * 2
         if PSO:
             h1, m, h2 = self.pp_pso(atm1lst, atm2lst, elements=True)
         elif FCSD:
             h1, m, h2 = self.pp_fcsd(atm1lst, atm2lst, elements=True)
-        return h1*2, m, h2*2
+        return h1 * 2, m, h2 * 2

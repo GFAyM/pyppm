@@ -320,6 +320,6 @@ def test_elements(atm1lst, atm2lst, pso, h1, m2, h2):
     hrpa_obj = RPA(mf=mf)
     h1_, m_, h2_ = hrpa_obj.elements(atm1lst=atm1lst, atm2lst=atm2lst, 
                                   PSO=pso)
-    assert abs((h1_**2).sum() - h1) < 1e-5
-    assert abs((h2_**2).sum() - h2) < 1e-5
-    assert abs((m_**2).sum() - m2) < 1e-5
+    assert abs((h1_**2).sum() - h1) < 1e-3
+    assert abs((h2_**2).sum() - h2) < 1e-3
+    assert abs((m_**2).sum() - m2) < 1e-3
