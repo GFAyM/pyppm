@@ -1,28 +1,29 @@
 import pytest
+from pyscf import scf
 from pyppm.help_functions import extra_functions
 from pyppm.entropy import entropy
 import os
 
 main_directory=os.path.realpath(os.path.dirname(__file__))+'/../'
 
-@pytest.mark.parametrize("ent_ab",[(1.3715180507864897)])
-def test_entropy_ab(ent_ab):
+@pytest.mark.parametrize("ent_ab, elec_corr",[(0.6763993986072987, "RPA")])
+def test_entropy_ab(ent_ab, elec_corr):
     """testing entropy_ab function
 
     Args:
         ent_ab (real): ent_ab value given a couple of occupied LMOs and 
         two pairs of virtual LMOs
     """
-    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
+    mf = scf.RHF(mol)
+    mf.kernel()
+    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, elec_corr=elec_corr)
+    ent_ab_ = ent_obj.entropy_ab
+    assert abs(ent_ab - ent_ab_) < 1e-5
 
-    cloppa_obj = entropy(mo_coeff=mo_coeff, mol=mol,
-                        occ=[2,3], vir=[10,11,14,17])
-    ent_ab_ = cloppa_obj.entropy_ab
-    assert ent_ab - ent_ab_ < 1e-5
-
-@pytest.mark.parametrize("ent_iaia",[(0.7108313054501851)])
-def test_entropy_iaia(ent_iaia):
+@pytest.mark.parametrize("ent_iaia, elec_corr",[(0.36568909801148347, "RPA")])
+def test_entropy_iaia(ent_iaia, elec_corr):
     """testing entropy_iaia function
 
     Args:
@@ -30,16 +31,16 @@ def test_entropy_iaia(ent_iaia):
         two pairs of virtual LMOs
     """
     #molden="C2H6_ccpvdz_Pipek_Mezey.molden"
-    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
-
+    molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
-    cloppa_obj = entropy(mo_coeff=mo_coeff, mol=mol,
-                        occ=[2,3], vir=[10,11,14,17])
-    ent_iaia_ = cloppa_obj.entropy_iaia
-    assert ent_iaia - ent_iaia_ < 1e-5
+    mf = scf.RHF(mol)
+    mf.kernel()
+    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, elec_corr=elec_corr)
+    ent_iaia_ = ent_obj.entropy_iaia
+    assert abs(ent_iaia - ent_iaia_) < 1e-5
 
-@pytest.mark.parametrize("ent_jbjb",[(0.6606867886260831)])
-def test_entropy_jbjb(ent_jbjb):
+@pytest.mark.parametrize("ent_jbjb, elec_corr",[(0.3107103005966103, "RPA")])
+def test_entropy_jbjb(ent_jbjb, elec_corr):
     """testing entropy_iaia function
 
     Args:
@@ -47,10 +48,60 @@ def test_entropy_jbjb(ent_jbjb):
         two pairs of virtual LMOs
     """
     #molden="C2H6_ccpvdz_Pipek_Mezey.molden"
-    molden= main_directory + "tests/C2H6_ccpvdz_Pipek_Mezey.molden"
-
+    molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
-    cloppa_obj = entropy(mo_coeff=mo_coeff, mol=mol,
-                        occ=[2,3], vir=[10,11,14,17])
-    ent_jbjb_ = cloppa_obj.entropy_jbjb
-    assert ent_jbjb - ent_jbjb_ < 1e-5
+    mf = scf.RHF(mol)
+    mf.kernel()
+    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, elec_corr=elec_corr)
+    ent_jbjb_ = ent_obj.entropy_jbjb
+    assert abs(ent_jbjb - ent_jbjb_) < 1e-5
+
+@pytest.mark.parametrize("ent_ab, elec_corr",[(0.6851136364894825, "HRPA")])
+def test_entropy_ab(ent_ab, elec_corr):
+    """testing entropy_ab function
+
+    Args:
+        ent_ab (real): ent_ab value given a couple of occupied LMOs and 
+        two pairs of virtual LMOs
+    """
+    molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
+    mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
+    mf = scf.RHF(mol)
+    mf.kernel()
+    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, elec_corr=elec_corr)
+    ent_ab_ = ent_obj.entropy_ab
+    assert abs(ent_ab - ent_ab_) < 1e-5
+
+@pytest.mark.parametrize("ent_iaia, elec_corr",[(0.36180860095233963, "HRPA")])
+def test_entropy_iaia(ent_iaia, elec_corr):
+    """testing entropy_iaia function
+
+    Args:
+        ent_ab (real): ent_iaia value given a couple of occupied LMOs and 
+        two pairs of virtual LMOs
+    """
+    #molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
+    mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
+    mf = scf.RHF(mol)
+    mf.kernel()
+    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, elec_corr=elec_corr)
+    ent_iaia_ = ent_obj.entropy_iaia
+    assert abs(ent_iaia - ent_iaia_) < 1e-5
+
+@pytest.mark.parametrize("ent_jbjb, elec_corr",[(0.32330503553791234, "HRPA")])
+def test_entropy_jbjb(ent_jbjb, elec_corr):
+    """testing entropy_iaia function
+
+    Args:
+        ent_ab (real): ent_iaia value given a couple of occupied LMOs and 
+        two pairs of virtual LMOs
+    """
+    #molden="C2H6_ccpvdz_Pipek_Mezey.molden"
+    molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
+    mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
+    mf = scf.RHF(mol)
+    mf.kernel()
+    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, elec_corr=elec_corr)
+    ent_jbjb_ = ent_obj.entropy_jbjb
+    assert abs(ent_jbjb - ent_jbjb_) < 1e-5

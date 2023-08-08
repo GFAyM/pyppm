@@ -47,7 +47,7 @@ class extra_functions:
 
     def mo_hibridization(self, mo_label, lim1, lim2):
         """This function gives the orbital index of the MOs that are in the
-        hibridization range
+        hibridization range and the contribution
 
         Args:
             mo_label (str): Which AO i watn to know the composition
@@ -70,6 +70,40 @@ class extra_functions:
             if lim1 < c < lim2:
                 orbital = np.append(orbital, (i, c))
         return orbital
+
+    def mo_hibridization_2(self, mo_label, lim1, lim2, vir):
+        """This function gives a lit with a set of orbital index of the MOs
+        that are in the hibridization range.
+
+        Args:
+            mo_label (str): Which AO label you want to know the composition
+            lim1 (int): inferior limit of the hibridization range
+            lim2 (int): superior limit of the hibridization range
+            vir (bool, optional): If true, analize virtual orbitals
+            Use False for analyze the occupied set.
+        Returns:
+            list : atm-ids
+        """
+        orbital = []
+        if vir:
+            mo_coeff = self.mo_coeff[:, self.nocc :]
+            comp = mo_mapping.mo_comps(
+                mo_label, self.mol, mo_coeff, orth_method="meta_lowdin"
+            )
+
+            for i, c in enumerate(comp):
+                if lim1 < c < lim2:
+                    orbital.append(i + self.nocc)
+            return orbital
+        else:
+            mo_coeff = self.mo_coeff[:, : self.nocc]
+            comp = mo_mapping.mo_comps(
+                mo_label, self.mol, mo_coeff, orth_method="meta_lowdin"
+            )
+            for i, c in enumerate(comp):
+                if lim1 < c < lim2:
+                    orbital.append(i)
+            return orbital
 
     def mo_hibridization_fixed(self, mo_label, fixed_orbital, lim1, lim2):
         """Evaluate the 'mo_label' composition of a fixed orbital of the molden
