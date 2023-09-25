@@ -13,13 +13,9 @@ import scipy
 from pyppm.rpa import RPA
 from pyscf.lib import current_memory
 
-def uniq_atoms(nuc_pair):
-    atm1lst = sorted(set([i for i,j in nuc_pair]))
-    atm2lst = sorted(set([j for i,j in nuc_pair]))
-    atm1dic = dict([(ia,k) for k,ia in enumerate(atm1lst)])
-    atm2dic = dict([(ia,k) for k,ia in enumerate(atm2lst)])
-    return atm1dic, atm2dic
 
+numpy.set_printoptions(precision=8)
+numpy.seterr(all='raise') 
 @attr.s
 class DRPA(RPA):
     """ This class Calculates the J-coupling between two nuclei in the 4-component framework
@@ -73,19 +69,19 @@ class DRPA(RPA):
         eri_mo = ao2mo.kernel(mol, [orboL.conj(), moL.conj(), moL.conj(), moL.conj()], intor='int2e_spinor')        
         eri_mo_b1 = ao2mo.kernel(mol, [orboL.conj(), moL.conj(), moL, moL], intor='int2e_spinor')
         eri_mo_b2 = ao2mo.kernel(mol, [orboL, moL.conj(), moL.conj(), moL], intor='int2e_spinor')
-        eri_mo+= ao2mo.kernel(mol, [orboS.conj(), moS.conj(), moS.conj(), moS.conj()], intor='int2e_spsp1spsp2_spinor')
-        eri_mo_b1+= ao2mo.kernel(mol, [orboS.conj(), moS.conj(), moS, moS], intor='int2e_spsp1spsp2_spinor')
-        eri_mo_b2+= ao2mo.kernel(mol, [orboS, moS.conj(), moS.conj(), moS], intor='int2e_spsp1spsp2_spinor')
+        #eri_mo+= ao2mo.kernel(mol, [orboS.conj(), moS.conj(), moS.conj(), moS.conj()], intor='int2e_spsp1spsp2_spinor')
+        #eri_mo_b1+= ao2mo.kernel(mol, [orboS.conj(), moS.conj(), moS, moS], intor='int2e_spsp1spsp2_spinor')
+        #eri_mo_b2+= ao2mo.kernel(mol, [orboS, moS.conj(), moS.conj(), moS], intor='int2e_spsp1spsp2_spinor')
         
-        eri_mo+= ao2mo.kernel(mol, [orboS.conj(), moS.conj(), moL.conj(), moL.conj()], intor='int2e_spsp1_spinor')
-        eri_mo+= ao2mo.kernel(mol, [moS.conj(), moS.conj(), orboL.conj(), moL.conj()], intor='int2e_spsp1_spinor').T
+        #eri_mo+= ao2mo.kernel(mol, [orboS.conj(), moS.conj(), moL.conj(), moL.conj()], intor='int2e_spsp1_spinor')
+        #eri_mo+= ao2mo.kernel(mol, [moS.conj(), moS.conj(), orboL.conj(), moL.conj()], intor='int2e_spsp1_spinor').T
         
-        eri_mo_b1+= ao2mo.kernel(mol, [orboS.conj(), moS.conj(), moL, moL], intor='int2e_spsp1_spinor')
-        eri_mo_b1+= ao2mo.kernel(mol, [moS, moS, orboL.conj(), moL.conj()], intor='int2e_spsp1_spinor').T
+        #eri_mo_b1+= ao2mo.kernel(mol, [orboS.conj(), moS.conj(), moL, moL], intor='int2e_spsp1_spinor')
+        #eri_mo_b1+= ao2mo.kernel(mol, [moS, moS, orboL.conj(), moL.conj()], intor='int2e_spsp1_spinor').T
         
-        eri_mo_b2+= ao2mo.kernel(mol, [orboS, moS.conj(), moL.conj(), moL], intor='int2e_spsp1_spinor')
+        #eri_mo_b2+= ao2mo.kernel(mol, [orboS, moS.conj(), moL.conj(), moL], intor='int2e_spsp1_spinor')
         
-        eri_mo_b2+= ao2mo.kernel(mol, [moS.conj(), moS, orboL, moL.conj()], intor='int2e_spsp1_spinor').T
+        #eri_mo_b2+= ao2mo.kernel(mol, [moS.conj(), moS, orboL, moL.conj()], intor='int2e_spsp1_spinor').T
         
         #eri_mo = eri_mo.reshape(nocc,nmo,nmo,nmo)
 
@@ -100,6 +96,22 @@ class DRPA(RPA):
         
         m = a + b 
         m = m.reshape(nocc*nvir,nocc*nvir, order='C')
+        
+        eri_mo = ao2mo.kernel(mol, [orboL.conj(), moL.conj(), moL.conj(), moL.conj()], intor='int2e_spinor')        
+        eri_mo_b1 = ao2mo.kernel(mol, [orboL.conj(), moL.conj(), moL, moL], intor='int2e_spinor')
+        eri_mo_b2 = ao2mo.kernel(mol, [orboL, moL.conj(), moL.conj(), moL], intor='int2e_spinor')
+        e_ia = lib.direct_sum('a-i->ia', mo_energy[viridx], mo_energy[occidx])
+        a = numpy.diag(e_ia.ravel()).reshape(nocc,nvir,nocc,nvir)
+        b = numpy.zeros_like(a)
+
+        a = a + numpy.einsum('iabj->iajb', eri_mo.reshape(nocc,nmo,nmo,nmo)
+                             [:nocc,nocc:,nocc:,:nocc])
+        a = a - numpy.einsum('ijba->iajb', eri_mo.reshape(nocc,nmo,nmo,nmo)
+                             [:nocc,:nocc,nocc:,nocc:])
+        b = b + numpy.einsum('iajb->iajb', eri_mo_b1.reshape(nocc,nmo,nmo,nmo)
+                             [:nocc,nocc:,:nocc,nocc:])
+        b = b - numpy.einsum('jaib->iajb', eri_mo_b2.reshape(nocc,nmo,nmo,nmo)
+                             [:nocc,nocc:,:nocc,nocc:])
         m_y = a - b
         m_y = m_y.reshape(nocc*nvir,nocc*nvir, order='C')
         return m, m_y
@@ -175,22 +187,22 @@ class DRPA(RPA):
 
         e = numpy.einsum('xai,iajb,ybj->xy', h1, p_xz.conj(), h2.conj()) * 2
         para.append(e.real)
-        #e1 = numpy.einsum('iajb,ybj->yai', p_y, h2) 
-        #e_y = numpy.einsum('xai,yai->xy', h1, e1.conj()) * 2 
+        e1 = numpy.einsum('iajb,ybj->yai', p_y, h2) 
+        e_y = numpy.einsum('xai,yai->xy', h1, e1.conj()) * 2 
 
-        e_y = numpy.einsum('xai,iajb,ybj->xy', h1, p_y.conj(), h2.conj()) * 2
+        #e_y = numpy.einsum('xai,iajb,ybj->xy', h1, p_y.conj(), h2.conj()) * 2
         para_y.append(e_y.real)
         
         resp = numpy.asarray(para)
         resp_y = numpy.asarray(para_y)
 
-        print('las respuestas xz son:\n',resp)
         #print('las respuestas y son:\n',resp_y)
         for i in range(resp.shape[0]):
             resp[i][1][1] = resp_y[i][1][1]
 
-        return resp * nist.ALPHA**4
+        print('las respuestas xz son:\n',resp)
 
+        return resp * nist.ALPHA**4
 
     def kernel(self, atom1, atom2):
         """This function multiplicates the response by the constants
