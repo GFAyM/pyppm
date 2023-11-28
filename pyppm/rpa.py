@@ -8,6 +8,7 @@ from pyscf.data import nist
 from pyscf.data.gyro import get_nuc_g_factor
 from functools import reduce
 
+
 @attr.s
 class RPA:
     """

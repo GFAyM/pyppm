@@ -18,9 +18,10 @@ def test_entropy_ab(ent_ab, elec_corr):
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
     mf = scf.RHF(mol)
     mf.kernel()
-    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, elec_corr=elec_corr)
+    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, 
+                      elec_corr = elec_corr, z_allexc=False)
     ent_ab_ = ent_obj.entropy_ab
-    assert abs(ent_ab - ent_ab_) < 1e-5
+    assert abs(ent_ab - ent_ab_) < 1e-5 
 
 @pytest.mark.parametrize("ent_iaia, elec_corr",[(0.36568909801148347, "RPA")])
 def test_entropy_iaia(ent_iaia, elec_corr):
@@ -35,7 +36,8 @@ def test_entropy_iaia(ent_iaia, elec_corr):
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
     mf = scf.RHF(mol)
     mf.kernel()
-    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, elec_corr=elec_corr)
+    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, 
+                      elec_corr=elec_corr, z_allexc=False)
     ent_iaia_ = ent_obj.entropy_iaia
     assert abs(ent_iaia - ent_iaia_) < 1e-5
 
@@ -52,7 +54,8 @@ def test_entropy_jbjb(ent_jbjb, elec_corr):
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
     mf = scf.RHF(mol)
     mf.kernel()
-    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, elec_corr=elec_corr)
+    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, 
+                      elec_corr=elec_corr, z_allexc=False)
     ent_jbjb_ = ent_obj.entropy_jbjb
     assert abs(ent_jbjb - ent_jbjb_) < 1e-5
 
@@ -68,7 +71,8 @@ def test_entropy_ab(ent_ab, elec_corr):
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
     mf = scf.RHF(mol)
     mf.kernel()
-    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, elec_corr=elec_corr)
+    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, 
+                      elec_corr=elec_corr, z_allexc=False)
     ent_ab_ = ent_obj.entropy_ab
     assert abs(ent_ab - ent_ab_) < 1e-5
 
@@ -85,7 +89,8 @@ def test_entropy_iaia(ent_iaia, elec_corr):
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
     mf = scf.RHF(mol)
     mf.kernel()
-    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, elec_corr=elec_corr)
+    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, 
+                      elec_corr=elec_corr, z_allexc=False)
     ent_iaia_ = ent_obj.entropy_iaia
     assert abs(ent_iaia - ent_iaia_) < 1e-5
 
@@ -102,6 +107,7 @@ def test_entropy_jbjb(ent_jbjb, elec_corr):
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
     mf = scf.RHF(mol)
     mf.kernel()
-    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, elec_corr=elec_corr)
+    ent_obj = entropy(occ=[2,4], vir=[8,9], mo_coeff_loc=mo_coeff, mf=mf, 
+                      elec_corr=elec_corr, z_allexc=False)
     ent_jbjb_ = ent_obj.entropy_jbjb
     assert abs(ent_jbjb - ent_jbjb_) < 1e-5
