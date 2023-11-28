@@ -6,6 +6,19 @@ import os
 
 main_directory=os.path.realpath(os.path.dirname(__file__))+'/../'
 
+@pytest.mark.parametrize("level",[('HRPA')])
+def test__attrs_post_init__(level):
+    molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
+    mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
+    mf = scf.RHF(mol)
+    mf.kernel()
+    loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = f'{level}')
+
+    with pytest.raises(Exception) as exc_info:    
+        loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = f'{level}')
+        assert str(exc_info.value
+                   ) == "SOPPA or other method are not avaible yet. Only RPA and HRPA"
+
 @pytest.mark.parametrize("c_occ, v, c_vir",[(4.999999999999936, 69.99999999999824, 13.999999999999826)])
 def test_inv_mat(c_occ, v, c_vir):
     """testing inv_mat property
@@ -28,6 +41,7 @@ def test_inv_mat(c_occ, v, c_vir):
     assert abs(c_occ_ - c_occ) < 1e-5
     assert abs(c_vir_ - c_vir) < 1e-5
     assert abs(v_ - v) < 1e-5    
+
 
 
 @pytest.mark.parametrize("h1, m, h2, fc", [(468.19341140496437, 

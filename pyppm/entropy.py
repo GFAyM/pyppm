@@ -52,6 +52,9 @@ class entropy:
     triplet = attr.ib(
         default=True, type=bool, validator=attr.validators.instance_of(bool)
     )
+    z_allexc = attr.ib(
+        default=True, type=bool, validator=attr.validators.instance_of(bool)
+    )
 
     def __attrs_post_init__(self):
 
@@ -99,9 +102,15 @@ class entropy:
         ]
 
         self.eigenvalues = np.linalg.eigvals(m_iajb)
+        m_loc = m_loc.reshape(nocc*nvir, nocc*nvir)
         self.Z = 0
-        for i in self.eigenvalues:
-            self.Z += np.exp(i)
+        if self.z_allexc is True:
+            eig = np.linalg.eigvals(m_loc)
+            for i in eig:
+                self.Z += np.exp(np.real(i))
+        else:
+            for i in self.eigenvalues:
+                self.Z += np.exp(np.real(i))
         self.m = m_loc_red
         return self.m
 
