@@ -5,14 +5,13 @@ import attr
 from pyscf import ao2mo
 from pyscf.ao2mo import r_outcore
 from pyscf.data import nist
-from pyscf.data.gyro import get_nuc_g_factor
 import scipy
 import h5py
 
 
 @attr.s
-class DRPA:
-    """This class Calculates the J-coupling between two nuclei in the 4-component
+class Shielding:
+    """This class Calculates the Shielding of a nuclei in the 4-component
         framework
 
     Need, as attribute, a DHF object and a boolean, ee, that set if you want to
@@ -44,6 +43,7 @@ class DRPA:
 
         orbv = mo_coeff[:, self.viridx]
         orbo = mo_coeff[:, self.occidx]
+        self.orbo = orbo
         self.nvir = orbv.shape[1]
         self.nocc = orbo.shape[1]
         self.nmo = self.nocc + self.nvir
@@ -55,7 +55,7 @@ class DRPA:
         SSSS integrals
 
         Returns:
-            numpy.ndarray: array with two electron integrals 
+            numpy.ndarray: array with two electron integrals
         """
         mol = self.mol
         mo = self.mo
@@ -93,11 +93,11 @@ class DRPA:
         dataname = "dhf_ovov"
 
         def run(mos, intor):
-            # Ajustar el valor de blksize: El valor de blksize controla cuántos 
+            # Ajustar el valor de blksize: El valor de blksize controla cuántos
             # elementos
             # de las integrales se calculan y almacenan en la memoria a la vez. Puedes
             # ajustar este valor según la cantidad de memoria disponible en tu sistema.
-            # Un valor más pequeño reducirá la huella de memoria, pero también puede 
+            # Un valor más pequeño reducirá la huella de memoria, pero también puede
             # aumentar el tiempo de cálculo debido a más escrituras en disco
             r_outcore.general(mol, mos, erifile, dataname="tmp", intor=intor)
             blksize = 400
@@ -117,7 +117,7 @@ class DRPA:
 
     def M(self, eri_m):
         """
-        A and B matrices for PP invers¿
+        A and B matrices for PP inverse
         A[i,a,j,b] = delta_{ab} delta_{ij}(E_a - E_i) + (ia||bj)
         B[i,a,j,b] = (ia||jb)
         This matrices was extracted from the tdscf pyscf module.
@@ -136,7 +136,6 @@ class DRPA:
         a = numpy.zeros((nocc, nvir, nocc, nvir), dtype="complex")
         b = numpy.zeros_like(a)
         if eri_m is True:
-            print("ao2mo")
             eri_mo = self.eri_mo
             a += lib.einsum("iabj->iajb", eri_mo[:nocc, nocc:, nocc:, :nocc])
             a -= lib.einsum("ijba->iajb", eri_mo[:nocc, :nocc, nocc:, nocc:])
@@ -144,7 +143,6 @@ class DRPA:
             b -= lib.einsum("jaib->iajb", eri_mo[:nocc, nocc:, :nocc, nocc:])
 
         else:
-            print("r_outcore")
             self.eri_mo_2
             with h5py.File("dhf_ovov.h5", "r") as h5file:
                 eri_mo = (
@@ -166,7 +164,7 @@ class DRPA:
         m = numpy.concatenate((m1, m2), axis=0)
         return m
 
-    def pert_ssc(self, atmlst):
+    def pert_alpha_nabla_r(self, atmlst):
         """
         Perturbator SSC in 4component framework
         Extracted from properties module, ssc/dhf.py
@@ -181,6 +179,7 @@ class DRPA:
         mol = self.mf.mol
         mo_coeff = self.mf.mo_coeff
         mo = self.mo
+        nmo = self.nmo
         n4c = mo_coeff.shape[0]
         n2c = n4c // 2
         h1 = []
@@ -192,38 +191,95 @@ class DRPA:
                 h01[:n2c, n2c:] = 0.5 * a01int[k]
                 h01[n2c:, :n2c] = 0.5 * a01int[k].conj().T
                 h1.append(mo.conj().T.dot(h01).dot(mo))
-        return h1
+        return numpy.asarray(h1).reshape(1, 3, nmo, nmo)[0]
 
-    def pp(self, atm1lst, atm2lst, eri_m):
-        """In this Function generate de Response << ; >>, i.e,
-        multiplicate the perturbators centered in nuclei1 and nuclei2 with the
-        principal propagator matrix.
+    def pert_alpha_rg(self, atmlst, giao):
+        """Perturbator \alpha \times r_g
+
+        Returns:
+
 
         Args:
-            atm1lst (list): list with atm1 id
-            atm2lst (list): list with atm2 id
+            atmlst (list): nuclei in which the perturbator is centered
+            giao (bool): Gauge origin
+
+        Returns:
+            list with perturbator in molecular basis
+        """
+        mol = self.mf.mol
+        mo_coeff = self.mf.mo_coeff
+        mo = self.mo
+        n4c = mo_coeff.shape[0]
+        n2c = n4c // 2
+        nmo = self.nmo
+        # c = lib.param.LIGHT_SPEED
+        if giao is True:
+            # t1 = mol.intor('int1e_giao_sa10sp_spinor', 3)
+            # tg = mol.intor('int1e_spgsp_spinor', 3)
+            # vg = mol.intor('int1e_gnuc_spinor', 3)
+            # wg = mol.intor('int1e_spgnucsp_spinor', 3)
+            # n2c = t1.shape[2]
+            # n4c = n2c * 2
+            # h1 = []
+            # vj, vk = self._call_giao_vhf1(mol)
+            # h = vj - vk
+            # for i in range(3):
+            #    h[i,:n2c,:n2c] += vg[i]
+            #    h[i,n2c:,:n2c] += tg[i] * .5
+            #    h[i,:n2c,n2c:] += tg[i].conj().T * .5
+            #    h[i,n2c:,n2c:] += wg[i]*(.25/c**2) - tg[i]*.5
+
+            # for i in range(3):
+            #    h01 = numpy.zeros(( n4c, n4c), complex)
+            #    h01[:n2c,n2c:] += .5 * t1[i]
+            #    h01[n2c:,:n2c] += .5 * t1[i].conj().T
+            #    h01 += h[i]
+            #    h1.append(mo.conj().T.dot(h01).dot(mo))
+            print("GIAO its not implemented yet")
+
+        else:
+            mol.set_common_origin(atmlst)
+            t1 = mol.intor("int1e_cg_sa10sp_spinor", 3)
+            n2c = t1.shape[2]
+            n4c = n2c * 2
+            h1 = []
+            for i in range(3):
+                h01 = numpy.zeros((n4c, n4c), complex)
+                h01[:n2c, n2c:] += 0.5 * t1[i]
+                h01[n2c:, :n2c] += 0.5 * t1[i].conj().T
+                h1.append(mo.conj().T.dot(h01).dot(mo))
+        return numpy.asarray(h1).reshape(1, 3, nmo, nmo)[0]
+
+    def pp(self, atmlst, eri_m, giao):
+        """In this Function generate de Response << ; >>, i.e,
+        multiplicate the perturbators with the principal propagator matrix.
+
+        Args:
+            atom (str): atom1 nuclei
+            eri_m (bool): if True, use direct 2-electron integrals to form the
+                principal propagator matrix. Otherwise, use r_outcore with a h5py file.
+            giao (bool): if True, use GIAO approximation. Otherwise, uses CGO centered
+                in the chosen nuclei.
 
         Returns:
             numpy.array: J tensor
         """
         nocc = self.nocc
         nvir = self.nvir
-        nmo = nocc + nvir
         m = self.M(eri_m=eri_m)
-        h1 = numpy.asarray(self.pert_ssc(atm1lst)).reshape(1, 3, nmo, nmo)[0]
-        h1 = h1[:, nocc:, :nocc]
-        h1 = numpy.concatenate((h1, h1.conj()), axis=2)
-        h2 = numpy.asarray(self.pert_ssc(atm2lst)).reshape(1, 3, nmo, nmo)[0]
+        h2 = self.pert_alpha_nabla_r(atmlst)
         h2 = h2[:, nocc:, :nocc]
         h2 = numpy.concatenate((h2, h2.conj()), axis=2)
+        h1 = self.pert_alpha_rg(atmlst, giao)
+        h1 = h1[:, nocc:, :nocc]
+        h1 = numpy.concatenate((h1, h1.conj()), axis=2)
         p = -scipy.linalg.inv(m)
         p = p.reshape(2 * nocc, nvir, 2 * nocc, nvir)
         para = []
         e = lib.einsum("xai,iajb,ybj->xy", h1, p.conj(), h2.conj())
         para.append(e.real)
-        print(para)
         resp = numpy.asarray(para)
-        return resp * nist.ALPHA ** 4
+        return resp
 
     def obtain_atom_order(self, atom):
         """Function that return the atom order in the molecule input
@@ -245,24 +301,20 @@ class DRPA:
             if atom_ == atom:
                 return i
 
-    def ssc(self, atom1, atom2, eri_m):
+    def shield(self, atom, eri_m, giao):
         """This function multiplicates the response by the constants
-        in order to get the isotropic J-coupling J between atom1 and atom2 nuclei
+        in order to get Shielding tensor of a nuclei
 
         Args:
-            atom1 (str): atom1 nuclei
-            atom2 (str): atom2 nuclei
+            atom (str): atom nuclei
+            eri_m (bool): if True, use direct 2-electron integrals to form the
+                principal propagator matrix. Otherwise, use r_outcore with a h5py file.
+            giao (bool): if True, use GIAO approximation. Otherwise, uses CGO centered
+                in the chosen nuclei.
 
         Returns:
-            real: isotropic J
+            real: isotropic Shielding
         """
-        atm1lst = [self.obtain_atom_order(atom1)]
-        atm2lst = [self.obtain_atom_order(atom2)]
-        e11 = self.pp(atm1lst, atm2lst, eri_m)
-        nuc_mag = 0.5 * (nist.E_MASS / nist.PROTON_MASS)
-        au2Hz = nist.HARTREE2J / nist.PLANCK
-        iso_ssc = au2Hz * nuc_mag ** 2 * lib.einsum("kii->k", e11) / 3
-        gyro1 = [get_nuc_g_factor(self.mol.atom_symbol(atm1lst[0]))]
-        gyro2 = [get_nuc_g_factor(self.mol.atom_symbol(atm2lst[0]))]
-        jtensor = lib.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)[0]
-        return jtensor
+        atmlst = [self.obtain_atom_order(atom)]
+        e11 = self.pp(atmlst, eri_m, giao) * (nist.ALPHA ** 2) * 1e6
+        return e11
