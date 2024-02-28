@@ -17,7 +17,7 @@ class Loc:
     attributes:
     mf = RHF object
     mo_coeff_loc = localized molecular orbitals
-    elec_corr = str with RPA or HRPA. This defines if the correlation 
+    elec_corr = str with RPA or HRPA. This defines if the correlation
                 level is RPA or HRPA.
     """
 
@@ -76,7 +76,7 @@ class Loc:
         v_transf = v_transf.reshape(nocc * nvir, nocc * nvir)
         return c_occ, v_transf, c_vir
 
-    def pp(self, atom1, atom2, FC=False, PSO=False, FCSD=False):
+    def pp(self, atom1, atom2, FC=False, PSO=False, FCSD=False, IPPP=False):
         """Fuction that localize perturbators and principal propagator inverse
         of a chosen mechanism
         Args:
@@ -84,11 +84,12 @@ class Loc:
             atom2 (str): atom2 label
             FC (bool, optional): If true, returns elements from FC mechanisms
             PSO (bool, optional): If true, returns elements for PSO mechanisms
-            FCSD (bool, optional): If true, returns elements for FC+SD mechanisms
+            FCSD (bool, optional): If true, returns elements for FC+SD 
+            mechanisms
 
         Returns:
-                h1_loc, m_loc, h2_loc: numpy.ndarrays with perturbators and 
-                principal propagator inverse in the localized basis
+                h1_loc, p_loc, h2_loc: numpy.ndarrays with perturbators and
+                principal propagator in a localized basis
         """
         atom1_ = [self.rpa_obj.obtain_atom_order(atom1)]
         atom2_ = [self.rpa_obj.obtain_atom_order(atom2)]
@@ -102,10 +103,15 @@ class Loc:
         c_occ, v_transf, c_vir = self.inv_mat
         h1_loc = c_occ.T @ h1 @ c_vir
         h2_loc = c_occ.T @ h2 @ c_vir
-        m_loc = v_transf.T @ m @ v_transf
-        return h1_loc, m_loc, h2_loc
+        if IPPP is False:
+            m_loc = v_transf.T @ m @ v_transf
+            p_loc = -numpy.linalg.inv(m_loc)
+        if IPPP is True:
+            p = -numpy.linalg.inv(m)
+            p_loc = v_transf.T @ p @ v_transf
+        return h1_loc, p_loc, h2_loc
 
-    def ssc(self, atom1=None, atom2=None, FC=False, PSO=False, FCSD=False):
+    def ssc(self, atom1=None, atom2=None, FC=False, PSO=False, FCSD=False, IPPP=False):
         """Function that obtains ssc mechanism for two chosen atoms in the localized
         basis
 
@@ -121,26 +127,22 @@ class Loc:
         """
         nocc = self.nocc
         nvir = self.nvir
-
         if FC:
-            h1, m, h2 = self.pp(FC=True, atom1=atom1, atom2=atom2)
-            p = -numpy.linalg.inv(m)
+            h1, p, h2 = self.pp(FC=True, atom1=atom1, atom2=atom2, IPPP=IPPP)
             p = p.reshape(nocc, nvir, nocc, nvir)
             para = []
             e = lib.einsum("ia,iajb,jb", h1, p, h2)
             para.append(e / 4)
             prop = lib.einsum(",k,xy->kxy", nist.ALPHA**4, para, numpy.eye(3))
         if PSO:
-            h1, m, h2 = self.pp(atom1=atom1, atom2=atom2, PSO=True)
-            p = -numpy.linalg.inv(m)
+            h1, p, h2 = self.pp(atom1=atom1, atom2=atom2, PSO=True, IPPP=IPPP)
             p = p.reshape(nocc, nvir, nocc, nvir)
             para = []
             e = lib.einsum("xia,iajb,yjb->xy", h1, p, h2)
             para.append(e)
             prop = numpy.asarray(para) * nist.ALPHA**4
         elif FCSD:
-            h1, m, h2 = self.pp(FCSD=True, atom1=atom1, atom2=atom2)
-            p = -numpy.linalg.inv(m)
+            h1, p, h2 = self.pp(FCSD=True, atom1=atom1, atom2=atom2)
             p = p.reshape(nocc, nvir, nocc, nvir)
             para = []
             e = numpy.einsum("wxia,iajb,wyjb->xy", h1, p, h2)
@@ -162,13 +164,14 @@ class Loc:
         self,
         atom1=None,
         atom2=None,
-        h1=None,
-        m=None,
-        h2=None,
+        FC=False,
+        FCSD=False,
+        PSO=False,
         occ_atom1=None,
         vir_atom1=None,
         occ_atom2=None,
         vir_atom2=None,
+        IPPP=False,
     ):
         """Function that obtains coupling pathways between two couple of exitations
         or a set of them. The shape of perturbator claims which mechanism is.
@@ -195,11 +198,10 @@ class Loc:
         atom1_ = [self.rpa_obj.obtain_atom_order(atom1)]
         atom2_ = [self.rpa_obj.obtain_atom_order(atom2)]
         para = []
-        if len(h1.shape) == 2:
+        h1, p, h2 = self.pp(atom1, atom2, FC=FC, FCSD=FCSD, PSO=PSO, IPPP=IPPP)
+        if FC:
             h1_pathway = numpy.zeros(h1.shape)
             h2_pathway = numpy.zeros(h1.shape)
-
-            p = -numpy.linalg.inv(m)
             p = p.reshape(nocc, nvir, nocc, nvir)
 
             if vir_atom1 is None:
@@ -210,16 +212,14 @@ class Loc:
                 vir_atom2 = [i - nocc for i in vir_atom2]
                 for i, a in list(product(occ_atom1, vir_atom1)):
                     h1_pathway[i, a] += h1[i, a]
-                for j, b in list(product(occ_atom1, vir_atom1)):
+                for j, b in list(product(occ_atom2, vir_atom2)):
                     h2_pathway[j, b] += h2[j, b]
             e = lib.einsum("ia,iajb,jb", h1_pathway, p, h2_pathway)
             para.append(e / 4)
             prop = lib.einsum(",k,xy->kxy", nist.ALPHA**4, para, numpy.eye(3))
-        if len(h1.shape) == 3:
+        if PSO:
             h1_pathway = numpy.zeros(h1.shape)
             h2_pathway = numpy.zeros(h1.shape)
-
-            p = -numpy.linalg.inv(m)
             p = p.reshape(nocc, nvir, nocc, nvir)
             para = []
             if vir_atom1 is None:
@@ -230,17 +230,16 @@ class Loc:
                 vir_atom2 = [i - nocc for i in vir_atom2]
                 for i, a in list(product(occ_atom1, vir_atom1)):
                     h1_pathway[:, i, a] += h1[:, i, a]
-                for j, b in list(product(occ_atom1, vir_atom1)):
+                for j, b in list(product(occ_atom2, vir_atom2)):
                     h2_pathway[:, j, b] += h2[:, j, b]
 
             e = lib.einsum("xia,iajb,yjb->xy", h1_pathway, p, h2_pathway)
             para.append(e)
             prop = numpy.asarray(para) * nist.ALPHA**4
-        if len(h1.shape) == 4:
+        if FCSD:
             h1_pathway = numpy.zeros(h1.shape)
             h2_pathway = numpy.zeros(h1.shape)
 
-            p = -numpy.linalg.inv(m)
             p = p.reshape(nocc, nvir, nocc, nvir)
             para = []
             if vir_atom1 is None:
@@ -251,7 +250,7 @@ class Loc:
                 vir_atom2 = [i - nocc for i in vir_atom2]
                 for i, a in list(product(occ_atom1, vir_atom1)):
                     h1_pathway[:, :, i, a] += h1[:, :, i, a]
-                for j, b in list(product(occ_atom1, vir_atom1)):
+                for j, b in list(product(occ_atom2, vir_atom2)):
                     h2_pathway[:, :, j, b] += h2[:, :, j, b]
             e = lib.einsum("wxia,iajb,wyjb->xy", h1_pathway, p, h2_pathway)
             para.append(e)
