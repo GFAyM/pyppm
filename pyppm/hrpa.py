@@ -6,6 +6,9 @@ from pyscf.data import nist
 from pyscf.data.gyro import get_nuc_g_factor
 from pyppm.rpa import RPA
 from itertools import product
+from line_profiler import profile
+#from memory_profiler import profile
+import numpy as np
 
 
 @attr.s
@@ -42,10 +45,11 @@ class HRPA:
         self.nmo = self.nocc + self.nvir
 
         self.rpa_obj = RPA(mf=self.mf)
-        self.eri_mo = self.rpa_obj.eri_mo
+        self.eri_mo = self.rpa_obj.eri_mo()
         self.occ = [i for i in range(self.nocc)]
         self.vir = [i for i in range(self.nvir)]
 
+    @profile
     def kappa(self, I_):
         """
         Method for obtain kappa_{\alpha \beta}^{m n} in a matrix form
@@ -64,6 +68,7 @@ class HRPA:
         Returns:
             numpy.ndarray: (nocc,nvir,nocc,nvir) array with kappa
         """
+        print('inicia kappa')
         nocc = self.nocc
         occidx = self.occidx
         viridx = self.viridx
@@ -77,8 +82,8 @@ class HRPA:
             mo_energy[viridx],
             mo_energy[viridx],
         )
-        int1 = lib.einsum("aibj->iajb", self.eri_mo[nocc:, :nocc, nocc:, :nocc])
-        int2 = lib.einsum("ajbi->iajb", self.eri_mo[nocc:, :nocc, nocc:, :nocc])
+        int1 = np.einsum("aibj->iajb", self.eri_mo[nocc:, :nocc, nocc:, :nocc])
+        int2 = np.einsum("ajbi->iajb", self.eri_mo[nocc:, :nocc, nocc:, :nocc])
         c = numpy.sqrt((2 * I_) - 1)
         K = (int1 - (((-1) ** I_) * int2)) / e_iajb
         K = K * c
@@ -89,9 +94,45 @@ class HRPA:
             for a, b in list(product(vir, vir)):
                 if a == b:
                     K[:, a, :, b] = 0
+        print('termina kappa')
+        
+        return K
+    
+    @profile
+    def kappa_op(self, I_):
+        nocc = self.nocc
+        occidx = self.occidx
+        viridx = self.viridx
+        occ = self.occ
+        vir = self.vir
+        mo_energy = self.mo_energy
+        e_iajb = lib.direct_sum(
+            "i+j-b-a->iajb",
+            mo_energy[occidx],
+            mo_energy[occidx],
+            mo_energy[viridx],
+            mo_energy[viridx],
+        )
+        int1 = np.einsum("aibj->iajb", self.eri_mo[nocc:, :nocc, nocc:, :nocc])
+        int2 = np.einsum("ajbi->iajb", self.eri_mo[nocc:, :nocc, nocc:, :nocc])
+        c = np.sqrt((2 * I_) - 1)
+        K = (int1 - ((-1) ** I_) * int2) / e_iajb
+        K *= c
+
+        if I_ == 2:
+            i, j = np.meshgrid(occ, occ, indexing='ij')
+            i_ = numpy.where(i==j)[0]
+            j_ = numpy.where(i==j)[1]
+            K[i_, :, j_, :] = 0
+            a, b = np.meshgrid(vir, vir, indexing='ij')
+            a_ = numpy.where(a==b)[0]
+            b_ = numpy.where(a==b)[1]
+            K[:, a_, :, b_] = 0
         return K
 
-    @property
+
+    #@property
+    @profile
     def part_a2(self):
         """Method for obtain A(2) matrix
         equation C.13 in Oddershede 1984
@@ -100,30 +141,65 @@ class HRPA:
         Returns:
             numpy.ndarray: (nocc,nvir,nocc,nvir) array with A(2) contribution
         """
+        print('arranca a2')
         nocc = self.nocc
         nvir = self.nvir
         int_ = self.eri_mo[:nocc, nocc:, :nocc, nocc:]
-        k_1 = self.kappa(1)
-        k_2 = self.kappa(2)
+        self.k_1 = self.kappa_op(1)
+        self.k_2 = self.kappa_op(2)
+        k_1 = self.k_1
+        k_2 = self.k_2
         A = numpy.zeros((nvir, nocc, nvir, nocc))
         occ = self.occ
         vir = self.vir
         for alfa, beta, m, n in list(product(occ, occ, vir, vir)):
             if n == m:
                 k = k_1[alfa, :, :, :] + (numpy.sqrt(3) * k_2[alfa, :, :, :])
-                A[m, alfa, n, beta] -= (0.5) * lib.einsum(
+                A[m, alfa, n, beta] -= (0.5) * np.einsum(
                     "adb,adb->", int_[beta, :, :, :], k
                 )
             if alfa == beta:
                 k = k_1[:, m, :, :] + (numpy.sqrt(3) * k_2[:, m, :, :])
-                A[m, alfa, n, beta] -= (0.5) * lib.einsum(
+                A[m, alfa, n, beta] -= (0.5) * np.einsum(
                     "dbp,pdb->", int_[:, :, :, n], k
                 )
-        A_ = lib.einsum("aibj->bjai", A)
+        A_ = np.einsum("aibj->bjai", A)
         A = (A + A_) / 2
-        A = lib.einsum("aibj->iajb", A)
+        A = np.einsum("aibj->iajb", A)
+        print('termina A2')
+        return A
+    
+    @profile
+    def part_a2_(self):
+
+        nocc = self.nocc
+        nvir = self.nvir
+        int_ = self.eri_mo[:nocc, nocc:, :nocc, nocc:]
+        self.k_1 = self.kappa_op(1)
+        self.k_2 = self.kappa_op(2)
+        k_1 = self.k_1
+        k_2 = self.k_2
+        A = np.zeros((nvir, nocc, nvir, nocc))
+        occ = self.occ
+        vir = self.vir
+        indices = np.array(list(product(occ, occ, vir, vir)))
+        alfa, beta, m, n = indices[:, 0], indices[:, 1], indices[:, 2], indices[:, 3]
+        mask = (n == m)
+        mask2 = (alfa == beta)
+        k_1_val = k_1[alfa[mask], :, :, :] + (np.sqrt(3) * k_2[alfa[mask], :, :, :])
+        k_2_val = k_1[:, m[mask2], :, :] + (np.sqrt(3) * k_2[:, m[mask2], :, :])
+        A_values = np.zeros(len(indices))
+        A_values[mask] -= 0.5 * np.einsum("abcd,abcd->a", int_[beta[mask], :, :, :], k_1_val)
+        A_values[mask2] -= 0.5* np.einsum("dbpa,padb->a", int_[:, :, :, n[mask2]], k_2_val)
+        A[m, alfa, n, beta] += A_values
+        A_ = np.einsum("aibj->bjai", A)
+        A = (A + A_) / 2
+        A = np.einsum("aibj->iajb", A)
+        
         return A
 
+
+    @profile
     def part_b2(self, S):
         """Method for obtain B(2) matrix (eq. 14 in Oddershede Paper)
 
@@ -133,6 +209,7 @@ class HRPA:
         Returns:
             numpy.array: (nvir,nocc,nvir,nocc) array with B(2) matrix
         """
+        print('arranca b2')
         nocc = self.nocc
         nvir = self.nvir
         occ = self.occ
@@ -142,8 +219,8 @@ class HRPA:
         int2 = eri_mo[:nocc, :nocc, nocc:, nocc:]
         int3 = eri_mo[:nocc, :nocc, :nocc, :nocc]
         int4 = eri_mo[nocc:, nocc:, nocc:, self.nocc :]
-        k_1 = self.kappa(1)
-        k_2 = self.kappa(2)
+        k_1 = self.k_1
+        k_2 = self.k_2
         B = numpy.zeros((nvir, nocc, nvir, nocc))
         for alfa, beta, m, n in list(product(occ, occ, vir, vir)):
             k_b1 = k_1[beta, m, :, :] + numpy.sqrt(3) * k_2[beta, m, :, :]
@@ -162,22 +239,25 @@ class HRPA:
                 + (numpy.sqrt(3) / (1 - 4 * S)) * k_2[beta, :, alfa, :]
             )
             B[m, alfa, n, beta] += 0.5 * (
-                lib.einsum("rp,pr->", int1[alfa, n, :, :], k_b1)
-                + lib.einsum("rp,pr->", int1[beta, m, :, :], k_b2)
+                np.einsum("rp,pr->", int1[alfa, n, :, :], k_b1)
+                + np.einsum("rp,pr->", int1[beta, m, :, :], k_b2)
                 + ((-1) ** S)
                 * (
                     (
-                        lib.einsum("pr,pr->", int2[alfa, :, :, n], k_b3)
-                        + lib.einsum("pr,pr->", int2[beta, :, :, m], k_b4)
+                        np.einsum("pr,pr->", int2[alfa, :, :, n], k_b3)
+                        + np.einsum("pr,pr->", int2[beta, :, :, m], k_b4)
                     )
-                    - lib.einsum("pd,dp->", int3[beta, :, alfa, :], k_b5)
-                    - lib.einsum("qp,pq->", int4[:, m, :, n], k_b6)
+                    - np.einsum("pd,dp->", int3[beta, :, alfa, :], k_b5)
+                    - np.einsum("qp,pq->", int4[:, m, :, n], k_b6)
                 )
             )
-        B = lib.einsum("aibj->iajb", B)
+        B = np.einsum("aibj->iajb", B)
+        print('termina B2')
         return B
 
-    @property
+
+    #@property
+    @profile
     def S2(self):
         """Property with S(2) matrix elements (eq. C.9 in Oddershede 1984)
         This matrix will be multiplied by energy
@@ -185,6 +265,7 @@ class HRPA:
         Returns:
             numpy.ndarray: (nocc,nvir,nocc,nvir) array with S(2) matrix
         """
+        print('arranca S2')
         mo_energy = self.mo_energy
         occidx = self.occidx
         viridx = self.viridx
@@ -199,14 +280,14 @@ class HRPA:
             mo_energy[viridx],
             mo_energy[viridx],
         )
-        k_1 = self.kappa(1)
-        k_2 = self.kappa(2)
+        k_1 = self.k_1
+        k_2 = self.k_2
         S2 = numpy.zeros((nvir, nocc, nvir, nocc))
         int_ = self.eri_mo[:nocc, nocc:, :nocc, nocc:]
         for alfa, beta, m, n in list(product(occ, occ, vir, vir)):
             if m == n:
                 k_s2_1 = k_1[alfa, :, :, :] + numpy.sqrt(3) * k_2[alfa, :, :, :]
-                S2[m, alfa, n, beta] -= 0.5 * lib.einsum(
+                S2[m, alfa, n, beta] -= 0.5 * np.einsum(
                     "apb,apb->",
                     int_[beta, :, :, :] / e_iajb[beta, :, :, :],
                     k_s2_1,
@@ -214,7 +295,7 @@ class HRPA:
             if alfa == beta:
                 k_s2_2 = k_1[:, m, :, :] + (numpy.sqrt(3) * k_2[:, m, :, :])
 
-                S2[m, alfa, n, beta] -= 0.5 * lib.einsum(
+                S2[m, alfa, n, beta] -= 0.5 * np.einsum(
                     "dap,pda->",
                     int_[:, :, :, n] / e_iajb[:, :, :, n],
                     k_s2_2,
@@ -226,16 +307,19 @@ class HRPA:
             mo_energy[occidx],
             mo_energy[occidx],
         )
-        S2 = lib.einsum("aibj->iajb", 0.5 * S2 * E)
+        S2 = np.einsum("aibj->iajb", 0.5 * S2 * E)
+        print('termina S2')
         return S2
 
-    @property
+    #@property
+    @profile
     def kappa_2(self):
         """property with kappa in equation C.24
 
         Returns:
             numpy.narray: (nocc,nvir) array
         """
+        print('arranca kappa2')
         nocc = self.nocc
         nvir = self.nvir
         mo_energy = self.mo_energy
@@ -243,26 +327,27 @@ class HRPA:
         viridx = self.viridx
         occ = self.occ
         vir = self.vir
-        k_1 = self.kappa(1)
-        k_2 = self.kappa(2)
+        k_1 = self.k_1
+        k_2 = self.k_2
         e_ia = lib.direct_sum("i-a->ia", mo_energy[occidx], mo_energy[viridx])
         int1 = self.eri_mo[:nocc, nocc:, nocc:, nocc:]
         int2 = self.eri_mo[:nocc, nocc:, :nocc, :nocc]
         kappa = numpy.zeros((nocc, nvir))
         for alfa, m in list(product(occ, vir)):
-            kappa[alfa, m] = lib.einsum(
+            kappa[alfa, m] = np.einsum(
                 "pab,pab->",
                 int1[:, :, m, :],
                 (k_1[:, :, alfa, :] + numpy.sqrt(3) * k_2[:, :, alfa, :]),
             )
-            kappa[alfa, m] -= lib.einsum(
+            kappa[alfa, m] -= np.einsum(
                 "pad,pad->",
                 int2[:, :, :, alfa],
                 (k_1[:, :, :, m] + numpy.sqrt(3) * k_2[:, :, :, m]),
             )
             kappa[alfa, m] = kappa[alfa, m] / e_ia[alfa, m]
+        print('termina kappa2')
         return kappa
-
+    @profile
     def correction_pert(self, FC=False, PSO=False, FCSD=False, atmlst=None):
         """Method with eq. C.25, which is the first correction to perturbator
 
@@ -272,7 +357,8 @@ class HRPA:
         Returns:
             numpy.ndarray: array with first correction to Perturbator (nocc,nvir)
         """
-        kappa = self.kappa_2
+        print('arranca corr pert 1')
+        kappa = self.kappa_2()
         nocc = self.nocc
         nvir = self.nvir
         ntot = nocc + nvir
@@ -283,40 +369,42 @@ class HRPA:
             pert = numpy.zeros((nvir, nocc))
             for alfa, m in list(product(occ, vir)):
                 p_virt = h1[nocc:, nocc:]
-                pert[m, alfa] += lib.einsum("n,n->", kappa[alfa, :], p_virt[m, :])
+                pert[m, alfa] += np.einsum("n,n->", kappa[alfa, :], p_virt[m, :])
                 p_occ = h1[:nocc, :nocc]
-                pert[m, alfa] -= lib.einsum("b,b->", kappa[:, m], p_occ[:, alfa])
-            pert = lib.einsum("ai->ia", pert)
+                pert[m, alfa] -= np.einsum("b,b->", kappa[:, m], p_occ[:, alfa])
+            pert = np.einsum("ai->ia", pert)
         if PSO:
             h1 = self.rpa_obj.pert_pso(atmlst)
             h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)[0]
             pert = numpy.zeros((3, nvir, nocc))
             for alfa, m in list(product(occ, vir)):
                 p_virt = h1[:, nocc:, nocc:]
-                pert[:, m, alfa] += lib.einsum(
+                pert[:, m, alfa] += np.einsum(
                     "n,xn->x", kappa[alfa, :], p_virt[:, m, :]
                 )
                 p_occ = h1[:, :nocc, :nocc]
-                pert[:, m, alfa] -= lib.einsum(
+                pert[:, m, alfa] -= np.einsum(
                     "b,xb->x", kappa[:, m], p_occ[:, :, alfa]
                 )
-            pert = lib.einsum("xai->xia", pert)
+            pert = np.einsum("xai->xia", pert)
         elif FCSD:
             h1 = self.rpa_obj.pert_fcsd(atmlst)
             h1 = numpy.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0, :, :, :, :]
             pert = numpy.zeros((3, 3, nvir, nocc))
             for alfa, m in list(product(occ, vir)):
                 p_virt = h1[:, :, nocc:, nocc:]
-                pert[:, :, m, alfa] += lib.einsum(
+                pert[:, :, m, alfa] += np.einsum(
                     "n,wxn->wx", kappa[alfa, :], p_virt[:, :, m, :]
                 )
                 p_occ = h1[:, :, :nocc, :nocc]
-                pert[:, :, m, alfa] -= lib.einsum(
+                pert[:, :, m, alfa] -= np.einsum(
                     "b,wxb->wx", kappa[:, m], p_occ[:, :, :, alfa]
                 )
-            pert = lib.einsum("wxai->wxia", pert)
+            pert = np.einsum("wxai->wxia", pert)
+        print('termina corr pert 1')
         return pert
 
+    @profile
     def correction_pert_2(self, FC=False, PSO=False, FCSD=False, atmlst=None):
         """Method with C.26 correction, which is a correction to perturbator
         centered in atmslt
@@ -328,6 +416,7 @@ class HRPA:
             numpy.ndarray: array with second correction to Perturbator
             (nocc,nvir)
         """
+        print('arranca correction pert 2')
         nmo = self.nocc + self.nvir
         nocc = self.nocc
         nvir = self.nvir
@@ -337,8 +426,8 @@ class HRPA:
         eri_mo = self.eri_mo.reshape(nmo, nmo, nmo, nmo)
         int1 = eri_mo[:nocc, nocc:, :nocc, nocc:]
         c1 = numpy.sqrt(3)
-        k_1 = self.kappa(1)
-        k_2 = self.kappa(2)
+        k_1 = self.k_1
+        k_2 = self.k_2
         e_iajb = lib.direct_sum(
             "i+j-a-b->iajb",
             self.mo_energy[self.occidx],
@@ -352,13 +441,13 @@ class HRPA:
 
             h1 = h1[nocc:, :nocc]
             for alfa, m in list(product(occ, vir)):
-                t = lib.einsum(
+                t = np.einsum(
                     "dapb,d,apb->",
                     int1[:, :, :, :] / e_iajb[:, :, :, :],
                     h1[m, :],
                     (k_1[alfa, :, :, :] + c1 * k_2[alfa, :, :, :]),
                 )
-                t += lib.einsum(
+                t += np.einsum(
                     "dapb,b,pda",
                     int1[:, :, :, :] / e_iajb[:, :, :, :],
                     h1[:, alfa],
@@ -366,7 +455,7 @@ class HRPA:
                 )
                 t = -t
                 pert[m, alfa] = t
-            pert = lib.einsum("ai->ia", pert)
+            pert = np.einsum("ai->ia", pert)
         if PSO:
             h1 = self.rpa_obj.pert_pso(atmlst)
             h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)
@@ -375,13 +464,13 @@ class HRPA:
 
             h1 = h1[:, nocc:, :nocc]
             for alfa, m in list(product(occ, vir)):
-                t = lib.einsum(
+                t = np.einsum(
                     "dapb,xd,apb->x",
                     int1[:, :, :, :] / e_iajb[:, :, :, :],
                     h1[:, m, :],
                     (k_1[alfa, :, :, :] + c1 * k_2[alfa, :, :, :]),
                 )
-                t += lib.einsum(
+                t += np.einsum(
                     "dapb,xb,pda->x",
                     int1[:, :, :, :] / e_iajb[:, :, :, :],
                     h1[:, :, alfa],
@@ -389,19 +478,19 @@ class HRPA:
                 )
                 t = -t  # *numpy.sqrt(2)/2
                 pert[:, m, alfa] = t
-            pert = lib.einsum("xai->xia", pert)
+            pert = np.einsum("xai->xia", pert)
         elif FCSD:
             h1 = self.rpa_obj.pert_fcsd(atmlst)
             h1 = numpy.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0, :, :, nocc:, :nocc]
             pert = numpy.zeros((3, 3, nvir, nocc))
             for alfa, m in list(product(occ, vir)):
-                t = lib.einsum(
+                t = np.einsum(
                     "dapb,wxd,apb->wx",
                     int1[:, :, :, :] / e_iajb[:, :, :, :],
                     h1[:, :, m, :],
                     (k_1[alfa, :, :, :] + c1 * k_2[alfa, :, :, :]),
                 )
-                t += lib.einsum(
+                t += np.einsum(
                     "dapb,wxb,pda->wx",
                     int1[:, :, :, :] / e_iajb[:, :, :, :],
                     h1[:, :, :, alfa],
@@ -409,7 +498,8 @@ class HRPA:
                 )
                 t = -t  # *numpy.sqrt(2)/2
                 pert[:, :, m, alfa] = t
-            pert = lib.einsum("wxai->wxia", pert)
+            pert = np.einsum("wxai->wxia", pert)
+        print('termina correction pert 2')
         return pert
 
     def Communicator(self, triplet):
@@ -450,18 +540,18 @@ class HRPA:
         nocc = self.nocc
         h1 = self.rpa_obj.pert_fc(atm1lst)[0][:nocc, nocc:]
         h2 = self.rpa_obj.pert_fc(atm2lst)[0][:nocc, nocc:]
+
+        m = self.rpa_obj.M(triplet=True)
+        m = m.reshape(nocc, nvir, nocc, nvir)
+        m += self.part_a2()
+        m -= self.part_b2(1)
+        m += self.S2()
         h1_corr1 = self.correction_pert(atmlst=atm1lst, FC=True)
         h1_corr2 = self.correction_pert_2(atmlst=atm1lst, FC=True)
         h2_corr1 = self.correction_pert(atmlst=atm2lst, FC=True)
         h2_corr2 = self.correction_pert_2(atmlst=atm2lst, FC=True)
-
         h1 = (2 * h1) + h1_corr1 + h1_corr2
         h2 = (2 * h2) + h2_corr1 + h2_corr2
-        m = self.rpa_obj.M(triplet=True)
-        m = m.reshape(nocc, nvir, nocc, nvir)
-        m += self.part_a2
-        m -= self.part_b2(1)
-        m += self.S2
         m = m.reshape(nocc * nvir, nocc * nvir)
         if elements:
             return h1, m, h2
@@ -469,9 +559,9 @@ class HRPA:
             p = -numpy.linalg.inv(m)
             p = p.reshape(nocc, nvir, nocc, nvir)
             para = []
-            e = lib.einsum("ia,iajb,jb", h1, p, h2)
+            e = np.einsum("ia,iajb,jb", h1, p, h2)
             para.append(e / 4)
-            fc = lib.einsum(",k,xy->kxy", nist.ALPHA**4, para, numpy.eye(3))
+            fc = np.einsum(",k,xy->kxy", nist.ALPHA**4, para, numpy.eye(3))
             return fc
 
     def pp_ssc_pso(self, atm1lst, atm2lst, elements=False):
@@ -513,7 +603,7 @@ class HRPA:
             p = numpy.linalg.inv(m)
             p = -p.reshape(nocc, nvir, nocc, nvir)
             para = []
-            e = lib.einsum("xia,iajb,yjb->xy", h1, p, h2)
+            e = np.einsum("xia,iajb,yjb->xy", h1, p, h2)
             para.append(e)
             pso = numpy.asarray(para) * nist.ALPHA**4
             return pso
@@ -587,10 +677,10 @@ class HRPA:
         nuc_magneton = 0.5 * (nist.E_MASS / nist.PROTON_MASS)  # e*hbar/2m
         au2Hz = nist.HARTREE2J / nist.PLANCK
         unit = au2Hz * nuc_magneton**2
-        iso_ssc = unit * lib.einsum("kii->k", prop) / 3
+        iso_ssc = unit * np.einsum("kii->k", prop) / 3
         gyro1 = [get_nuc_g_factor(self.mol.atom_symbol(atom1_[0]))]
         gyro2 = [get_nuc_g_factor(self.mol.atom_symbol(atom2_[0]))]
-        jtensor = lib.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)
+        jtensor = np.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)
         return jtensor[0]
 
     def elements(self, atm1lst, atom2lst, FC=False, FCSD=False, PSO=False):
