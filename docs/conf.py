@@ -16,7 +16,7 @@ import os
 sys.path.insert(0, os.path.abspath('../..'))
 
 
-project = 'PyPPM'
+project = 'pyppm'
 copyright = '2023, Daniel F. E. Bajac'
 author = 'Daniel F. E. Bajac'
 release = '0.1'
@@ -35,10 +35,10 @@ extensions = [
 templates_path = ['_templates']
 exclude_patterns = []
 
-
+autosummary_generate = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'alabaster'
-html_static_path = ['_static']
+#html_static_path = ['_static']

@@ -50,7 +50,7 @@ class HRPA:
         self.iter = list(product(self.occ, self.occ, self.vir, self.vir))
         self.k_1 = self.kappa(1)
         self.k_2 = self.kappa(2)
-    
+
     def kappa(self, I_):
 
         nocc = self.nocc
@@ -73,33 +73,35 @@ class HRPA:
         K *= c
 
         if I_ == 2:
-            i, j = np.meshgrid(occ, occ, indexing='ij')
-            i_ = numpy.where(i==j)[0]
-            j_ = numpy.where(i==j)[1]
+            i, j = np.meshgrid(occ, occ, indexing="ij")
+            i_ = numpy.where(i == j)[0]
+            j_ = numpy.where(i == j)[1]
             K[i_, :, j_, :] = 0
-            a, b = np.meshgrid(vir, vir, indexing='ij')
-            a_ = numpy.where(a==b)[0]
-            b_ = numpy.where(a==b)[1]
+            a, b = np.meshgrid(vir, vir, indexing="ij")
+            a_ = numpy.where(a == b)[0]
+            b_ = numpy.where(a == b)[1]
             K[:, a_, :, b_] = 0
         return K
-    
+
     def da_from_array(self, array):
-        '''Method to convert numpy array to dask array
-        Args: 
+        """Method to convert numpy array to dask array
+        Args:
             array (numpy.ndarray): array to convert
-        '''
-        chunk = (array.shape[0]//2,
-                 array.shape[1],
-                    array.shape[2]//2,
-                    array.shape[3])
-        
+        """
+        chunk = (
+            array.shape[0] // 2,
+            array.shape[1],
+            array.shape[2] // 2,
+            array.shape[3],
+        )
+
         array_da = da.from_array(array, chunks=chunk)
-        
+
         return array_da
 
     @property
     def part_a2(self):
-        """Method for obtain A(2) matrix using einsum 
+        """Method for obtain A(2) matrix using einsum
         equation C.13 in Oddershede 1984
         The A = (A + A_)/2 term is because of c.13a equation
 
@@ -107,7 +109,7 @@ class HRPA:
             numpy.ndarray: (nocc,nvir,nocc,nvir) array with A(2) contribution
                 #A = np.einsum('mn,ij->minj', mask_mn, A)
         #A = -.5*np.einsum('jadb,iadb->ij',int_,k)
-            
+
         """
         nocc = self.nocc
         nvir = self.nvir
@@ -121,19 +123,19 @@ class HRPA:
         int_da = self.da_from_array(int_)
         k_da = self.da_from_array(k)
 
-        A_dask = da.einsum('jadb,iadb->ij', int_da, k_da)
+        A_dask = da.einsum("jadb,iadb->ij", int_da, k_da)
         A = A_dask.compute()
-        
+
         mask_mn = np.eye(nvir)
-        A = np.einsum('mn,ij->minj', mask_mn, -.5*A)
-        A_dask = da.einsum('dbpn,pmdb->mn', int_da, k_da)
+        A = np.einsum("mn,ij->minj", mask_mn, -0.5 * A)
+        A_dask = da.einsum("dbpn,pmdb->mn", int_da, k_da)
         A_ = A_dask.compute()
         mask_ab = np.eye(nocc)
-        A += np.einsum('ij,mn->minj', mask_ab, -.5*A_)
+        A += np.einsum("ij,mn->minj", mask_ab, -0.5 * A_)
         A_ = np.einsum("aibj->bjai", A)
         A = (A + A_) / 2
         A = np.einsum("aibj->iajb", A)
-        return A 
+        return A
 
     def part_b2(self, S):
         """Method for obtain B(2) matrix (eq. 14 in Oddershede Paper)
@@ -155,16 +157,16 @@ class HRPA:
         cte = self.cte
         cte2 = (-1) ** S
         k_b1 = self.da_from_array(k_1 + cte * k_2)
-        k_b2 = self.da_from_array(k_1 + (cte/(1-4*S)) * k_2)
-        B = da.einsum('anrp,bmpr->manb', int1, k_b1).compute()
-        B += da.einsum('bmrp,anpr->manb', int1, k_b1).compute()
-        B += cte2 * da.einsum('aprn,pmbr->manb', int2, k_b2).compute()
-        B += cte2 * da.einsum('bprm,pnar->manb', int2, k_b2).compute()
-        B -= cte2 * da.einsum('bpad,dmpn->manb', int3, k_b2).compute()
-        B -= cte2 * da.einsum('qmpn,bpaq->manb', int4, k_b2).compute()      
+        k_b2 = self.da_from_array(k_1 + (cte / (1 - 4 * S)) * k_2)
+        B = da.einsum("anrp,bmpr->manb", int1, k_b1).compute()
+        B += da.einsum("bmrp,anpr->manb", int1, k_b1).compute()
+        B += cte2 * da.einsum("aprn,pmbr->manb", int2, k_b2).compute()
+        B += cte2 * da.einsum("bprm,pnar->manb", int2, k_b2).compute()
+        B -= cte2 * da.einsum("bpad,dmpn->manb", int3, k_b2).compute()
+        B -= cte2 * da.einsum("qmpn,bpaq->manb", int4, k_b2).compute()
         B = np.einsum("aibj->iajb", B)
-        return .5*B
-    
+        return 0.5 * B
+
     @property
     def S2(self):
         """Property with S(2) matrix elements (eq. C.9 in Oddershede 1984)
@@ -188,14 +190,13 @@ class HRPA:
         k_1 = self.k_1
         k_2 = self.k_2
         k = self.da_from_array(k_1 + self.cte * k_2)
-        int_ = self.da_from_array(
-                self.eri_mo[:nocc, nocc:, :nocc, nocc:])
-        S2 = da.einsum('japb,iapb->ij', int_/e_iajb, k).compute()
+        int_ = self.da_from_array(self.eri_mo[:nocc, nocc:, :nocc, nocc:])
+        S2 = da.einsum("japb,iapb->ij", int_ / e_iajb, k).compute()
         mask_mn = np.eye(nvir)
-        S2 = np.einsum('mn,ij->minj', mask_mn, -.5*S2)
-        S2_ = da.einsum('dapn,pmda->mn', int_/e_iajb, k).compute()
+        S2 = np.einsum("mn,ij->minj", mask_mn, -0.5 * S2)
+        S2_ = da.einsum("dapn,pmda->mn", int_ / e_iajb, k).compute()
         mask_ij = np.eye(nocc)
-        S2 += np.einsum('ij,mn->minj', mask_ij, -.5*S2_)
+        S2 += np.einsum("ij,mn->minj", mask_ij, -0.5 * S2_)
         E = lib.direct_sum(
             "a+b-i-j->aibj",
             mo_energy[viridx],
@@ -205,7 +206,7 @@ class HRPA:
         )
         S2 = np.einsum("aibj->iajb", 0.5 * S2 * E)
         return S2
-    
+
     @property
     def kappa_2(self):
         """property with kappa in equation C.24
@@ -213,7 +214,7 @@ class HRPA:
         Returns:
             numpy.narray: (nocc,nvir) array
         """
-        print('arranca kappa2')
+        print("arranca kappa2")
         nocc = self.nocc
         mo_energy = self.mo_energy
         occidx = self.occidx
@@ -224,9 +225,9 @@ class HRPA:
         int1 = self.eri_mo[:nocc, nocc:, nocc:, nocc:]
         int2 = self.eri_mo[:nocc, nocc:, :nocc, :nocc]
         k = k_1 + self.cte * k_2
-        kappa = np.einsum('pamb,paib->im', int1, k)
-        kappa -= np.einsum('padi,padm->im', int2, k)
-        return kappa/e_ia
+        kappa = np.einsum("pamb,paib->im", int1, k)
+        kappa -= np.einsum("padi,padm->im", int2, k)
+        return kappa / e_ia
 
     def correction_pert(self, FC=False, PSO=False, FCSD=False, atmlst=None):
         """Method with eq. C.25, which is the first correction to perturbator
@@ -245,23 +246,23 @@ class HRPA:
         if FC:
             h1 = self.rpa_obj.pert_fc(atmlst)[0]
             p_virt = h1[nocc:, nocc:]
-            pert = np.einsum('an,mn->am', kappa, p_virt)
+            pert = np.einsum("an,mn->am", kappa, p_virt)
             p_occ = h1[:nocc, :nocc]
-            pert -= np.einsum('bm,ba->am', kappa, p_occ)
+            pert -= np.einsum("bm,ba->am", kappa, p_occ)
         if PSO:
             h1 = self.rpa_obj.pert_pso(atmlst)
             h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)[0]
             p_virt = h1[:, nocc:, nocc:]
-            pert = np.einsum('an,xmn->xam', kappa, p_virt)
+            pert = np.einsum("an,xmn->xam", kappa, p_virt)
             p_occ = h1[:, :nocc, :nocc]
-            pert -= np.einsum('bm,xba->xam', kappa, p_occ)
+            pert -= np.einsum("bm,xba->xam", kappa, p_occ)
         elif FCSD:
             h1 = self.rpa_obj.pert_fcsd(atmlst)
             h1 = numpy.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0, :, :, :, :]
             p_virt = h1[:, :, nocc:, nocc:]
             p_occ = h1[:, :, :nocc, :nocc]
-            pert = np.einsum('an,wxmn->wxam', kappa, p_virt)
-            pert -= np.einsum('bm, wxba->wxam', kappa, p_occ)        
+            pert = np.einsum("an,wxmn->wxam", kappa, p_virt)
+            pert -= np.einsum("bm, wxba->wxam", kappa, p_occ)
         return pert
 
     def correction_pert_2(self, FC=False, PSO=False, FCSD=False, atmlst=None):
@@ -291,32 +292,31 @@ class HRPA:
             self.mo_energy[self.viridx],
         )
         k = self.da_from_array(k_1 + self.cte * k_2)
-        int_e = self.da_from_array(int1/e_iajb)
+        int_e = self.da_from_array(int1 / e_iajb)
         if FC:
             h1 = self.rpa_obj.pert_fc(atmlst)[0]
             h1 = h1[nocc:, :nocc]
-            h1 = da.from_array(h1, chunks=(h1[0].shape[0]//2, h1[1].shape[0]//2))
+            h1 = da.from_array(h1, chunks=(h1[0].shape[0] // 2, h1[1].shape[0] // 2))
 
-            pert = -da.einsum('dapb,md,iapb->im', int_e, h1, k).compute()
-            pert -= da.einsum('dapb,bi,pmda->im', int_e, h1, k).compute()
+            pert = -da.einsum("dapb,md,iapb->im", int_e, h1, k).compute()
+            pert -= da.einsum("dapb,bi,pmda->im", int_e, h1, k).compute()
         if PSO:
             h1 = self.rpa_obj.pert_pso(atmlst)
             h1 = numpy.asarray(h1).reshape(1, 3, ntot, ntot)
             h1 = h1[0][:, nocc:, :nocc]
-            h1 = da.from_array(h1, 
-                               chunks=(h1[0].shape[0], h1[1].shape[1]//2,
-                                       h1[2].shape[0]//2))
+            h1 = da.from_array(
+                h1, chunks=(h1[0].shape[0], h1[1].shape[1] // 2, h1[2].shape[0] // 2)
+            )
 
-            pert = -da.einsum('dapb,xmd,iapb->xim', int_e, h1, k).compute()
-            pert -= da.einsum('dapb,xbi,pmda->xim', int_e, h1, k).compute()
+            pert = -da.einsum("dapb,xmd,iapb->xim", int_e, h1, k).compute()
+            pert -= da.einsum("dapb,xbi,pmda->xim", int_e, h1, k).compute()
         elif FCSD:
             h1 = self.rpa_obj.pert_fcsd(atmlst)
             h1 = numpy.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0, :, :, nocc:, :nocc]
             h1 = self.da_from_array(h1)
-            pert = -da.einsum('dapb,wxmd,iapb->wxim', int_e, h1, k).compute()
-            pert -= da.einsum('dapb,wxbi,pmda->wxim', int_e, h1, k).compute()
+            pert = -da.einsum("dapb,wxmd,iapb->wxim", int_e, h1, k).compute()
+            pert -= da.einsum("dapb,wxbi,pmda->wxim", int_e, h1, k).compute()
         return pert
-
 
     def Communicator(self, triplet):
         """Function for obtain Communicator matrix, i.e., the principal propagator
@@ -522,5 +522,3 @@ class HRPA:
         elif FCSD:
             h1, m, h2 = self.pp_ssc_fcsd(atm1lst, atom2lst, elements=True)
         return h1, m, h2
-    
-
