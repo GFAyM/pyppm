@@ -34,10 +34,7 @@ class RPA:
         self.nocc = self.orbo.shape[1]
         self.mo = numpy.hstack((self.orbo, self.orbv))
         self.nmo = self.nocc + self.nvir
-        # eri_mo = ao2mo.general(self.mol, [self.orbo, mo, mo, mo], compact=False)
-        # self.eri_mo = eri_mo.reshape(self.nocc, nmo, nmo, nmo)
 
-    @property
     def eri_mo(self):
         """Property with all 2-electron Molecular orbital integrals
 
@@ -66,7 +63,7 @@ class RPA:
         Returns:
                 numpy.ndarray: M matrix
         """
-        eri_mo = self.eri_mo
+        eri_mo = self.eri_mo()
         e_ia = lib.direct_sum(
             "a-i->ia", self.mo_energy[self.viridx], self.mo_energy[self.occidx]
         )

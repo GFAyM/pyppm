@@ -13,7 +13,7 @@ def test_eri_mo(eri_mo_2_sum):
     mf = scf.RHF(HF_mol)
     mf.kernel()
     rpa_obj = RPA(mf=mf)
-    eri_mo = rpa_obj.eri_mo
+    eri_mo = rpa_obj.eri_mo()
     assert abs(eri_mo_2_sum - (eri_mo**2).sum()) < 1e-5
 
 
