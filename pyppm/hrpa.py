@@ -55,7 +55,6 @@ class HRPA:
         Then, loaded in a dask array
         """
         mol = self.mol
-        nmo = self.nmo
         if self.h5_file is None:
             ao2mo.general(
                 mol,
@@ -66,7 +65,23 @@ class HRPA:
             self.h5_file = f"{mol.nao}.h5"
 
     def kappa(self, I_):
+        """
+        Method for obtain kappa_{\alpha \beta}^{m n} in a matrix form
+        K_{ij}^{a,b} = [(1-delta_{ij})(1-delta_ab]^{I-1}(2I-1)^.5
+                        * [[(ab|bj) -(-1)^I (aj|bi)]/ [e_i+e_j-e_a-e_b]]
 
+        for i noteq j, a noteq b
+
+        K_{ij}^{a,b}=1^{I-1}(2I-1)^.5 * [[(ab|bj) -(-1)^I (aj|bi)]/ [e_i+e_j-e_a-e_b]]
+
+        Oddershede 1984, eq C.7
+
+        Args:
+            I (integral): 1 or 2.
+
+        Returns:
+            numpy.ndarray: (nocc,nvir,nocc,nvir) array with kappa
+        """
         nocc = self.nocc
         occidx = self.occidx
         viridx = self.viridx
