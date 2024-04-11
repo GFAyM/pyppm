@@ -6,7 +6,7 @@ from pyppm.rpa import RPA
 import numpy as np
 import dask.array as da
 import h5py
-from memory_profiler import profile
+
 
 @attr.s
 class HRPA:
@@ -25,8 +25,8 @@ class HRPA:
     mf = attr.ib(
         default=None, type=scf.hf.RHF, validator=attr.validators.instance_of(scf.hf.RHF)
     )
-    h5_file = attr.ib(        
-        default=None)
+    h5_file = attr.ib(default=None)
+
     def __attrs_post_init__(self):
         self.mo_occ = self.mf.mo_occ
         self.mo_energy = self.mf.mo_energy
@@ -44,22 +44,26 @@ class HRPA:
         self.occ = [i for i in range(self.nocc)]
         self.vir = [i for i in range(self.nvir)]
         self.rpa_obj = RPA(mf=self.mf)
-        self.eri_mo_ = self.rpa_obj.eri_mo()
+        self.eri_mo()
         self.cte = np.sqrt(3)
         self.k_1 = self.kappa(1)
         self.k_2 = self.kappa(2)
 
     def eri_mo(self):
         """Method to obtain the ERI in MO basis, and saved it
-        in a h5py file, if it doesn't exist. 
+        in a h5py file, if it doesn't exist.
         Then, loaded in a dask array
         """
         mol = self.mol
         nmo = self.nmo
         if self.h5_file is None:
-            ao2mo.general(mol, (self.mo, self.mo, self.mo, self.mo), 
-                          f'{mol.nao}.h5', compact=False)
-            self.h5_file = f'{mol.nao}.h5'
+            ao2mo.general(
+                mol,
+                (self.mo, self.mo, self.mo, self.mo),
+                f"{mol.nao}.h5",
+                compact=False,
+            )
+            self.h5_file = f"{mol.nao}.h5"
 
     def kappa(self, I_):
 
@@ -78,14 +82,12 @@ class HRPA:
             mo_energy[viridx],
         )
         eri_mo = self.eri_mo()
-        with h5py.File(str(self.h5_file), 'r') as f:
-            eri_mo = da.from_array((f["eri_mo"]), chunks=(nmo//4,nmo//4))
-            eri_mo = eri_mo.reshape(nmo,nmo,nmo,nmo)
-        
-            int1 = da.einsum("aibj->iajb", 
-                            eri_mo[nocc:, :nocc, nocc:, :nocc]).compute()
-            int2 = da.einsum("ajbi->iajb", 
-                            eri_mo[nocc:, :nocc, nocc:, :nocc]).compute()
+        with h5py.File(str(self.h5_file), "r") as f:
+            eri_mo = da.from_array((f["eri_mo"]), chunks=(nmo // 4, nmo // 4))
+            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+
+            int1 = da.einsum("aibj->iajb", eri_mo[nocc:, :nocc, nocc:, :nocc]).compute()
+            int2 = da.einsum("ajbi->iajb", eri_mo[nocc:, :nocc, nocc:, :nocc]).compute()
         c = np.sqrt((2 * I_) - 1)
         K = (int1 - ((-1) ** I_) * int2) / e_iajb
         K *= c
@@ -139,13 +141,13 @@ class HRPA:
         k = k_1 + cte * k_2
         nmo = self.nmo
         k_da = self.da_from_array(k)
-        with h5py.File(str(self.h5_file), 'r') as f:
-            eri_mo = da.from_array((f["eri_mo"]), chunks=(nmo//4,nmo//4))
-            eri_mo = eri_mo.reshape(nmo,nmo,nmo,nmo)
+        with h5py.File(str(self.h5_file), "r") as f:
+            eri_mo = da.from_array((f["eri_mo"]), chunks=(nmo // 4, nmo // 4))
+            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
             int_ = eri_mo[:nocc, nocc:, :nocc, nocc:]
             A1 = da.einsum("jadb,iadb->ij", int_, k_da).compute()
             A2 = da.einsum("dbpn,pmdb->mn", int_, k_da).compute()
-        
+
         mask_mn = np.eye(nvir)
         mask_ab = np.eye(nocc)
         A = np.einsum("mn,ij->minj", mask_mn, -0.5 * A1)
@@ -154,7 +156,7 @@ class HRPA:
         A = (A + A_) / 2
         A = np.einsum("aibj->iajb", A)
         return A
-    
+
     def part_b2(self, S):
         """Method for obtain B(2) matrix (eq. 14 in Oddershede Paper)
         but using einsum function
@@ -172,10 +174,10 @@ class HRPA:
         cte2 = (-1) ** S
         k_b1 = self.da_from_array(k_1 + cte * k_2)
         k_b2 = self.da_from_array(k_1 + (cte / (1 - 4 * S)) * k_2)
-        with h5py.File(str(self.h5_file), 'r') as f:
-            eri_mo = da.from_array((f["eri_mo"]), chunks='auto')
+        with h5py.File(str(self.h5_file), "r") as f:
+            eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
 
-            eri_mo = eri_mo.reshape(nmo,nmo,nmo,nmo)
+            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
             int1 = eri_mo[:nocc, nocc:, nocc:, :nocc]
             int2 = eri_mo[:nocc, :nocc, nocc:, nocc:]
             int3 = eri_mo[:nocc, :nocc, :nocc, :nocc]
@@ -213,9 +215,9 @@ class HRPA:
         k_2 = self.k_2
         k = self.da_from_array(k_1 + self.cte * k_2)
         nmo = self.nmo
-        with h5py.File(str(self.h5_file), 'r') as f:
-            eri_mo = da.from_array((f["eri_mo"]), chunks='auto')
-            eri_mo = eri_mo.reshape(nmo,nmo,nmo,nmo)
+        with h5py.File(str(self.h5_file), "r") as f:
+            eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
             int_ = eri_mo[:nocc, nocc:, :nocc, nocc:]
             S2 = da.einsum("japb,iapb->ij", int_ / e_iajb, k).compute()
             S2_ = da.einsum("dapn,pmda->mn", int_ / e_iajb, k).compute()
@@ -249,9 +251,9 @@ class HRPA:
         k_2 = self.k_2
         e_ia = lib.direct_sum("i-a->ia", mo_energy[occidx], mo_energy[viridx])
         k = k_1 + self.cte * k_2
-        with h5py.File(str(self.h5_file), 'r') as f:
-            eri_mo = da.from_array((f["eri_mo"]), chunks='auto')
-            eri_mo = eri_mo.reshape(nmo,nmo,nmo,nmo)
+        with h5py.File(str(self.h5_file), "r") as f:
+            eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
             int1 = eri_mo[:nocc, nocc:, nocc:, nocc:]
             int2 = eri_mo[:nocc, nocc:, :nocc, :nocc]
             kappa = da.einsum("pamb,paib->im", int1, k).compute()
@@ -323,10 +325,10 @@ class HRPA:
         if FC:
             h1 = self.rpa_obj.pert_fc(atmlst)[0]
             h1 = h1[nocc:, :nocc]
-            with h5py.File(str(self.h5_file), 'r') as f:
-                eri_mo = da.from_array((f["eri_mo"]), chunks='auto')
-                eri_mo = eri_mo.reshape(nmo,nmo,nmo,nmo)
-                int_e = eri_mo[:nocc, nocc:, :nocc, nocc:]/ e_iajb
+            with h5py.File(str(self.h5_file), "r") as f:
+                eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+                eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+                int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
                 pert = -da.einsum("dapb,md,iapb->im", int_e, h1, k).compute()
                 pert -= da.einsum("dapb,bi,pmda->im", int_e, h1, k).compute()
         if PSO:
@@ -336,24 +338,23 @@ class HRPA:
             h1 = da.from_array(
                 h1, chunks=(h1[0].shape[0], h1[1].shape[1] // 2, h1[2].shape[0] // 2)
             )
-            with h5py.File(str(self.h5_file), 'r') as f:
-                eri_mo = da.from_array((f["eri_mo"]), chunks='auto')
-                eri_mo = eri_mo.reshape(nmo,nmo,nmo,nmo)
-                int_e = eri_mo[:nocc, nocc:, :nocc, nocc:]/ e_iajb
+            with h5py.File(str(self.h5_file), "r") as f:
+                eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+                eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+                int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
                 pert = -da.einsum("dapb,xmd,iapb->xim", int_e, h1, k).compute()
                 pert -= da.einsum("dapb,xbi,pmda->xim", int_e, h1, k).compute()
         elif FCSD:
             h1 = self.rpa_obj.pert_fcsd(atmlst)
             h1 = np.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0, :, :, nocc:, :nocc]
             h1 = self.da_from_array(h1)
-            with h5py.File(str(self.h5_file), 'r') as f:
-                eri_mo = da.from_array((f["eri_mo"]), chunks='auto')
-                eri_mo = eri_mo.reshape(nmo,nmo,nmo,nmo)
-                int_e = eri_mo[:nocc, nocc:, :nocc, nocc:]/ e_iajb
+            with h5py.File(str(self.h5_file), "r") as f:
+                eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+                eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+                int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
                 pert = -da.einsum("dapb,wxmd,iapb->wxim", int_e, h1, k).compute()
                 pert -= da.einsum("dapb,wxbi,pmda->wxim", int_e, h1, k).compute()
         return pert
-
 
     def Communicator(self, triplet):
         """Function for obtain Communicator matrix, i.e., the principal propagator
@@ -439,23 +440,27 @@ class HRPA:
         nocc = self.nocc
         nvir = self.nvir
         if communicator is False:
-            a = np.diag(e_ia.ravel()).reshape(self.nocc, self.nvir, self.nocc, self.nvir)
+            a = np.diag(e_ia.ravel()).reshape(
+                self.nocc, self.nvir, self.nocc, self.nvir
+            )
         else:
             a = np.zeros((nocc, nvir, nocc, nvir))
         b = np.zeros_like(a)
-        with h5py.File(str(self.h5_file), 'r') as f:
-            eri_mo = da.from_array((f["eri_mo"]), chunks='auto')
-            eri_mo = eri_mo.reshape(nmo,nmo,nmo,nmo)
+        with h5py.File(str(self.h5_file), "r") as f:
+            eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
             a -= da.einsum(
                 "ijba->iajb", eri_mo[: self.nocc, : self.nocc, self.nocc :, self.nocc :]
             ).compute()
             if triplet:
                 b -= da.einsum(
-                    "jaib->iajb", eri_mo[: self.nocc, self.nocc :, : self.nocc, self.nocc :]
+                    "jaib->iajb",
+                    eri_mo[: self.nocc, self.nocc :, : self.nocc, self.nocc :],
                 ).compute()
             elif not triplet:
                 b += da.einsum(
-                    "jaib->iajb", eri_mo[: self.nocc, self.nocc :, : self.nocc, self.nocc :]
+                    "jaib->iajb",
+                    eri_mo[: self.nocc, self.nocc :, : self.nocc, self.nocc :],
                 ).compute()
         m = a + b
         m = m.reshape(self.nocc * self.nvir, self.nocc * self.nvir, order="C")
