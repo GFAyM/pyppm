@@ -98,7 +98,7 @@ class HRPA:
         )
         eri_mo = self.eri_mo()
         with h5py.File(str(self.h5_file), "r") as f:
-            eri_mo = da.from_array((f["eri_mo"]), chunks=(nmo // 4, nmo // 4))
+            eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
 
             int1 = da.einsum("aibj->iajb", eri_mo[nocc:, :nocc, nocc:, :nocc]).compute()
@@ -157,7 +157,7 @@ class HRPA:
         nmo = self.nmo
         k_da = self.da_from_array(k)
         with h5py.File(str(self.h5_file), "r") as f:
-            eri_mo = da.from_array((f["eri_mo"]), chunks=(nmo // 4, nmo // 4))
+            eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
             int_ = eri_mo[:nocc, nocc:, :nocc, nocc:]
             A1 = da.einsum("jadb,iadb->ij", int_, k_da).compute()
