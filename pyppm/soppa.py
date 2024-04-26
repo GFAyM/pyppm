@@ -318,6 +318,63 @@ class SOPPA:
             c_1 = np.einsum('nbma,nbmapg->nbmapg', cte*deltas, c_1)
             
         return c_1
+    
+    def c_1_singlet_for(self):
+        nmo = self.nmo
+        nocc = self.nocc
+        nvir = self.nvir
+        with h5py.File(str(self.h5_file), "r") as f:
+            #eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+            eri_mo = f["eri_mo"][:]
+            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+            int1_ = eri_mo[nocc:, :nocc, nocc:, nocc:]
+            int2_ = eri_mo[nocc:, nocc:, nocc:, :nocc]
+            int3_ = eri_mo[nocc:, :nocc, :nocc, :nocc]
+            int4_ = eri_mo[:nocc,:nocc,nocc:,:nocc]
+            c_1 = np.zeros((nvir,nocc,nvir,nocc,nvir,nocc))
+            for a in range(nocc):
+                for b in range(nocc):
+                    for g in range(nocc):
+                        for m in range(nvir):
+                            for n in range(nvir):
+                                for p in range(nvir):
+                                    if a == g:
+                                        if a==b and n==m:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(4))*(int1_[m,b,n,p] + int2_[m,p,n,b])
+                                        elif a==b and n!=m:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,b,n,p] + int2_[m,p,n,b])
+                                        elif a!=b and n==m:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,b,n,p] + int2_[m,p,n,b])
+                                        else:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(int1_[m,b,n,p] + int2_[m,p,n,b])
+                                    if b == g:
+                                        if a==b and n==m:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(4))*(int1_[m,a,n,p] + int2_[m,p,n,a])
+                                        elif a==b and n!=m:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,a,n,p] + int2_[m,p,n,a])
+                                        elif a!=b and n==m:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,a,n,p] + int2_[m,p,n,a])
+                                        else:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(int1_[m,a,n,p] + int2_[m,p,n,a])
+                                    if n == p:
+                                        if a==b and n==m:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(4))*(int3_[m,a,g,b] + int3_[m,b,g,a])
+                                        elif a==b and n!=m:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int3_[m,a,g,b] + int3_[m,b,g,a])
+                                        elif a!=b and n==m:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int3_[m,a,g,b] + int3_[m,b,g,a])
+                                        else:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(int3_[m,a,g,b] + int3_[m,b,g,a])
+                                    if m == p:
+                                        if a==b and n==m:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(4))*(int4_[g,b,n,a] + int4_[g,a,n,b])
+                                        elif a==b and n!=m:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int4_[g,b,n,a] + int4_[g,a,n,b])
+                                        elif a!=b and n==m:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int4_[g,b,n,a] + int4_[g,a,n,b])
+                                        else:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(int4_[g,b,n,a] + int4_[g,a,n,b])
+        return c_1
 
     def c_2_singlet(self):
         """C.16 equation, for obtain 2p-2h C(i=2) for singlet 
