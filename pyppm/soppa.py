@@ -426,18 +426,51 @@ class SOPPA:
             
         return c_1
 
+    def c_2_singlet_for(self):
+        nmo = self.nmo
+        nocc = self.nocc
+        nvir = self.nvir
+        with h5py.File(str(self.h5_file), "r") as f:
+            #eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+            eri_mo = f["eri_mo"][:]
+            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+            int1_ = eri_mo[nocc:, :nocc, nocc:, nocc:]
+            int2_ = eri_mo[nocc:, nocc:, nocc:, :nocc]
+            int3_ = eri_mo[nocc:, :nocc, :nocc, :nocc]
+            int4_ = eri_mo[:nocc,:nocc,nocc:,:nocc]
+            c_1 = np.zeros((nvir,nocc,nvir,nocc,nvir,nocc))
+            for a in range(nocc):
+                for b in range(nocc):
+                    for g in range(nocc):
+                        for m in range(nvir):
+                            for n in range(nvir):
+                                for p in range(nvir):
+                                    if a == g:
+                                        if a!=b and n!=m:
+                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int1_[m,b,n,p] - int2_[m,p,n,b])
+                                    if b == g:
+                                        if a!=b and n!=m:
+                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int2_[m,p,n,a] - int1_[m,a,n,p])
+                                    if n == p:
+                                        if a!=b and n!=m:
+                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int3_[m,a,g,b] - int3_[m,b,g,a])
+                                    if m == p:
+                                        if a!=b and n!=m:
+                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int4_[g,a,n,b] - int4_[g,b,n,a])
+        return c_1
+
     def da0(self):
         d = self.D()
         nocc = self.nocc
         nvir = self.nvir
-        c_1 = self.c_1_singlet()
+        c_1 = -self.c_1_singlet()
         c_1_t = np.einsum('nbmapg->pgnbma',c_1)        
         d = np.linalg.inv(d).reshape(nvir,nocc,nvir,nocc,nvir,nocc,nvir,nocc)
         da0 = np.einsum('pgnbma,nbmanbma,nbmaqd->pgqd',c_1_t, d, c_1)
         c_2 = self.c_2_singlet()
         c_2_t = np.einsum('nbmapg->pgnbma',c_2)
         da0 += np.einsum('pgnbma,nbmanbma,nbmaqd->pgqd',c_2_t, d, c_2)
-        return da0
+        return np.einsum('pgqd->gpdq',da0)
 
     @property
     def kappa_2(self):
@@ -560,67 +593,33 @@ class SOPPA:
                 pert -= da.einsum("dapb,wxbi,pmda->wxim", int_e, h1, k).compute()
         return pert
 
-    def Communicator(self, triplet):
-        """Function for obtain Communicator matrix, i.e., the principal propagator
-        inverse without the A(0) matrix
-
-        Args:
-            triplet (bool, optional): Triplet or singlet quantum communicator matrix.
-            Defaults to True.
-
-        Returns:
-            np.ndarray: Quantum communicator matrix
+    def correction_pert_3(self, atmlst, PSO=False):
+        """C.29 oddershede eq
         """
-        nvir = self.nvir
+        k_1 = self.k_1
+        print(k_1.shape)
         nocc = self.nocc
-        m = self.M_rpa(triplet=triplet, communicator=True)
-        m = m.reshape(nocc, nvir, nocc, nvir)
-        m += self.part_a2
-        m += self.S2
-        if triplet:
-            m -= self.part_b2(1)
-        else:
-            m += self.part_b2(0)
-        m = m.reshape(nocc * nvir, nocc * nvir)
-        return m
-
-    def pp_ssc_fc(self, atm1lst, atm2lst, elements=False):
-        """Method that obtain the linear response between two FC perturbation at
-        HRPA level of approach between two nuclei
-        Args:
-            atm1lst (list): First nuclei
-            atm2lst (list): Second nuclei
-
-        Returns:
-            real: FC response at HRPA level of approach
-        """
         nvir = self.nvir
-        nocc = self.nocc
-        h1 = self.rpa_obj.pert_fc(atm1lst)[0][:nocc, nocc:]
-        h2 = self.rpa_obj.pert_fc(atm2lst)[0][:nocc, nocc:]
+        ntot = nocc + nvir
+        if PSO:
+            h1 = self.rpa_obj.pert_pso(atmlst)
+            h1 = np.asarray(h1).reshape(1, 3, ntot, ntot)[0]
+            p_virt = h1[:, nocc:, nocc:]
+            pert = np.einsum("xnc,ambc->xmanb", p_virt, k_1).conj()
+            pert += np.einsum("xmc,anbc->xmanb", p_virt, k_1).conj()
+            p_occ = h1[:, :nocc, :nocc]
+            pert -= np.einsum('xpb,ampn->xmanb', p_occ, k_1).conj()
+            pert -= np.einsum('xpa,bmpn->xmanb', p_occ, k_1).conj()
+            delta1 = 1 + np.eye(nvir)
+            delta2 = 1 + np.eye(nocc)
+            deltas = np.einsum('nm,ab->manb', delta1, delta2)
+            #deltas = np.einsum('nbma->ambn', deltas)
+            #pert = np.einsum('xmanb,manb->xmanb', pert, 1/np.sqrt(deltas))
+            pert = pert[1]*(1/np.sqrt(deltas))
+#            p_occ = h1[:, :nocc, :nocc]
+        return pert           
 
-        m = self.M_rpa(triplet=True)
-        m = m.reshape(nocc, nvir, nocc, nvir)
-        m += self.part_a2
-        m -= self.part_b2(1)
-        m += self.S2
-        h1_corr1 = self.correction_pert(atmlst=atm1lst, FC=True)
-        h1_corr2 = self.correction_pert_2(atmlst=atm1lst, FC=True)
-        h2_corr1 = self.correction_pert(atmlst=atm2lst, FC=True)
-        h2_corr2 = self.correction_pert_2(atmlst=atm2lst, FC=True)
-        h1 = (2 * h1) + h1_corr1 + h1_corr2
-        h2 = (2 * h2) + h2_corr1 + h2_corr2
-        m = m.reshape(nocc * nvir, nocc * nvir)
-        if elements:
-            return h1, m, h2
-        else:
-            p = -np.linalg.inv(m)
-            p = p.reshape(nocc, nvir, nocc, nvir)
-            para = []
-            e = np.einsum("ia,iajb,jb", h1, p, h2)
-            para.append(e / 4)
-            fc = np.einsum(",k,xy->kxy", nist.ALPHA**4, para, np.eye(3))
-            return fc
+
 
     def M_rpa(self, triplet, communicator=False):
         """Principal Propagator Inverse at RPA, defined as M = A+B
@@ -669,6 +668,69 @@ class SOPPA:
         m = a + b
         m = m.reshape(self.nocc * self.nvir, self.nocc * self.nvir, order="C")
         return m
+    
+    def Communicator(self, triplet):
+        """Function for obtain Communicator matrix, i.e., the principal propagator
+        inverse without the A(0) matrix
+
+        Args:
+            triplet (bool, optional): Triplet or singlet quantum communicator matrix.
+            Defaults to True.
+
+        Returns:
+            np.ndarray: Quantum communicator matrix
+        """
+        nvir = self.nvir
+        nocc = self.nocc
+        m = self.M_rpa(triplet=triplet, communicator=True)
+        m = m.reshape(nocc, nvir, nocc, nvir)
+        m += self.part_a2
+        m += self.S2
+        if triplet:
+            m -= self.part_b2(1)
+        else:
+            m += self.part_b2(0)
+        m = m.reshape(nocc * nvir, nocc * nvir)
+        return m
+
+
+    def pp_ssc_fc(self, atm1lst, atm2lst, elements=False):
+        """Method that obtain the linear response between two FC perturbation at
+        HRPA level of approach between two nuclei
+        Args:
+            atm1lst (list): First nuclei
+            atm2lst (list): Second nuclei
+
+        Returns:
+            real: FC response at HRPA level of approach
+        """
+        nvir = self.nvir
+        nocc = self.nocc
+        h1 = self.rpa_obj.pert_fc(atm1lst)[0][:nocc, nocc:]
+        h2 = self.rpa_obj.pert_fc(atm2lst)[0][:nocc, nocc:]
+
+        m = self.M_rpa(triplet=True)
+        m = m.reshape(nocc, nvir, nocc, nvir)
+        m += self.part_a2
+        m -= self.part_b2(1)
+        m += self.S2
+        h1_corr1 = self.correction_pert(atmlst=atm1lst, FC=True)
+        h1_corr2 = self.correction_pert_2(atmlst=atm1lst, FC=True)
+        h2_corr1 = self.correction_pert(atmlst=atm2lst, FC=True)
+        h2_corr2 = self.correction_pert_2(atmlst=atm2lst, FC=True)
+        h1 = (2 * h1) + h1_corr1 + h1_corr2
+        h2 = (2 * h2) + h2_corr1 + h2_corr2
+        m = m.reshape(nocc * nvir, nocc * nvir)
+        if elements:
+            return h1, m, h2
+        else:
+            p = -np.linalg.inv(m)
+            p = p.reshape(nocc, nvir, nocc, nvir)
+            para = []
+            e = np.einsum("ia,iajb,jb", h1, p, h2)
+            para.append(e / 4)
+            fc = np.einsum(",k,xy->kxy", nist.ALPHA**4, para, np.eye(3))
+            return fc
 
     def pp_ssc_pso(self, atm1lst, atm2lst, elements=False):
         """Method that obtain the linear response between PSO perturbation at
@@ -702,6 +764,7 @@ class SOPPA:
         m += self.part_a2
         m += self.part_b2(0)
         m += self.S2
+        m += self.da0()
         m = m.reshape(nocc * nvir, nocc * nvir)
         if elements:
             return h1, m, h2
