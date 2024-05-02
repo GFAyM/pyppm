@@ -310,72 +310,10 @@ class SOPPA:
             int2 = np.einsum('ganb->nbag', int4_)
             c4 = int1 + int2
             c_1 += np.einsum('mp,nbag->nbmapg', mask_mp, c4)
-            # firt deltas
-            delta1 = 1 + np.eye(nocc)
-            delta2 = 1 + np.eye(nvir)
-            deltas = 1/np.sqrt(np.einsum('ab,nm->nbma', delta1, delta2))
-            cte = 1/np.sqrt(2)
-            c_1 = np.einsum('nbma,nbmapg->nbmapg', cte*deltas, c_1)
+            c_1 = c_1/np.sqrt(2)
             
         return c_1
     
-    def c_1_singlet_for(self):
-        nmo = self.nmo
-        nocc = self.nocc
-        nvir = self.nvir
-        with h5py.File(str(self.h5_file), "r") as f:
-            #eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
-            eri_mo = f["eri_mo"][:]
-            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-            int1_ = eri_mo[nocc:, :nocc, nocc:, nocc:]
-            int2_ = eri_mo[nocc:, nocc:, nocc:, :nocc]
-            int3_ = eri_mo[nocc:, :nocc, :nocc, :nocc]
-            int4_ = eri_mo[:nocc,:nocc,nocc:,:nocc]
-            c_1 = np.zeros((nvir,nocc,nvir,nocc,nvir,nocc))
-            for a in range(nocc):
-                for b in range(nocc):
-                    for g in range(nocc):
-                        for m in range(nvir):
-                            for n in range(nvir):
-                                for p in range(nvir):
-                                    if a == g:
-                                        if a==b and n==m:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(4))*(int1_[m,b,n,p] + int2_[m,p,n,b])
-                                        elif a==b and n!=m:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,b,n,p] + int2_[m,p,n,b])
-                                        elif a!=b and n==m:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,b,n,p] + int2_[m,p,n,b])
-                                        else:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(int1_[m,b,n,p] + int2_[m,p,n,b])
-                                    if b == g:
-                                        if a==b and n==m:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(4))*(int1_[m,a,n,p] + int2_[m,p,n,a])
-                                        elif a==b and n!=m:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,a,n,p] + int2_[m,p,n,a])
-                                        elif a!=b and n==m:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,a,n,p] + int2_[m,p,n,a])
-                                        else:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(int1_[m,a,n,p] + int2_[m,p,n,a])
-                                    if n == p:
-                                        if a==b and n==m:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(4))*(int3_[m,a,g,b] + int3_[m,b,g,a])
-                                        elif a==b and n!=m:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int3_[m,a,g,b] + int3_[m,b,g,a])
-                                        elif a!=b and n==m:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int3_[m,a,g,b] + int3_[m,b,g,a])
-                                        else:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(int3_[m,a,g,b] + int3_[m,b,g,a])
-                                    if m == p:
-                                        if a==b and n==m:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(4))*(int4_[g,b,n,a] + int4_[g,a,n,b])
-                                        elif a==b and n!=m:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int4_[g,b,n,a] + int4_[g,a,n,b])
-                                        elif a!=b and n==m:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int4_[g,b,n,a] + int4_[g,a,n,b])
-                                        else:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(int4_[g,b,n,a] + int4_[g,a,n,b])
-        return c_1
-
     def c_2_singlet(self):
         """C.16 equation, for obtain 2p-2h C(i=2) for singlet 
         properties
@@ -426,39 +364,6 @@ class SOPPA:
             
         return c_1
 
-    def c_2_singlet_for(self):
-        nmo = self.nmo
-        nocc = self.nocc
-        nvir = self.nvir
-        with h5py.File(str(self.h5_file), "r") as f:
-            #eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
-            eri_mo = f["eri_mo"][:]
-            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-            int1_ = eri_mo[nocc:, :nocc, nocc:, nocc:]
-            int2_ = eri_mo[nocc:, nocc:, nocc:, :nocc]
-            int3_ = eri_mo[nocc:, :nocc, :nocc, :nocc]
-            int4_ = eri_mo[:nocc,:nocc,nocc:,:nocc]
-            c_1 = np.zeros((nvir,nocc,nvir,nocc,nvir,nocc))
-            for a in range(nocc):
-                for b in range(nocc):
-                    for g in range(nocc):
-                        for m in range(nvir):
-                            for n in range(nvir):
-                                for p in range(nvir):
-                                    if a == g:
-                                        if a!=b and n!=m:
-                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int1_[m,b,n,p] - int2_[m,p,n,b])
-                                    if b == g:
-                                        if a!=b and n!=m:
-                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int2_[m,p,n,a] - int1_[m,a,n,p])
-                                    if n == p:
-                                        if a!=b and n!=m:
-                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int3_[m,a,g,b] - int3_[m,b,g,a])
-                                    if m == p:
-                                        if a!=b and n!=m:
-                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int4_[g,a,n,b] - int4_[g,b,n,a])
-        return c_1
-
     def da0(self):
         d = self.D()
         nocc = self.nocc
@@ -470,7 +375,8 @@ class SOPPA:
         c_2 = self.c_2_singlet()
         c_2_t = np.einsum('nbmapg->pgnbma',c_2)
         da0 += np.einsum('pgnbma,nbmanbma,nbmaqd->pgqd',c_2_t, d, c_2)
-        return np.einsum('pgqd->gpdq',da0)
+        da0 = np.einsum('pgqd->gpdq',da0/4)
+        return da0
 
     @property
     def kappa_2(self):
@@ -597,7 +503,6 @@ class SOPPA:
         """C.29 oddershede eq
         """
         k_1 = self.k_1
-        print(k_1.shape)
         nocc = self.nocc
         nvir = self.nvir
         ntot = nocc + nvir
@@ -605,19 +510,34 @@ class SOPPA:
             h1 = self.rpa_obj.pert_pso(atmlst)
             h1 = np.asarray(h1).reshape(1, 3, ntot, ntot)[0]
             p_virt = h1[:, nocc:, nocc:]
-            pert = np.einsum("xnc,ambc->xmanb", p_virt, k_1).conj()
-            pert += np.einsum("xmc,anbc->xmanb", p_virt, k_1).conj()
+            pert = np.einsum("xnc,ambc->xmanb", p_virt, k_1)
+            pert += np.einsum("xmc,anbc->xmanb", p_virt, k_1)
+            pert = pert.conj()
             p_occ = h1[:, :nocc, :nocc]
-            pert -= np.einsum('xpb,ampn->xmanb', p_occ, k_1).conj()
-            pert -= np.einsum('xpa,bmpn->xmanb', p_occ, k_1).conj()
-            delta1 = 1 + np.eye(nvir)
-            delta2 = 1 + np.eye(nocc)
-            deltas = np.einsum('nm,ab->manb', delta1, delta2)
-            #deltas = np.einsum('nbma->ambn', deltas)
-            #pert = np.einsum('xmanb,manb->xmanb', pert, 1/np.sqrt(deltas))
-            pert = pert[1]*(1/np.sqrt(deltas))
-#            p_occ = h1[:, :nocc, :nocc]
-        return pert           
+            pert_ = -np.einsum('xpb,ampn->xmanb', p_occ, k_1)
+            pert_ -= np.einsum('xpa,bmpn->xmanb', p_occ, k_1)
+            pert_ = pert_.conj()
+        return pert + pert_          
+
+    def correction_pert_4(self, atmlst, PSO=False):
+        """C.30 oddershede eq
+        """
+        k_2 = self.k_2
+        nocc = self.nocc
+        nvir = self.nvir
+        ntot = nocc + nvir
+        if PSO:
+            h1 = self.rpa_obj.pert_pso(atmlst)
+            h1 = np.asarray(h1).reshape(1, 3, ntot, ntot)[0]
+            p_virt = h1[:, nocc:, nocc:]
+            pert = np.einsum("xnc,ambc->xmanb", p_virt, k_2)
+            pert -= np.einsum("xmc,anbc->xmanb", p_virt, k_2)
+            pert = pert.conj()
+            p_occ = h1[:, :nocc, :nocc]
+            pert_ = np.einsum('xpb,ampn->xmanb', p_occ, k_2)
+            pert_ -= np.einsum('xpa,bmpn->xmanb', p_occ, k_2)
+            pert_ = pert_.conj()
+        return pert - pert_          
 
 
 
@@ -876,4 +796,93 @@ class SOPPA:
             h1, m, h2 = self.pp_ssc_fcsd(atm1lst, atom2lst, elements=True)
         return h1, m, h2
 
-    
+
+    def c_2_singlet_for(self):
+        nmo = self.nmo
+        nocc = self.nocc
+        nvir = self.nvir
+        with h5py.File(str(self.h5_file), "r") as f:
+            #eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+            eri_mo = f["eri_mo"][:]
+            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+            int1_ = eri_mo[nocc:, :nocc, nocc:, nocc:]
+            int2_ = eri_mo[nocc:, nocc:, nocc:, :nocc]
+            int3_ = eri_mo[nocc:, :nocc, :nocc, :nocc]
+            int4_ = eri_mo[:nocc,:nocc,nocc:,:nocc]
+            c_1 = np.zeros((nvir,nocc,nvir,nocc,nvir,nocc))
+            for a in range(nocc):
+                for b in range(nocc):
+                    for g in range(nocc):
+                        for m in range(nvir):
+                            for n in range(nvir):
+                                for p in range(nvir):
+                                    if a == g:
+                                        if a!=b and n!=m:
+                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int1_[m,b,n,p] - int2_[m,p,n,b])
+                                    if b == g:
+                                        if a!=b and n!=m:
+                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int2_[m,p,n,a] - int1_[m,a,n,p])
+                                    if n == p:
+                                        if a!=b and n!=m:
+                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int3_[m,a,g,b] - int3_[m,b,g,a])
+                                    if m == p:
+                                        if a!=b and n!=m:
+                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int4_[g,a,n,b] - int4_[g,b,n,a])
+        return c_1
+
+    def c_1_singlet_for(self):
+        nmo = self.nmo
+        nocc = self.nocc
+        nvir = self.nvir
+        with h5py.File(str(self.h5_file), "r") as f:
+            #eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+            eri_mo = f["eri_mo"][:]
+            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+            int1_ = eri_mo[nocc:, :nocc, nocc:, nocc:]
+            int2_ = eri_mo[nocc:, nocc:, nocc:, :nocc]
+            int3_ = eri_mo[nocc:, :nocc, :nocc, :nocc]
+            int4_ = eri_mo[:nocc,:nocc,nocc:,:nocc]
+            c_1 = np.zeros((nvir,nocc,nvir,nocc,nvir,nocc))
+            for a in range(nocc):
+                for b in range(nocc):
+                    for g in range(nocc):
+                        for m in range(nvir):
+                            for n in range(nvir):
+                                for p in range(nvir):
+                                    if a == g:
+                                        if a==b and n==m:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(4))*(int1_[m,b,n,p] + int2_[m,p,n,b])
+                                        elif a==b and n!=m:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,b,n,p] + int2_[m,p,n,b])
+                                        elif a!=b and n==m:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,b,n,p] + int2_[m,p,n,b])
+                                        else:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(int1_[m,b,n,p] + int2_[m,p,n,b])
+                                    if b == g:
+                                        if a==b and n==m:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(4))*(int1_[m,a,n,p] + int2_[m,p,n,a])
+                                        elif a==b and n!=m:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,a,n,p] + int2_[m,p,n,a])
+                                        elif a!=b and n==m:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,a,n,p] + int2_[m,p,n,a])
+                                        else:
+                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(int1_[m,a,n,p] + int2_[m,p,n,a])
+                                    if n == p:
+                                        if a==b and n==m:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(4))*(int3_[m,a,g,b] + int3_[m,b,g,a])
+                                        elif a==b and n!=m:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int3_[m,a,g,b] + int3_[m,b,g,a])
+                                        elif a!=b and n==m:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int3_[m,a,g,b] + int3_[m,b,g,a])
+                                        else:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(int3_[m,a,g,b] + int3_[m,b,g,a])
+                                    if m == p:
+                                        if a==b and n==m:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(4))*(int4_[g,b,n,a] + int4_[g,a,n,b])
+                                        elif a==b and n!=m:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int4_[g,b,n,a] + int4_[g,a,n,b])
+                                        elif a!=b and n==m:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int4_[g,b,n,a] + int4_[g,a,n,b])
+                                        else:
+                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(int4_[g,b,n,a] + int4_[g,a,n,b])
+        return c_1
