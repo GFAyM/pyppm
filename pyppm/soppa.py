@@ -368,7 +368,7 @@ class SOPPA:
         d = self.D()
         nocc = self.nocc
         nvir = self.nvir
-        c_1 = -self.c_1_singlet()
+        c_1 = self.c_1_singlet()
         c_1_t = np.einsum('nbmapg->pgnbma',c_1)        
         d = np.linalg.inv(d).reshape(nvir,nocc,nvir,nocc,nvir,nocc,nvir,nocc)
         da0 = np.einsum('pgnbma,nbmanbma,nbmaqd->pgqd',c_1_t, d, c_1)
@@ -499,7 +499,7 @@ class SOPPA:
                 pert -= da.einsum("dapb,wxbi,pmda->wxim", int_e, h1, k).compute()
         return pert
 
-    def correction_pert_3(self, atmlst, PSO=False):
+    def trans_mat_1(self, atmlst, PSO=True):
         """C.29 oddershede eq
         """
         k_1 = self.k_1
@@ -519,7 +519,7 @@ class SOPPA:
             pert_ = pert_.conj()
         return pert + pert_          
 
-    def correction_pert_4(self, atmlst, PSO=False):
+    def trans_mat_2(self, atmlst, PSO=True):
         """C.30 oddershede eq
         """
         k_2 = self.k_2
@@ -539,7 +539,34 @@ class SOPPA:
             pert_ = pert_.conj()
         return pert - pert_          
 
+    def correction_pert_3(self, atmlst):
+        "C.28 oddershede 1984 paper"
+        d = self.D()
+        nocc = self.nocc
+        nvir = self.nvir
+        d = np.linalg.inv(d).reshape(nvir,nocc,nvir,nocc,nvir,nocc,nvir,nocc)
+        c_1 = self.c_1_singlet()
+        c_2 = self.c_2_singlet()
+        trans_mat_1 = self.trans_mat_1(atmlst)
+        trans_mat_2 = self.trans_mat_2(atmlst)
+        t = np.einsum('xmanb,manbmanb,manbpg->xpg', trans_mat_1, d, c_1)
+        t += np.einsum('xmanb,manbmanb,manbpg->xpg', trans_mat_2, d, c_2)
+        t = np.einsum('xpg->xgp', t)
+        return t/4
 
+    def w4(self, atm1lst, atm2lst):
+        'eq 5.34 Oddershede'
+        d = self.D()
+        nocc = self.nocc
+        nvir = self.nvir
+        d = np.linalg.inv(d).reshape(nvir,nocc,nvir,nocc,nvir,nocc,nvir,nocc)
+        h1_trans_mat_1 = self.trans_mat_1(atm1lst)
+        h1_trans_mat_2 = self.trans_mat_2(atm1lst)
+        h2_trans_mat_1 = self.trans_mat_1(atm2lst)
+        h2_trans_mat_2 = self.trans_mat_2(atm2lst)
+        w4 = np.einsum('xmanb,manbmanb,ymanb->xy', h1_trans_mat_1, 2*d, h2_trans_mat_1)
+        w4 += np.einsum('xmanb,manbmanb,ymanb->xy', h1_trans_mat_2, 2*d, h2_trans_mat_2)
+        return w4/4
 
     def M_rpa(self, triplet, communicator=False):
         """Principal Propagator Inverse at RPA, defined as M = A+B
@@ -674,18 +701,21 @@ class SOPPA:
 
         h1_corr1 = self.correction_pert(atmlst=atm1lst, PSO=True)
         h1_corr2 = self.correction_pert_2(atmlst=atm1lst, PSO=True)
+        h1_corr3 = self.correction_pert_3(atmlst=atm1lst)
         h2_corr1 = self.correction_pert(atmlst=atm2lst, PSO=True)
         h2_corr2 = self.correction_pert_2(atmlst=atm2lst, PSO=True)
+        h2_corr3 = self.correction_pert_3(atmlst=atm2lst)
 
-        h1 = (-2 * h1) + h1_corr1 + h1_corr2
-        h2 = (-2 * h2) + h2_corr1 + h2_corr2
+        h1 = (-2 * h1) + h1_corr1 + h1_corr2 + h1_corr3
+        h2 = (-2 * h2) + h2_corr1 + h2_corr2 + h2_corr3
         m = self.M_rpa(triplet=False)
         m = m.reshape(nocc, nvir, nocc, nvir)
         m += self.part_a2
         m += self.part_b2(0)
         m += self.S2
-        m += self.da0()
+        m -= self.da0()
         m = m.reshape(nocc * nvir, nocc * nvir)
+        w4 = self.w4(atm1lst,atm2lst)        
         if elements:
             return h1, m, h2
         else:
@@ -693,6 +723,7 @@ class SOPPA:
             p = -p.reshape(nocc, nvir, nocc, nvir)
             para = []
             e = np.einsum("xia,iajb,yjb->xy", h1, p, h2)
+            e += w4
             para.append(e)
             pso = np.asarray(para) * nist.ALPHA**4
             return pso
@@ -766,9 +797,11 @@ class SOPPA:
         nuc_magneton = 0.5 * (nist.E_MASS / nist.PROTON_MASS)  # e*hbar/2m
         au2Hz = nist.HARTREE2J / nist.PLANCK
         unit = au2Hz * nuc_magneton**2
+        
         iso_ssc = unit * np.einsum("kii->k", prop) / 3
         gyro1 = [get_nuc_g_factor(self.mol.atom_symbol(atom1_[0]))]
         gyro2 = [get_nuc_g_factor(self.mol.atom_symbol(atom2_[0]))]
+        print(prop*unit*gyro1*gyro2, )
         jtensor = np.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)
         return jtensor[0]
 
