@@ -391,14 +391,11 @@ class SOPPA:
             mo_energy[occidx],
             mo_energy[occidx]
         )
-        #d = np.diag(e_aibj.ravel())
-        #nocc = self.nocc
-        #nvir = self.nvir
-        d = e_aibj.ravel()
+        d = np.diag(e_aibj.ravel())
 
         return d
 
-    @profile
+    #@profile
     def c_1_singlet(self):
         """C.16 equation, for obtain 2p-2h C(i=1) for singlet 
         properties
@@ -698,13 +695,32 @@ class SOPPA:
             da0 += np.einsum('pgnbma,nbmanbma,nbmaqd->pgqd', c3_t, d, c3)
         else:
             da0 = np.einsum('pgnbma,nbmacejk,cejkqd->pgqd',c_1_t, d, c_1)
-            c_2 = self.c_2_singlet()
-            c_2_t = np.einsum('nbmapg->pgnbma',c_2)#.conj()
-            da0 += np.einsum('pgnbma,nbmacejk,cejkqd->pgqd',c_2_t, d, c_2)
+            #c_2 = self.c_2_singlet()
+            #c_2_t = np.einsum('nbmapg->pgnbma',c_2)#.conj()
+            #da0 += np.einsum('pgnbma,nbmacejk,cejkqd->pgqd',c_2_t, d, c_2)
         
         da0 = np.einsum('pgqd->gpdq',da0/4)
         return da0
     
+    def da0_other(self):
+        mo_energy = self.mo_energy
+        occidx = self.occidx
+        viridx = self.viridx
+        
+        e_aibj = lib.direct_sum(
+            "n+m-a-b->nbma",
+            mo_energy[viridx],
+            mo_energy[viridx],
+            mo_energy[occidx],
+            mo_energy[occidx]
+        )
+        d = 1/e_aibj
+        c_1 = self.c_1_singlet()
+        c_1_t = np.einsum('nbmapg->pgnbma',c_1)#.conj()
+        da0 = np.einsum('pgnbma,nbma,nbmaqd->pgqd',c_1_t, d, c_1)
+        da0 = np.einsum('pgqd->gpdq',da0/4)
+        return da0
+
     @profile
     def da0_best(self):
         mo_energy = self.mo_energy
@@ -718,7 +734,7 @@ class SOPPA:
             mo_energy[occidx],
             mo_energy[occidx]
         )
-        e_aibj = 1/e_aibj
+        d = 1/e_aibj
         nocc = self.nocc
         nvir = self.nvir
         nmo = nocc + nvir
@@ -726,13 +742,6 @@ class SOPPA:
         with h5py.File(str(self.h5_file), "r") as f:
             eri_mo = da.from_array((f["eri_mo"]), chunks=
                                    (nvir,nvir))
-            d = da.diag(
-                e_aibj.ravel())
-            
-            d = d.reshape(
-                    nvir,nocc,nvir,nocc,nvir,nocc,nvir,nocc).rechunk((5,1,5,1,5,1,5,1))
-            #print(type(d))                  
-            
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo).rechunk((nmo//2,nmo//2,nmo//2,nmo//2))
             int1_ = eri_mo[nocc:, :nocc, nocc:, nocc:]
             int1 = da.einsum('mbnp->nbmp', int1_)
@@ -771,21 +780,19 @@ class SOPPA:
             c4_ = int2-int1
             c_2 += da.einsum('mp,nbag->nbmapg', mask_mp, c4_)            
 
-
-
             # firt deltas
             delta1 = 1 - da.eye(nvir)
             delta2 = 1 - da.eye(nocc)
-            deltas = da.einsum('nm,ab->nbma', delta1, delta2)
+            deltas = np.einsum('nm,ab->nbma', delta1, delta2)
             
-            #c_2 = da.einsum('nbma,nbmapg->nbmapg', cte*deltas, c_2).compute()
-            c_1_t = da.einsum('nbmapg->pgnbma',c_1).conj()
-            #c_2_t = da.einsum('nbmapg->pgnbma',c_2)
-            da0 = da.einsum('pgnbma,nbmacejk,cejkqd->pgqd',c_1_t, d, c_1)
+            c_2 = da.einsum('nbma,nbmapg->nbmapg', cte*deltas, c_2)
+            c_1_t = da.einsum('nbmapg->pgnbma',c_1)
+            c_2_t = da.einsum('nbmapg->pgnbma',c_2)
+            da0 = da.einsum('pgnbma,nbma,nbmaqd->pgqd',c_1_t, d, c_1)
             
-            #da0 += da.einsum('pgnbma,nbmacejk,cejkqd->pgqd',c_2_t, d, c_2)
-            #da0 = da.einsum('pgqd->gpdq',da0/4)
-            return da0.compute()# c_1.sum().compute(), c_2.sum().compute() # 
+            da0 += da.einsum('pgnbma,nbma,nbmaqd->pgqd',c_2_t, d, c_2)
+            da0 = da.einsum('pgqd->gpdq',da0/4)
+            return da0.compute() 
 
 
     def trans_mat_1(self, atmlst, FC=False, PSO=False):
