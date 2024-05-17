@@ -470,73 +470,110 @@ class SOPPA:
         nocc = self.nocc
         nvir = self.nvir
         nmo = nocc + nvir
-        cte = -np.sqrt(3)/np.sqrt(2)
+        
         with h5py.File(str(self.h5_file), "r") as f:
             eri_mo = da.from_array((f["eri_mo"]), chunks=
                                    #(nocc,nocc)
                                    "auto")
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
             int1_ = eri_mo[nocc:, :nocc, nocc:, nocc:]
-            int1 = da.einsum('mbnp->nbmp', int1_)
             int2_ = eri_mo[nocc:, nocc:, nocc:, :nocc]
-            int2 = da.einsum('mpnb->nbmp', int2_)
-            c1 = int1 + int2
-            mask_ag = np.eye(nocc)
-            c_1 = da.einsum('ag,nbmp->nbmapg', -mask_ag, c1)
-            c1 = int1-int2
-            c_2 = da.einsum('ag,nbmp->nbmapg', mask_ag, c1)
-            #second term eq. C.16
-            int1 = da.einsum('manp->nmap', int1_)
-            int2 = da.einsum('mpna->nmap', int2_)
-            c1 = int1 + int2
-            mask_bg = np.eye(nocc)
-            c_1 += da.einsum('bg,nmap->nbmapg', -mask_bg, c1)
-            c1 =  int2-int1
-            c_2 +=  da.einsum('bg,nmap->nbmapg', mask_bg, c1)
-            #third term eq C.16
-            mask_np = np.eye(nvir)
             int3_ = eri_mo[nocc:, :nocc, :nocc, :nocc]
-            int1 = da.einsum('magb->bmag', int3_)
-            int2 = da.einsum('mbga->bmag', int3_)
-            c1 = int1+int2
-            c_1 += da.einsum('np,bmag->nbmapg', mask_np, c1)
-            c1 = int1-int2
-            c_2 += da.einsum('np,bmag->nbmapg', mask_np, c1)
-            # fourth term eq C.16
-            mask_mp = np.eye(nvir)
             int4_ = eri_mo[:nocc,:nocc,nocc:,:nocc]
-            int1 = da.einsum('gbna->nbag', int4_)
-            int2 = da.einsum('ganb->nbag', int4_)
-            c1 = int1+int2
-            c_1 +=  da.einsum('mp,nbag->nbmapg', mask_mp, c1)
-            c_1 = -c_1/np.sqrt(2)
-            c1 = int2-int1
-            c_2 += da.einsum('mp,nbag->nbmapg', mask_mp, c1)
 
-            # firt deltas
-            delta1 = 1 - np.eye(nvir)
-            delta2 = 1 - np.eye(nocc)
-            deltas = da.einsum('nm,ab->nbma', delta1, delta2)
-            
-            c_2 = da.einsum('nbma,nbmapg->nbmapg', cte*deltas, c_2)
-            c_1_t = da.einsum('nbmapg->pgnbma',c_1)
-            c_2_t = da.einsum('nbmapg->pgnbma',c_2)
-            da0 = da.einsum('pgnbma,nbma,nbmaqd->pgqd',c_1_t, d, c_1)
-            
-            da0 += da.einsum('pgnbma,nbma,nbmaqd->pgqd',c_2_t, d, c_2)
-            da0 = da.einsum('pgqd->gpdq',da0/4)
-        
+            int_mbnp = da.einsum('mbnp->nbmp', int1_)
+            int_mpnb = da.einsum('mpnb->nbmp', int2_)
+            int_magb = da.einsum('magb->bmag', int3_)
+            int_mbga = da.einsum('mbga->bmag', int3_)
+
+            mask_bg = np.eye(nocc)
+            mask_np = np.eye(nvir)
+            mask_ag = np.eye(nocc)
+            mask_mp = np.eye(nvir)
+            #second term eq. C.16
+            int_manp = da.einsum('manp->nmap', int1_)
+            int_mpna = da.einsum('mpna->nmap', int2_)
+            int_gbna = da.einsum('gbna->nbag', int4_)
+            int_ganb = da.einsum('ganb->nbag', int4_)
+                
+            c2 = int_mbnp-int_mpnb
+            s_2 = da.einsum('ag,nbmp->nbmapg', mask_ag, c2)
+            c2 =  int_mpna-int_manp
+            s_2 +=  da.einsum('bg,nmap->nbmapg', mask_bg, c2)
+            c2 = int_magb-int_mbga
+            s_2 += da.einsum('np,bmag->nbmapg', mask_np, c2)
+            c2 = int_ganb-int_gbna
+            s_2 += da.einsum('mp,nbag->nbmapg', mask_mp, c2)
+            delta_vir = 1 - np.eye(nvir)
+            delta_occ = 1 - np.eye(nocc)
+            deltas = da.einsum('nm,ab->nbma', delta_vir, delta_occ)
+            cte = -np.sqrt(3)/np.sqrt(2)
+            s_2 = da.einsum('nbma,nbmapg->nbmapg', cte*deltas, s_2)
+            s_2_t = da.einsum('nbmapg->pgnbma', s_2)
+            c1 = int_mbnp + int_mpnb
+            s_1 = da.einsum('ag,nbmp->nbmapg', -mask_ag, c1)
+            c1 = int_manp + int_mpna
+            s_1 += da.einsum('bg,nmap->nbmapg', -mask_bg, c1)
+            c1 = int_magb+int_mbga
+            s_1 += da.einsum('np,bmag->nbmapg', mask_np, c1)
+            c1 = int_gbna + int_ganb
+            s_1 +=  da.einsum('mp,nbag->nbmapg', mask_mp, c1)
+            s_1 = -s_1/np.sqrt(2) #the minus sign cames from a Sauer paper, 1997.
+            s_1_t = da.einsum('nbmapg->pgnbma',s_1)
             if PSO:
+
+                da0 = da.einsum('pgnbma,nbma,nbmaqd->pgqd', s_1_t, d, s_1)
+                da0 += da.einsum('pgnbma,nbma,nbmaqd->pgqd', s_2_t, d, s_2)
+                da0 = da.einsum('pgqd->gpdq',da0/4)
                 tm_h1 = self.trans_mat_1(atm1lst, PSO=True)
                 tm_h2 = self.trans_mat_1(atm2lst, PSO=True)
                 tm2_h1 = self.trans_mat_2(atm1lst, PSO=True)
                 tm2_h2 = self.trans_mat_2(atm2lst, PSO=True)
-                t_1 = da.einsum('xmanb,manb,manbpg->xgp', tm_h1, d, c_1)
-                t_1 += da.einsum('xmanb,manb,manbpg->xgp', tm2_h1, d, c_2)
-                t_2 = da.einsum('xmanb,manb,manbpg->xgp', tm_h2, d, c_1)
-                t_2 += da.einsum('xmanb,manb,manbpg->xgp', tm2_h2, d, c_2)
+                t_1 = da.einsum('xmanb,manb,manbpg->xgp', tm_h1, d, s_1)
+                t_1 += da.einsum('xmanb,manb,manbpg->xgp', tm2_h1, d, s_2)
+                t_2 = da.einsum('xmanb,manb,manbpg->xgp', tm_h2, d, s_1)
+                t_2 += da.einsum('xmanb,manb,manbpg->xgp', tm2_h2, d, s_2)
                 w4 = da.einsum('xmanb,manb,ymanb->xy', tm_h2, d, tm_h1)
                 w4 += da.einsum('xmanb,manb,ymanb->xy', tm2_h1, d, tm2_h2)
+
+            if FC:
+                c2_t = int_mbnp + int_mpnb
+                c3_t = -int_mbnp + int_mpnb
+                t_2 = da.einsum('ag,nbmp->nbmapg', mask_ag, c2_t)
+                t_3 = da.einsum('ag,nbmp->nbmapg', mask_ag, c3_t)
+                c2_t =  int_mpna + int_manp
+                c3_t =  int_mpna - int_manp
+                t_2 += da.einsum('bg,nmap->nbmapg', -mask_bg, c2_t)
+                t_3 += da.einsum('bg,nmap->nbmapg', mask_bg, c2_t)
+                c2_t = int_magb - int_mbga
+                c3_t = int_magb + int_mbga
+                t_2 += da.einsum('np,bmag->nbmapg', mask_np, c2_t)
+                t_3 += da.einsum('np,bmag->nbmapg', mask_np, c3_t)
+                c2_t = -int_ganb + int_gbna
+                c2_t = int_ganb + int_gbna
+                t_2 += da.einsum('mp,nbag->nbmapg', mask_mp, c2_t)
+                t_3 += da.einsum('mp,nbag->nbmapg', -mask_mp, c2_t)
+                t_2 = da.einsum('ab,nbmapg->nbmapg', delta_occ, t_2)/np.sqrt(2)
+                t_3 = -da.einsum('ab,nbmapg->nbmapg', delta_vir, t_3)/np.sqrt(2)
+                t_1 = -s_2*np.sqrt(2)/np.sqrt(3)
+                t_1_t =  da.einsum('nbmapg->pgnbma', t_1)
+                t_2_t =  da.einsum('nbmapg->pgnbma', t_2)
+                t_3_t =  da.einsum('nbmapg->pgnbma', t_3)
+                da0 = da.einsum('pgnbma,nbmanbma,nbmaqd->pgqd', t_1_t, d, t_1)
+                da0 += da.einsum('pgnbma,nbmanbma,nbmaqd->pgqd', t_2_t, d, t_2)
+                da0 += da.einsum('pgnbma,nbmanbma,nbmaqd->pgqd', t_3_t, d, t_3)
+                da0 = da.einsum('pgqd->gpdq',da0/4)
+                tm1_h1 = self.trans_mat_1(atm1lst, FC=True)
+                tm1_h2 = self.trans_mat_1(atm2lst, FC=True)
+                tm2_h1 = self.trans_mat_2(atm1lst, FC=True)
+                tm2_h2 = self.trans_mat_2(atm2lst, FC=True)
+                t_1 = np.einsum('manb,manbmanb,manbpg->gp', tm1_h1, d, s_1)
+                t_1 += np.einsum('manb,manbmanb,manbpg->gp', tm2_h1, d, s_2)
+                t_2 = np.einsum('manb,manbmanb,manbpg->gp', tm1_h2, d, s_1)
+                t_2 += np.einsum('manb,manbmanb,manbpg->gp', tm2_h2, d, s_2)
+                w4 = da.einsum('manb,manb,manb->', tm1_h2, d, tm1_h1)
+                w4 += da.einsum('manb,manb,manb->', tm2_h1, d, tm2_h2)
+
             return da0.compute(), t_1.compute(), t_2.compute(), w4.compute()
 
     def da0(self, triplet):
@@ -640,29 +677,6 @@ class SOPPA:
 
         return t/4
 
-    def w4(self, atm1lst, atm2lst, FC=False, PSO=False):
-        'eq 5.34 Oddershede'
-        d = self.D()
-        nocc = self.nocc
-        nvir = self.nvir
-        d = np.linalg.inv(d).reshape(nvir,nocc,nvir,nocc,nvir,nocc,nvir,nocc)
-        if FC:
-            h1_trans_mat_1 = self.trans_mat_1(atm1lst, FC=True)
-            h1_trans_mat_2 = self.trans_mat_2(atm1lst, FC=True)
-            h2_trans_mat_1 = self.trans_mat_1(atm2lst, FC=True)
-            h2_trans_mat_2 = self.trans_mat_2(atm2lst, FC=True)
-            w4 = np.einsum('manb,manbcejk,cejk', h2_trans_mat_1, d, h1_trans_mat_1)
-            w4 += np.einsum('manb,manbcejk,cejk', h2_trans_mat_2, d, h1_trans_mat_2)
-            
-        elif PSO:
-            h1_trans_mat_1 = self.trans_mat_1(atm1lst, PSO=True)
-            h1_trans_mat_2 = self.trans_mat_2(atm1lst, PSO=True)
-            h2_trans_mat_1 = self.trans_mat_1(atm2lst, PSO=True)
-            h2_trans_mat_2 = self.trans_mat_2(atm2lst, PSO=True)
-            w4 = np.einsum('xmanb,manbcejk,ycejk->xy', h2_trans_mat_1, d, h1_trans_mat_1)
-            w4 += np.einsum('xmanb,manbcejk,ycejk->xy', h2_trans_mat_2, d, h1_trans_mat_2)
-        return 2*w4/4
-
     def pp_ssc_pso(self, atm1lst, atm2lst, elements=False):
         """Method that obtain the linear response between PSO perturbation at
         HRPA level of approach between two nuclei
@@ -685,10 +699,8 @@ class SOPPA:
 
         h1_corr1 = self.correction_pert(atmlst=atm1lst, PSO=True)
         h1_corr2 = self.correction_pert_2(atmlst=atm1lst, PSO=True)
-        #h1_corr3 = self.correction_pert_3(atmlst=atm1lst, PSO=True)
         h2_corr1 = self.correction_pert(atmlst=atm2lst, PSO=True)
         h2_corr2 = self.correction_pert_2(atmlst=atm2lst, PSO=True)
-        #h2_corr3 = self.correction_pert_3(atmlst=atm2lst, PSO=True)
         da0, h1_corr3, h2_corr3, w4 = self.da0(PSO=True, atm1lst=atm1lst, atm2lst=atm2lst)
 
 
@@ -936,110 +948,3 @@ class SOPPA:
             h1, m, h2 = self.pp_ssc_fcsd(atm1lst, atom2lst, elements=True)
         return h1, m, h2
 
-
-    def c_2_singlet_for(self):
-        nmo = self.nmo
-        nocc = self.nocc
-        nvir = self.nvir
-        with h5py.File(str(self.h5_file), "r") as f:
-            #eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
-            eri_mo = f["eri_mo"][:]
-            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-            int1_ = eri_mo[nocc:, :nocc, nocc:, nocc:]
-            int2_ = eri_mo[nocc:, nocc:, nocc:, :nocc]
-            int3_ = eri_mo[nocc:, :nocc, :nocc, :nocc]
-            int4_ = eri_mo[:nocc,:nocc,nocc:,:nocc]
-            c_1 = np.zeros((nvir,nocc,nvir,nocc,nvir,nocc))
-            for a in range(nocc):
-                for b in range(nocc):
-                    for g in range(nocc):
-                        for m in range(nvir):
-                            for n in range(nvir):
-                                for p in range(nvir):
-                                    if a == g:
-                                        if a!=b and n!=m:
-                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int1_[m,b,n,p] - int2_[m,p,n,b])
-                                    if b == g:
-                                        if a!=b and n!=m:
-                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int2_[m,p,n,a] - int1_[m,a,n,p])
-                                    if n == p:
-                                        if a!=b and n!=m:
-                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int3_[m,a,g,b] - int3_[m,b,g,a])
-                                    if m == p:
-                                        if a!=b and n!=m:
-                                            c_1[n,b,m,a,p,g] -= np.sqrt(3)/np.sqrt(2)*(int4_[g,a,n,b] - int4_[g,b,n,a])
-        return c_1
-
-    def c_1_singlet_for(self):
-        nmo = self.nmo
-        nocc = self.nocc
-        nvir = self.nvir
-        with h5py.File(str(self.h5_file), "r") as f:
-            #eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
-            eri_mo = f["eri_mo"][:]
-            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-            int1_ = eri_mo[nocc:, :nocc, nocc:, nocc:]
-            int2_ = eri_mo[nocc:, nocc:, nocc:, :nocc]
-            int3_ = eri_mo[nocc:, :nocc, :nocc, :nocc]
-            int4_ = eri_mo[:nocc,:nocc,nocc:,:nocc]
-            c_1 = np.zeros((nvir,nocc,nvir,nocc,nvir,nocc))
-            for a in range(nocc):
-                for b in range(nocc):
-                    for g in range(nocc):
-                        for m in range(nvir):
-                            for n in range(nvir):
-                                for p in range(nvir):
-                                    if a == g:
-                                        if a==b and n==m:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(4))*(int1_[m,b,n,p] + int2_[m,p,n,b])
-                                        elif a==b and n!=m:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,b,n,p] + int2_[m,p,n,b])
-                                        elif a!=b and n==m:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,b,n,p] + int2_[m,p,n,b])
-                                        else:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(int1_[m,b,n,p] + int2_[m,p,n,b])
-                                    if b == g:
-                                        if a==b and n==m:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(4))*(int1_[m,a,n,p] + int2_[m,p,n,a])
-                                        elif a==b and n!=m:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,a,n,p] + int2_[m,p,n,a])
-                                        elif a!=b and n==m:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(1/np.sqrt(2))*(int1_[m,a,n,p] + int2_[m,p,n,a])
-                                        else:
-                                            c_1[n,b,m,a,p,g] -= 1/np.sqrt(2)*(int1_[m,a,n,p] + int2_[m,p,n,a])
-                                    if n == p:
-                                        if a==b and n==m:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(4))*(int3_[m,a,g,b] + int3_[m,b,g,a])
-                                        elif a==b and n!=m:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int3_[m,a,g,b] + int3_[m,b,g,a])
-                                        elif a!=b and n==m:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int3_[m,a,g,b] + int3_[m,b,g,a])
-                                        else:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(int3_[m,a,g,b] + int3_[m,b,g,a])
-                                    if m == p:
-                                        if a==b and n==m:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(4))*(int4_[g,b,n,a] + int4_[g,a,n,b])
-                                        elif a==b and n!=m:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int4_[g,b,n,a] + int4_[g,a,n,b])
-                                        elif a!=b and n==m:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(1/np.sqrt(2))*(int4_[g,b,n,a] + int4_[g,a,n,b])
-                                        else:
-                                            c_1[n,b,m,a,p,g] += 1/np.sqrt(2)*(int4_[g,b,n,a] + int4_[g,a,n,b])
-        return c_1
-
-    def D_for(self):
-        'same as D but with for loops'
-        mo_energy = self.mo_energy
-        occidx = self.occidx
-        viridx = self.viridx
-        nocc = self.nocc
-        nvir = self.nvir
-        d = np.zeros((nvir,nocc,nvir,nocc,nvir,nocc,nvir,nocc))
-        for a in range(nocc):
-                for b in range(nocc):
-                    for m in range(nvir):
-                        for n in range(nvir):
-                            d[n,b,m,a,n,b,m,a] += mo_energy[viridx][n] + mo_energy[viridx][m] - mo_energy[occidx][a] - mo_energy[occidx][b]
-
-        d = d.reshape((nvir*nocc*nvir*nocc,nvir*nocc*nvir*nocc))
-        return d
