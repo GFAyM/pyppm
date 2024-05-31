@@ -9,6 +9,7 @@ import dask
 from dask import delayed
 import h5py
 from memory_profiler import profile
+import zarr
 #from line_profiler import profile
 
 @attr.s
@@ -359,7 +360,7 @@ class SOPPA:
                 return pert.compute()
 
         
-    @profile
+    #@profile
     def da0(self, PSO=False, FC=False, FCSD=False, atm1lst=None, atm2lst=None):
         mo_energy = self.mo_energy
         occidx = self.occidx
@@ -379,13 +380,19 @@ class SOPPA:
         
         with h5py.File(str(self.h5_file), "r") as f:
             eri_mo = da.from_array((f["eri_mo"]), chunks=
-                                   #(nmo*2,nmo*2))
-                                   "auto")
+                                   (nmo,nmo))
+                                   #"auto")
+            print(eri_mo)
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)#.re
+            print(eri_mo)
             int1_ = eri_mo[nocc:, :nocc, nocc:, nocc:]
+            print(int1_)
             int2_ = eri_mo[nocc:, nocc:, nocc:, :nocc]
+            print(int2_)
             int3_ = eri_mo[nocc:, :nocc, :nocc, :nocc]
+            print(int3_)
             int4_ = eri_mo[:nocc,:nocc,nocc:,:nocc]
+            print(int4_)
             int_mbnp = np.einsum('mbnp->nbmp', int1_)
             int_mpnb = np.einsum('mpnb->nbmp', int2_)
             int_magb = np.einsum('magb->bmag', int3_)
@@ -428,19 +435,19 @@ class SOPPA:
             s_1 = -s_1/np.sqrt(2) #the minus sign cames from a Sauer paper, 1997.
             s_1_t = da.einsum('nbmapg->pgnbma', s_1)
             if PSO:
-                da0 = da.einsum('pgnbma,nbma,nbmaqd->pgqd', s_1_t, d, s_1).compute()
-                da0 += da.einsum('pgnbma,nbma,nbmaqd->pgqd', s_2_t, d, s_2).compute()
+                da0 = da.einsum('pgnbma,nbma,nbmaqd->pgqd', s_1_t, d, s_1)
+                da0 += da.einsum('pgnbma,nbma,nbmaqd->pgqd', s_2_t, d, s_2)
                 da0 = np.einsum('pgqd->gpdq',da0/4)
                 tm_h1 = self.trans_mat_1(atm1lst, PSO=True)
                 tm_h2 = self.trans_mat_1(atm2lst, PSO=True)
                 tm2_h1 = self.trans_mat_2(atm1lst, PSO=True)
                 tm2_h2 = self.trans_mat_2(atm2lst, PSO=True)
-                t_1 = da.einsum('xmanb,manb,manbpg->xgp', tm_h1, d, s_1).compute()
-                t_1 += da.einsum('xmanb,manb,manbpg->xgp', tm2_h1, d, s_2).compute()
-                t_2 = da.einsum('xmanb,manb,manbpg->xgp', tm_h2, d, s_1).compute()
-                t_2 += da.einsum('xmanb,manb,manbpg->xgp', tm2_h2, d, s_2).compute()
-                w4 = da.einsum('xmanb,manb,ymanb->xy', tm_h2, d, tm_h1).compute()
-                w4 += da.einsum('xmanb,manb,ymanb->xy', tm2_h1, d, tm2_h2).compute()
+                t_1 = da.einsum('xmanb,manb,manbpg->xgp', tm_h1, d, s_1)
+                t_1 += da.einsum('xmanb,manb,manbpg->xgp', tm2_h1, d, s_2)
+                t_2 = da.einsum('xmanb,manb,manbpg->xgp', tm_h2, d, s_1)
+                t_2 += da.einsum('xmanb,manb,manbpg->xgp', tm2_h2, d, s_2)
+                w4 = da.einsum('xmanb,manb,ymanb->xy', tm_h2, d, tm_h1)
+                w4 += da.einsum('xmanb,manb,ymanb->xy', tm2_h1, d, tm2_h2)
 
             elif FC:
                 c2_t_1 = int_mbnp + int_mpnb
@@ -483,8 +490,8 @@ class SOPPA:
 
             return da0.compute(), t_1.compute(), t_2.compute(), w4.compute()
 
-    @profile
-    def da0_smaller(self, PSO=False, FC=False, FCSD=False, atm1lst=None, atm2lst=None):
+    #@profile
+    def c(self):
         mo_energy = self.mo_energy
         occidx = self.occidx
         viridx = self.viridx
@@ -503,45 +510,141 @@ class SOPPA:
         
         with h5py.File(str(self.h5_file), "r") as f:
             eri_mo = da.from_array((f["eri_mo"]), chunks=
-                                   #(nmo*2,nmo*2))
-                                   "auto")
-            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)#.re
-            print('running A')
-            int1_ = eri_mo[nocc:, :nocc, nocc:, nocc:]
-            print('running B')
-            int2_ = eri_mo[nocc:, nocc:, nocc:, :nocc]
-            print('running C')
-            int_mbnp = np.einsum('mbnp->nbmp', int1_)
-            int_mpnb = np.einsum('mpnb->nbmp', int2_)
-            int_manp = np.einsum('manp->nmap', int1_)
-            int_mpna = np.einsum('mpna->nmap', int2_)
-            print('running D')
-            mask_bg = np.eye(nocc)
-            mask_np = np.eye(nvir)
-            mask_ag = np.eye(nocc)
-            mask_mp = np.eye(nvir)
-            delta_vir = 1 - np.eye(nvir)
-            delta_occ = 1 - np.eye(nocc)
-            #print(delta_occ)
-            deltas = np.einsum('nm,ab->nbma', delta_vir, delta_occ)
-                
+                                    #(nmo**2//4,nmo**2//4))
+                                    "auto")
+            n = 8
+            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo).rechunk(nmo//n, nmo//n, nmo//n, nmo//n)
+            int1_ = eri_mo[nocc:, :nocc, nocc:, nocc:].rechunk(nvir//n, nocc, nvir//n, nvir//n)
+            int2_ = eri_mo[nocc:, nocc:, nocc:, :nocc].rechunk(nvir//n, nvir//n, nvir//n, nocc)
+            int3_ = eri_mo[nocc:, :nocc, :nocc, :nocc].rechunk(nvir//n, nocc, nocc, nvir//n)
+            int4_ = eri_mo[:nocc,:nocc,nocc:,:nocc].rechunk(nocc, nvir//n, nvir//n, nocc )
+            int_mbnp = da.einsum('mbnp->nbmp', int1_)#.rechunk(nmo//4, nmo//4, nmo//4, nmo//4)
+            int_mpnb = da.einsum('mpnb->nbmp', int2_)#.rechunk(nmo//4, nmo//4, nmo//4, nmo//4)
+            int_magb = da.einsum('magb->bmag', int3_)#.rechunk(nmo//4, nmo//4, nmo//4, nmo//4)
+            int_mbga = da.einsum('mbga->bmag', int3_)#.rechunk(nmo//4, nmo//4, nmo//4, nmo//4)
+            int_manp = da.einsum('manp->nmap', int1_)#.rechunk(nmo//4, nmo//4, nmo//4, nmo//4)
+            int_mpna = da.einsum('mpna->nmap', int2_)#.rechunk(nmo//4, nmo//4, nmo//4, nmo//4)
+            int_gbna = da.einsum('gbna->nbag', int4_)#.rechunk(nmo//4, nmo//4, nmo//4, nmo//4)
+            int_ganb = da.einsum('ganb->nbag', int4_)#.rechunk(nmo//4, nmo//4, nmo//4, nmo//4)
+
+            mask_bg = da.eye(nocc).rechunk(nocc, nocc)
+            mask_np = da.eye(nvir).rechunk(nvir//n, nvir//n)
+            mask_ag = da.eye(nocc).rechunk(nocc, nocc)
+            mask_mp = da.eye(nvir).rechunk(nvir//n, nvir//n)
+            delta_vir = 1 - da.eye(nvir)
+            delta_occ = 1 - da.eye(nocc)
+            deltas = da.einsum('nm,ab->nbma', delta_vir, delta_occ)
             c2_1 = int_mbnp-int_mpnb
-            s_2 = da.einsum('ag,nbmp->nbmapg', mask_ag, c2_1)#.compute()
+            s_2 = da.einsum('ag,nbmp->nbmapg', mask_ag, c2_1)
             c2_2 =  int_mpna-int_manp
-            s_2 +=  da.einsum('bg,nmap->nbmapg', mask_bg, c2_2)#.compute()
-            #c2_3 = int_magb-int_mbga
-            #s_2 += da.einsum('np,bmag->nbmapg', mask_np, c2_3)
-            #c2_4 = int_ganb-int_gbna
-            #s_2 += da.einsum('mp,nbag->nbmapg', mask_mp, c2_4)
+            s_2 +=  da.einsum('bg,nmap->nbmapg', mask_bg, c2_2)
+            c2_3 = int_magb-int_mbga
+            s_2 += da.einsum('np,bmag->nbmapg', mask_np, c2_3)
+            c2_4 = int_ganb-int_gbna
+            s_2 += da.einsum('mp,nbag->nbmapg', mask_mp, c2_4)
 
             cte = -np.sqrt(3)/np.sqrt(2)
             s_2 = da.einsum('nbma,nbmapg->nbmapg', deltas, cte*s_2)
-            s_2_t = da.einsum('nbmapg->pgnbma', s_2)
-            
-            if PSO:
-                da0 = da.einsum('pgnbma,nbma,nbmaqd->pgqd', s_2_t, d, s_2).compute()
+            c1_1 = int_mbnp + int_mpnb
+            s_1 = da.einsum('ag,nbmp->nbmapg', -mask_ag, c1_1)
+            c1_2 = int_manp + int_mpna
+            s_1 += da.einsum('bg,nmap->nbmapg', -mask_bg, c1_2)
+            c1_3 = int_magb+int_mbga
+            s_1 += da.einsum('np,bmag->nbmapg', mask_np, c1_3)
+            c1_4 = int_gbna + int_ganb
+            s_1 +=  da.einsum('mp,nbag->nbmapg', mask_mp, c1_4)
+            s_1 = -s_1/np.sqrt(2) #the minus sign cames from a Sauer paper, 1997.
+            c2_t_1 = int_mbnp + int_mpnb
+            c3_t_1 = -int_mbnp + int_mpnb
+            t_2 = da.einsum('ag,nbmp->nbmapg', mask_ag, c2_t_1)
+            t_3 = da.einsum('ag,nbmp->nbmapg', mask_ag, c3_t_1)
+            c2_t_2 =  int_mpna + int_manp
+            c3_t_2 =  int_mpna - int_manp
+            t_2 += da.einsum('bg,nmap->nbmapg', -mask_bg, c2_t_2)
+            t_3 += da.einsum('bg,nmap->nbmapg', mask_bg, c3_t_2)
+            c2_t_3 = int_magb - int_mbga
+            c3_t_3 = int_magb + int_mbga
+            t_2 += da.einsum('np,bmag->nbmapg', mask_np, c2_t_3)
+            t_3 += da.einsum('np,bmag->nbmapg', mask_np, c3_t_3)
+            c2_t_4 = -int_ganb + int_gbna
+            c3_t_4 = int_ganb + int_gbna
+            t_2 += da.einsum('mp,nbag->nbmapg', mask_mp, c2_t_4)
+            t_3 += da.einsum('mp,nbag->nbmapg', -mask_mp, c3_t_4)
+            t_2 = da.einsum('ab,nbmapg->nbmapg', delta_occ, t_2)/np.sqrt(2)
+            t_3 = da.einsum('nm,nbmapg->nbmapg', delta_vir, -t_3)/np.sqrt(2)
 
-            return da0#.compute()
+            s_1_t = np.einsum('nbmapg->pgnbma', s_1)
+            print(s_1)
+            print(s_1_t)
+            s_2_t = np.einsum('nbmapg->pgnbma', s_2)
+            da0 = np.einsum('pgnbma,nbma,nbmaqd->pgqd', s_1_t, d, s_1)
+            da0 += np.einsum('pgnbma,nbma,nbmaqd->pgqd', s_2_t, d, s_2)
+            da0 = np.einsum('pgqd->gpdq',da0/4)
+            return s_1.compute()# da0.compute()
+            
+
+    @profile
+    def da0_smaller(self, PSO=False, FC=False, FCSD=False, atm1lst=None, atm2lst=None):
+
+        nocc = self.nocc
+        nvir = self.nvir
+        nmo = nocc + nvir
+        
+        with h5py.File(str(self.h5_file), "r") as f:
+            eri_mo = da.from_array((f["eri_mo"]), chunks=
+                                   #(nmo*4,nmo*4))
+                                   "auto")
+            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)#.rechunk(nocc,nocc,nocc,nocc)
+            int1_ = eri_mo[nocc:, :nocc, nocc:, nocc:]#.compute()
+            print('donte int1')
+            int2_ = eri_mo[nocc:, nocc:, nocc:, :nocc]#.compute()
+            print('donte int2')
+            int3_ = eri_mo[nocc:, :nocc, :nocc, :nocc]#.compute()
+            print('donte int3')
+            int4_ = eri_mo[:nocc,:nocc,nocc:,:nocc]#.compute()
+            print('donte int4')
+            int_mbnp = np.einsum('mbnp->nbmp', int1_)#.compute()
+            int_mpnb = np.einsum('mpnb->nbmp', int2_)#.compute()
+            int_magb = np.einsum('magb->bmag', int3_)#.compute()
+            int_mbga = np.einsum('mbga->bmag', int3_)#.compute()
+            int_manp = np.einsum('manp->nmap', int1_)#.compute()
+            int_mpna = np.einsum('mpna->nmap', int2_)#.compute()
+            int_gbna = np.einsum('gbna->nbag', int4_)#.compute()
+            int_ganb = np.einsum('ganb->nbag', int4_)#compute()
+            c2_1 = (int_mbnp-int_mpnb).compute()
+            c2_2 =  (int_mpna-int_manp).compute()
+            c2_3 = (int_magb-int_mbga).compute()
+            c2_4 = (int_ganb-int_gbna).compute()
+            print('done int all inte')
+        mask_bg = np.eye(nocc)
+        mask_np = np.eye(nvir)
+        mask_ag = np.eye(nocc)
+        mask_mp = np.eye(nvir)
+        delta_vir = 1 - np.eye(nvir)
+        delta_occ = 1 - np.eye(nocc)
+        deltas = np.einsum('nm,ab->nbma', delta_vir, delta_occ)
+        c2_1 = da.from_array(c2_1).rechunk('auto')
+        c2_2 = da.from_array(c2_2).rechunk('auto')
+        c2_3 = da.from_array(c2_3).rechunk('auto')
+        c2_4 = da.from_array(c2_4).rechunk('auto')
+        print(nocc,nvir)
+        print(c2_1.shape)
+        print(c2_2.shape)
+        print(c2_3.shape)
+        print(c2_4.shape)
+
+        s_2 = da.einsum('ag,nbmp->nbmapg', mask_ag, c2_1)#.compute()
+        
+        s_2 +=  da.einsum('bg,nmap->nbmapg', mask_bg, c2_2)#.compute()
+        
+        s_2 += da.einsum('np,bmag->nbmapg', mask_np, c2_3)#.compute()
+        
+        s_2 += da.einsum('mp,nbag->nbmapg', mask_mp, c2_4)#.compute()
+
+        cte = -np.sqrt(3)/np.sqrt(2)
+        s_2 = da.einsum('nbma,nbmapg->', deltas, cte*s_2)#.compute()
+
+        return s_2.compute()
 
     def trans_mat_1(self, atmlst, FC=False, PSO=False):
         """C.29 oddershede eq

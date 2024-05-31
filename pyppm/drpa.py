@@ -8,8 +8,11 @@ from pyscf.data import nist
 from pyscf.data.gyro import get_nuc_g_factor
 import scipy
 import h5py
-
-
+import dask.array as da
+from memory_profiler import profile
+import os
+import numpy as np
+from dask.distributed import Client
 @attr.s
 class DRPA:
     """This class Calculates the J-coupling between two nuclei in the 4-component
@@ -89,9 +92,14 @@ class DRPA:
         c1 = 0.5 / lib.param.LIGHT_SPEED
         moL = numpy.asarray(mo[:n2c, :], order="F")
         moS = numpy.asarray(mo[n2c:, :], order="F") * c1
-        erifile = "dhf_ovov.h5"
+        orboL = moL[:, : self.nocc]
+        orboS = moS[:, : self.nocc]
+        scratch_dir = os.getenv('SCRATCH')  # Obtener la ruta de la carpeta de scratch
+        erifile = os.path.join(scratch_dir, "dhf_ovov.h5")  # Unir la ruta de la carpeta de scratch con el nombre del archivo
+        self.erifile = erifile
+        #erifile = "dhf_ovov.h5"
         dataname = "dhf_ovov"
-
+        print('running eri_mo2')
         def run(mos, intor):
             # Ajustar el valor de blksize: El valor de blksize controla cuántos 
             # elementos
@@ -100,20 +108,27 @@ class DRPA:
             # Un valor más pequeño reducirá la huella de memoria, pero también puede 
             # aumentar el tiempo de cálculo debido a más escrituras en disco
             r_outcore.general(mol, mos, erifile, dataname="tmp", intor=intor)
-            blksize = 400
+            blksize = 200
             nij = mos[0].shape[1] * mos[1].shape[1]
             with h5py.File(erifile, "a") as feri:
                 for i0, i1 in lib.prange(0, nij, blksize):
                     buf = feri[dataname][i0:i1]
                     buf += feri["tmp"][i0:i1]
                     feri[dataname][i0:i1] = buf
+                if 'tmp' in feri:
+                    del feri['tmp']
 
         r_outcore.general(
-            mol, (moL, moL, moL, moL), erifile, dataname=dataname, intor="int2e_spinor"
+            mol, (orboL, moL, moL, moL), erifile, dataname=dataname, intor="int2e_spinor"
         )
-        run((moS, moS, moS, moS), "int2e_spsp1spsp2_spinor")
-        run((moS, moS, moL, moL), "int2e_spsp1_spinor")
-        run((moL, moL, moS, moS), "int2e_spsp2_spinor")
+        print('run LLLL')
+        run((orboS, moS, moS, moS), "int2e_spsp1spsp2_spinor")
+        print('run SSSS')
+        run((orboS, moS, moL, moL), "int2e_spsp1_spinor")
+        print('run SSLL')
+
+        run((orboL, moL, moS, moS), "int2e_spsp2_spinor")
+        print('run LLSS')
 
     def M(self, eri_m):
         """
@@ -144,20 +159,67 @@ class DRPA:
             b -= lib.einsum("jaib->iajb", eri_mo[:nocc, nocc:, :nocc, nocc:])
 
         else:
-            print("r_outcore")
             self.eri_mo_2
+            print("r_outcore")
+            
             with h5py.File("dhf_ovov.h5", "r") as h5file:
                 eri_mo = (
                     h5file["dhf_ovov"][()]
-                    .reshape(nmo, nmo, nmo, nmo)[:nocc, :, :, :]
+                    .reshape(nocc, nmo, nmo, nmo)[:, :, :, :]
                     .conj()
                 )
-
-                a += lib.einsum("iabj->iajb", eri_mo[:, nocc:, nocc:, :nocc])
-                a -= lib.einsum("ijba->iajb", eri_mo[:, :nocc, nocc:, nocc:])
-                b += lib.einsum("iajb->iajb", eri_mo[:, nocc:, :nocc, nocc:])
-                b -= lib.einsum("jaib->iajb", eri_mo[:, nocc:, :nocc, nocc:])
+                a += eri_mo[:, nocc:, nocc:, :nocc].transpose(0, 1, 3, 2)
+                #a += lib.einsum("iabj->iajb", eri_mo[:, nocc:, nocc:, :nocc])
+                a -= eri_mo[:, :nocc, nocc:, nocc:].transpose(0, 3, 1, 2)
+                #a -= lib.einsum("ijba->iajb", eri_mo[:, :nocc, nocc:, nocc:])
+                b += eri_mo[:, nocc:, :nocc, nocc:]
+                #b += lib.einsum("iajb->iajb", eri_mo[:, nocc:, :nocc, nocc:])
+                b -= eri_mo[:, nocc:, :nocc, nocc:].transpose(2, 1, 0, 3)
+                #b -= lib.einsum("jaib->iajb", eri_mo[:, nocc:, :nocc, nocc:])
                 eri_mo = 0
+        a = a + numpy.diag(e_ia.ravel()).reshape(nocc, nvir, nocc, nvir)
+        a = a.reshape(nocc * nvir, nocc * nvir, order="C")
+        b = b.reshape(nocc * nvir, nocc * nvir, order="C")
+        m1 = numpy.concatenate((a, b), axis=1)
+        m2 = numpy.concatenate((b.conj(), a.conj()), axis=1)
+        m = numpy.concatenate((m1, m2), axis=0)
+        return m
+
+    
+    def M_(self):
+        """
+        A and B matrices for PP invers¿
+        A[i,a,j,b] = delta_{ab} delta_{ij}(E_a - E_i) + (ia||bj)
+        B[i,a,j,b] = (ia||jb)
+        This matrices was extracted from the tdscf pyscf module.
+
+        Returns:
+
+            Numpy.array: Inverse of Principal Propagator
+        """
+        mo_energy = self.mf.mo_energy
+        nocc = self.nocc
+        nvir = self.nvir
+        viridx = self.viridx
+        occidx = self.occidx
+        nmo = self.nmo
+        e_ia = lib.direct_sum("a-i->ia", mo_energy[viridx], mo_energy[occidx])
+        a = numpy.zeros((nocc, nvir, nocc, nvir), dtype="complex")
+        b = numpy.zeros_like(a)
+        self.eri_mo_2
+        print("r_outcore")
+        with h5py.File(str(self.erifile), "r") as f:
+            eri_mo = da.from_array((f["dhf_ovov"]), chunks=
+                                   (nmo,nmo))
+            eri_mo = eri_mo.reshape(nocc, nmo, nmo, nmo).conj()
+            a = a + eri_mo[:, nocc:, nocc:, :nocc].transpose(0, 1, 3, 2)
+            a = a - eri_mo[:, :nocc, nocc:, nocc:].transpose(0, 3, 1, 2)
+            b = b + eri_mo[:, nocc:, :nocc, nocc:]
+            b = b - eri_mo[:, nocc:, :nocc, nocc:].transpose(2, 1, 0, 3)
+            a = a.compute()
+            b = b.compute()
+            #eri_mo = 0
+        print('termina el dask')
         a = a + numpy.diag(e_ia.ravel()).reshape(nocc, nvir, nocc, nvir)
         a = a.reshape(nocc * nvir, nocc * nvir, order="C")
         b = b.reshape(nocc * nvir, nocc * nvir, order="C")
@@ -191,10 +253,10 @@ class DRPA:
             for k in range(3):
                 h01[:n2c, n2c:] = 0.5 * a01int[k]
                 h01[n2c:, :n2c] = 0.5 * a01int[k].conj().T
-                h1.append(mo.conj().T.dot(h01).dot(mo))
+                h1.append(mo[:, self.nocc:].conj().T.dot(h01).dot(mo[:, :self.nocc]))
         return h1
 
-    def pp(self, atm1lst, atm2lst, eri_m):
+    def pp(self, atm1lst, atm2lst):
         """In this Function generate de Response << ; >>, i.e,
         multiplicate the perturbators centered in nuclei1 and nuclei2 with the
         principal propagator matrix.
@@ -209,19 +271,24 @@ class DRPA:
         nocc = self.nocc
         nvir = self.nvir
         nmo = nocc + nvir
-        m = self.M(eri_m=eri_m)
-        h1 = numpy.asarray(self.pert_ssc(atm1lst)).reshape(1, 3, nmo, nmo)[0]
-        h1 = h1[:, nocc:, :nocc]
+        m = self.M_()
+
+        h1 = numpy.asarray(self.pert_ssc(atm1lst)).reshape(1, 3, nvir, nocc)[0]
+        #h1 = h1[:, nocc:, :nocc]
         h1 = numpy.concatenate((h1, h1.conj()), axis=2)
-        h2 = numpy.asarray(self.pert_ssc(atm2lst)).reshape(1, 3, nmo, nmo)[0]
-        h2 = h2[:, nocc:, :nocc]
+        h2 = numpy.asarray(self.pert_ssc(atm2lst)).reshape(1, 3, nvir, nocc)[0]
+        #h2 = h2[:, nocc:, :nocc]
         h2 = numpy.concatenate((h2, h2.conj()), axis=2)
-        p = -scipy.linalg.inv(m)
+        print('arranca la inversa')
+        p = -np.linalg.inv(m)
+        
         p = p.reshape(2 * nocc, nvir, 2 * nocc, nvir)
         para = []
-        e = lib.einsum("xai,iajb,ybj->xy", h1, p.conj(), h2.conj())
+        print('arranca einsum')
+        #client = Client(threads_per_worker=4)
+        e = da.einsum("xai,iajb,ybj->xy", h1, p.conj(), h2.conj())
+        e.compute()
         para.append(e.real)
-        print(para)
         resp = numpy.asarray(para)
         return resp * nist.ALPHA ** 4
 
@@ -245,7 +312,7 @@ class DRPA:
             if atom_ == atom:
                 return i
 
-    def ssc(self, atom1, atom2, eri_m):
+    def ssc(self, atom1, atom2):
         """This function multiplicates the response by the constants
         in order to get the isotropic J-coupling J between atom1 and atom2 nuclei
 
@@ -258,7 +325,7 @@ class DRPA:
         """
         atm1lst = [self.obtain_atom_order(atom1)]
         atm2lst = [self.obtain_atom_order(atom2)]
-        e11 = self.pp(atm1lst, atm2lst, eri_m)
+        e11 = self.pp(atm1lst, atm2lst)
         nuc_mag = 0.5 * (nist.E_MASS / nist.PROTON_MASS)
         au2Hz = nist.HARTREE2J / nist.PLANCK
         iso_ssc = au2Hz * nuc_mag ** 2 * lib.einsum("kii->k", e11) / 3
