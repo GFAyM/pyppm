@@ -6,13 +6,11 @@ from pyscf import ao2mo
 from pyscf.ao2mo import r_outcore
 from pyscf.data import nist
 from pyscf.data.gyro import get_nuc_g_factor
-import scipy
 import h5py
 import dask.array as da
-from memory_profiler import profile
 import os
 import numpy as np
-from dask.distributed import Client
+
 @attr.s
 class DRPA:
     """This class Calculates the J-coupling between two nuclei in the 4-component
@@ -95,7 +93,7 @@ class DRPA:
         orboL = moL[:, : self.nocc]
         orboS = moS[:, : self.nocc]
         scratch_dir = os.getenv('SCRATCH')  # Obtener la ruta de la carpeta de scratch
-        erifile = os.path.join(scratch_dir, "dhf_ovov.h5")  # Unir la ruta de la carpeta de scratch con el nombre del archivo
+        erifile = os.path.join(scratch_dir, f"{str(self.nmo)}_4c.h5")  # Unir la ruta de la carpeta de scratch con el nombre del archivo
         self.erifile = erifile
         #erifile = "dhf_ovov.h5"
         dataname = "dhf_ovov"
@@ -255,6 +253,60 @@ class DRPA:
                 h01[n2c:, :n2c] = 0.5 * a01int[k].conj().T
                 h1.append(mo[:, self.nocc:].conj().T.dot(h01).dot(mo[:, :self.nocc]))
         return h1
+    
+    def M_pp(self, atm1lst, atm2lst):
+        """
+        A and B matrices for PP invers¿
+        A[i,a,j,b] = delta_{ab} delta_{ij}(E_a - E_i) + (ia||bj)
+        B[i,a,j,b] = (ia||jb)
+        This matrices was extracted from the tdscf pyscf module.
+
+        Returns:
+
+            Numpy.array: Inverse of Principal Propagator
+        """
+        mo_energy = self.mf.mo_energy
+        nocc = self.nocc
+        nvir = self.nvir
+        viridx = self.viridx
+        occidx = self.occidx
+        nmo = self.nmo
+        e_ia = lib.direct_sum("a-i->ia", mo_energy[viridx], mo_energy[occidx])
+        
+        
+        self.eri_mo_2
+        #print("r_outcore")
+        h1 = numpy.asarray(self.pert_ssc(atm1lst)).reshape(1, 3, nvir, nocc)[0]
+        h1 = numpy.concatenate((h1, h1.conj()), axis=2)
+        h2 = numpy.asarray(self.pert_ssc(atm2lst)).reshape(1, 3, nvir, nocc)[0]
+        h2 = numpy.concatenate((h2, h2.conj()), axis=2)
+        with h5py.File(str(self.erifile), "r") as f:
+            eri_mo = da.from_array((f["dhf_ovov"]), chunks='auto')
+                                   #(nmo,nmo))
+            eri_mo = eri_mo.reshape(nocc, nmo, nmo, nmo).conj()
+            a = da.zeros((nocc, nvir, nocc, nvir), dtype="complex")
+            b = da.zeros_like(a)
+            a = a + eri_mo[:, nocc:, nocc:, :nocc].transpose(0, 1, 3, 2)
+            a = a - eri_mo[:, :nocc, nocc:, nocc:].transpose(0, 3, 1, 2)
+            b = b + eri_mo[:, nocc:, :nocc, nocc:]
+            b = b - eri_mo[:, nocc:, :nocc, nocc:].transpose(2, 1, 0, 3)
+            a = a + da.diag(e_ia.ravel()).reshape(nocc, nvir, nocc, nvir)
+            a = a.reshape(nocc * nvir, nocc * nvir)#, order="C")
+            b = b.reshape(nocc * nvir, nocc * nvir)#, order="C")
+            m1 = da.concatenate((a, b), axis=1)
+            m2 = da.concatenate((b.conj(), a.conj()), axis=1)
+            m = da.concatenate((m1, m2), axis=0).compute()
+            
+        p = -da.linalg.inv(da.from_array(m)).compute()
+        p = p.reshape(2 * nocc, nvir, 2 * nocc, nvir)
+        para = []
+        print('arranca einsum')
+        e = da.einsum("xai,iajb,ybj->xy", h1, p.conj(), h2.conj()).compute()
+            
+        para.append(e.real)
+        resp = numpy.asarray(para)
+        return resp * nist.ALPHA ** 4
+        
 
     def pp(self, atm1lst, atm2lst):
         """In this Function generate de Response << ; >>, i.e,
@@ -285,7 +337,6 @@ class DRPA:
         p = p.reshape(2 * nocc, nvir, 2 * nocc, nvir)
         para = []
         print('arranca einsum')
-        #client = Client(threads_per_worker=4)
         e = da.einsum("xai,iajb,ybj->xy", h1, p.conj(), h2.conj())
         e.compute()
         para.append(e.real)
@@ -325,7 +376,9 @@ class DRPA:
         """
         atm1lst = [self.obtain_atom_order(atom1)]
         atm2lst = [self.obtain_atom_order(atom2)]
-        e11 = self.pp(atm1lst, atm2lst)
+        #e11 = self.pp(atm1lst, atm2lst)
+        e11 = self.M_pp(atm1lst, atm2lst)
+        
         nuc_mag = 0.5 * (nist.E_MASS / nist.PROTON_MASS)
         au2Hz = nist.HARTREE2J / nist.PLANCK
         iso_ssc = au2Hz * nuc_mag ** 2 * lib.einsum("kii->k", e11) / 3
