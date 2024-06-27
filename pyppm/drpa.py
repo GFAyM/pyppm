@@ -10,6 +10,7 @@ import h5py
 import dask.array as da
 import os
 import numpy as np
+from dask.distributed import Client
 
 @attr.s
 class DRPA:
@@ -29,7 +30,7 @@ class DRPA:
         validator=attr.validators.instance_of(scf.dhf.DHF),
     )
     ee = attr.ib(default=False, type=bool)
-
+    client = attr.ib(default=None)
     def __attrs_post_init__(self):
         self.mol = self.mf.mol
         mo_coeff = self.mf.mo_coeff
@@ -95,16 +96,11 @@ class DRPA:
         scratch_dir = os.getenv('SCRATCH')  # Obtener la ruta de la carpeta de scratch
         erifile = os.path.join(scratch_dir, f"{str(self.nmo)}_4c.h5")  # Unir la ruta de la carpeta de scratch con el nombre del archivo
         self.erifile = erifile
-        #erifile = "dhf_ovov.h5"
+        erifile = "full_ao2mo.h5"
+
         dataname = "dhf_ovov"
         print('running eri_mo2')
         def run(mos, intor):
-            # Ajustar el valor de blksize: El valor de blksize controla cuántos 
-            # elementos
-            # de las integrales se calculan y almacenan en la memoria a la vez. Puedes
-            # ajustar este valor según la cantidad de memoria disponible en tu sistema.
-            # Un valor más pequeño reducirá la huella de memoria, pero también puede 
-            # aumentar el tiempo de cálculo debido a más escrituras en disco
             r_outcore.general(mol, mos, erifile, dataname="tmp", intor=intor)
             blksize = 200
             nij = mos[0].shape[1] * mos[1].shape[1]
@@ -117,16 +113,65 @@ class DRPA:
                     del feri['tmp']
 
         r_outcore.general(
-            mol, (orboL, moL, moL, moL), erifile, dataname=dataname, intor="int2e_spinor"
+            mol, (orboL, moL, moL, moL), erifile, dataname=dataname, intor="int2e_spinor", verbose=5
         )
-        print('run LLLL')
+        print('full eri_mo')
         run((orboS, moS, moS, moS), "int2e_spsp1spsp2_spinor")
-        print('run SSSS')
         run((orboS, moS, moL, moL), "int2e_spsp1_spinor")
-        print('run SSLL')
-
         run((orboL, moL, moS, moS), "int2e_spsp2_spinor")
-        print('run LLSS')
+
+    @property
+    def eri_mo_3(self):
+        """Function that generates two electron integrals, including LLLL, LLSS and
+        SSSS integrals, but more eficiently, saving eri_mos in a h5 file
+        """
+        mol = self.mol
+        mo = self.mo
+        n2c = self.n2c
+        c1 = 0.5 / lib.param.LIGHT_SPEED
+        moL = numpy.asarray(mo[:n2c, :], order="F")
+        moS = numpy.asarray(mo[n2c:, :], order="F") * c1
+        orboL = moL[:, : self.nocc]
+        orboS = moS[:, : self.nocc]
+        orbvL = moL[:, self.nocc :]
+        orbvS = moS[:, self.nocc :]
+        print(orboL.shape, orbvL.shape)
+        scratch_dir = os.getenv('SCRATCH')  # Obtener la ruta de la carpeta de scratch
+        erifile = os.path.join(scratch_dir, f"{str(self.nmo)}_4c.h5")  # Unir la ruta de la carpeta de scratch con el nombre del archivo
+        self.erifile = erifile
+        def run(mos, intor, dataname):
+            r_outcore.general(mol, mos, erifile, dataname="tmp", intor=intor)
+            blksize = 200
+            nij = mos[0].shape[1] * mos[1].shape[1]
+            with h5py.File(erifile, "a") as feri:
+                for i0, i1 in lib.prange(0, nij, blksize):
+                    buf = feri[dataname][i0:i1]
+                    buf += feri["tmp"][i0:i1]
+                    feri[dataname][i0:i1] = buf
+                if 'tmp' in feri:
+                    del feri['tmp']
+
+        r_outcore.general(
+            mol, (orboL, orbvL, orbvL, orboL), erifile, dataname='A1', intor="int2e_spinor", verbose=4
+        , max_memory=3000, ioblk_size=9000)
+        run((orboS, orbvS, orbvS, orboS), "int2e_spsp1spsp2_spinor", dataname='A1')
+        run((orboS, orbvS, orbvL, orboL), "int2e_spsp1_spinor",  dataname='A1')
+        run((orboL, orbvL, orbvS, orboS), "int2e_spsp2_spinor",  dataname='A1')
+        
+        r_outcore.general(
+            mol, (orboL, orboL, orbvL, orbvL), erifile, dataname='A2', intor="int2e_spinor", verbose=4
+        )#
+        run((orboS, orboS, orbvS, orbvS), "int2e_spsp1spsp2_spinor", dataname='A2')
+        run((orboS, orboS, orbvL, orbvL), "int2e_spsp1_spinor",  dataname='A2')
+        run((orboL, orboL, orbvS, orbvS), "int2e_spsp2_spinor",  dataname='A2')
+        
+        r_outcore.general(
+            mol, (orboL, orbvL, orboL, orbvL), erifile, dataname='B', intor="int2e_spinor", verbose=4
+        )
+        run((orboS, orbvS, orboS, orbvS), "int2e_spsp1spsp2_spinor", dataname='B')
+        run((orboS, orbvS, orboL, orbvL), "int2e_spsp1_spinor",  dataname='B')
+        run((orboL, orbvL, orboS, orbvS), "int2e_spsp2_spinor",  dataname='B')
+        
 
     def M(self, eri_m):
         """
@@ -167,13 +212,9 @@ class DRPA:
                     .conj()
                 )
                 a += eri_mo[:, nocc:, nocc:, :nocc].transpose(0, 1, 3, 2)
-                #a += lib.einsum("iabj->iajb", eri_mo[:, nocc:, nocc:, :nocc])
                 a -= eri_mo[:, :nocc, nocc:, nocc:].transpose(0, 3, 1, 2)
-                #a -= lib.einsum("ijba->iajb", eri_mo[:, :nocc, nocc:, nocc:])
                 b += eri_mo[:, nocc:, :nocc, nocc:]
-                #b += lib.einsum("iajb->iajb", eri_mo[:, nocc:, :nocc, nocc:])
                 b -= eri_mo[:, nocc:, :nocc, nocc:].transpose(2, 1, 0, 3)
-                #b -= lib.einsum("jaib->iajb", eri_mo[:, nocc:, :nocc, nocc:])
                 eri_mo = 0
         a = a + numpy.diag(e_ia.ravel()).reshape(nocc, nvir, nocc, nvir)
         a = a.reshape(nocc * nvir, nocc * nvir, order="C")
@@ -295,18 +336,83 @@ class DRPA:
             b = b.reshape(nocc * nvir, nocc * nvir)#, order="C")
             m1 = da.concatenate((a, b), axis=1)
             m2 = da.concatenate((b.conj(), a.conj()), axis=1)
-            m = da.concatenate((m1, m2), axis=0).compute()
-            
-        p = -da.linalg.inv(da.from_array(m)).compute()
-        p = p.reshape(2 * nocc, nvir, 2 * nocc, nvir)
-        para = []
-        print('arranca einsum')
-        e = da.einsum("xai,iajb,ybj->xy", h1, p.conj(), h2.conj()).compute()
-            
+            m = da.concatenate((m1, m2), axis=0)#.compute()
+            #m_da = da.from_array(m)
+            div = m.shape[0] // 4
+            m = m.rechunk(chunks=(div, div))
+            p = -da.linalg.inv(m)#.compute()
+            #print(p.sum())
+            p = p.reshape(2 * nocc, nvir, 2 * nocc, nvir)
+            para = []
+            #print('arranca einsum')
+            e = da.einsum("xai,iajb,ybj->xy", h1, p.conj(), h2.conj()).compute(scheduler='single-threaded') #scheduler='threads'
         para.append(e.real)
         resp = numpy.asarray(para)
         return resp * nist.ALPHA ** 4
         
+    def M_pp_2(self, atm1lst, atm2lst):
+        """
+        A and B matrices for PP invers¿
+        A[i,a,j,b] = delta_{ab} delta_{ij}(E_a - E_i) + (ia||bj)
+        B[i,a,j,b] = (ia||jb)
+        This matrices was extracted from the tdscf pyscf module.
+
+        Returns:
+
+            Numpy.array: Inverse of Principal Propagator
+        """
+        mo_energy = self.mf.mo_energy
+        nocc = self.nocc
+        nvir = self.nvir
+        viridx = self.viridx
+        occidx = self.occidx
+        nmo = self.nmo
+        e_ia = lib.direct_sum("a-i->ia", mo_energy[viridx], mo_energy[occidx])
+        
+        
+        self.eri_mo_3
+        h1 = numpy.asarray(self.pert_ssc(atm1lst)).reshape(1, 3, nvir, nocc)[0]
+        h1 = numpy.concatenate((h1, h1.conj()), axis=2)
+        h2 = numpy.asarray(self.pert_ssc(atm2lst)).reshape(1, 3, nvir, nocc)[0]
+        h2 = numpy.concatenate((h2, h2.conj()), axis=2)
+        with h5py.File(str(self.erifile), "r") as f:
+            #eri_mo = da.from_array((f["dhf_ovov"]), chunks='auto')
+            
+            a1 = da.from_array((f["A1"]), chunks='auto')
+            a1 = a1.reshape(nocc, nvir, nvir, nocc).conj()
+
+            a2 = da.from_array((f["A2"]), chunks='auto')
+            a2 = a2.reshape(nocc, nocc, nvir, nvir).conj()
+
+            b_ = da.from_array((f["B"]), chunks='auto')
+            b_ = b_.reshape(nocc, nvir, nocc, nvir).conj()
+                                   
+            #eri_mo = eri_mo.reshape(nocc, nmo, nmo, nmo).conj()
+            a = da.zeros((nocc, nvir, nocc, nvir), dtype="complex")
+            b = da.zeros_like(a)
+            a = a + a1.transpose(0, 1, 3, 2)
+            a = a - a2.transpose(0, 3, 1, 2)
+            b = b + b_
+            b = b - b_.transpose(2, 1, 0, 3)
+            a = a + da.diag(e_ia.ravel()).reshape(nocc, nvir, nocc, nvir)
+            a = a.reshape(nocc * nvir, nocc * nvir)#, order="C")
+            b = b.reshape(nocc * nvir, nocc * nvir)#, order="C")
+            m1 = da.concatenate((a, b), axis=1)
+            m2 = da.concatenate((b.conj(), a.conj()), axis=1)
+            m = da.concatenate((m1, m2), axis=0)#.compute()
+            #m_da = da.from_array(m)
+            div = m.shape[0] // 4
+            m = m.rechunk(chunks=(div, div))
+            p = -da.linalg.inv(m)#.compute()
+            #print(p.sum())
+            p = p.reshape(2 * nocc, nvir, 2 * nocc, nvir)
+            para = []
+            #print('arranca einsum')
+            e = da.einsum("xai,iajb,ybj->xy", h1, p.conj(), h2.conj()).compute()
+        para.append(e.real)
+        resp = numpy.asarray(para)
+        return resp * nist.ALPHA ** 4
+
 
     def pp(self, atm1lst, atm2lst):
         """In this Function generate de Response << ; >>, i.e,
@@ -377,8 +483,8 @@ class DRPA:
         atm1lst = [self.obtain_atom_order(atom1)]
         atm2lst = [self.obtain_atom_order(atom2)]
         #e11 = self.pp(atm1lst, atm2lst)
-        e11 = self.M_pp(atm1lst, atm2lst)
-        
+        #e11 = self.M_pp(atm1lst, atm2lst)
+        e11 = self.M_pp_2(atm1lst, atm2lst)        
         nuc_mag = 0.5 * (nist.E_MASS / nist.PROTON_MASS)
         au2Hz = nist.HARTREE2J / nist.PLANCK
         iso_ssc = au2Hz * nuc_mag ** 2 * lib.einsum("kii->k", e11) / 3
@@ -386,3 +492,4 @@ class DRPA:
         gyro2 = [get_nuc_g_factor(self.mol.atom_symbol(atm2lst[0]))]
         jtensor = lib.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)[0]
         return jtensor
+

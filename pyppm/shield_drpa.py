@@ -317,4 +317,4 @@ class Shielding:
         """
         atmlst = [self.obtain_atom_order(atom)]
         e11 = self.pp(atmlst, eri_m, giao) * (nist.ALPHA ** 2) * 1e6
-        return e11
+        return e11 / 3
