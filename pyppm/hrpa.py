@@ -83,10 +83,9 @@ class HRPA:
             numpy.ndarray: (nocc,nvir,nocc,nvir) array with kappa
         """
         nocc = self.nocc
+        nvir = self.nvir
         occidx = self.occidx
         viridx = self.viridx
-        occ = self.occ
-        vir = self.vir
         nmo = self.nmo
         mo_energy = self.mo_energy
         e_iajb = lib.direct_sum(
@@ -96,27 +95,21 @@ class HRPA:
             mo_energy[viridx],
             mo_energy[viridx],
         )
-        eri_mo = self.eri_mo()
+        self.eri_mo()
+        c = np.sqrt((2 * I_) - 1)
         with h5py.File(str(self.h5_file), "r") as f:
             eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+            int1 = da.einsum("aibj->iajb", eri_mo[nocc:, :nocc, nocc:, :nocc])
+            int2 = da.einsum("ajbi->iajb", eri_mo[nocc:, :nocc, nocc:, :nocc])
+            K = c*(int1 - ((-1) ** I_) * int2) / e_iajb
 
-            int1 = da.einsum("aibj->iajb", eri_mo[nocc:, :nocc, nocc:, :nocc]).compute()
-            int2 = da.einsum("ajbi->iajb", eri_mo[nocc:, :nocc, nocc:, :nocc]).compute()
-        c = np.sqrt((2 * I_) - 1)
-        K = (int1 - ((-1) ** I_) * int2) / e_iajb
-        K *= c
-
-        if I_ == 2:
-            i, j = np.meshgrid(occ, occ, indexing="ij")
-            i_ = np.where(i == j)[0]
-            j_ = np.where(i == j)[1]
-            K[i_, :, j_, :] = 0
-            a, b = np.meshgrid(vir, vir, indexing="ij")
-            a_ = np.where(a == b)[0]
-            b_ = np.where(a == b)[1]
-            K[:, a_, :, b_] = 0
-        return K
+            if I_ == 2:
+                delta_1 = 1 - np.eye(nocc)
+                delta_2 = 1 - np.eye(nvir)
+                deltas = np.einsum('ij,ab->iajb', delta_1, delta_2)
+                K = K*deltas
+            return K.compute()
 
     def da_from_array(self, array):
         """Method to convert np array to dask array
@@ -148,29 +141,26 @@ class HRPA:
         """
         nocc = self.nocc
         nvir = self.nvir
-        self.k_1 = self.kappa(1)
-        self.k_2 = self.kappa(2)
         k_1 = self.k_1
         k_2 = self.k_2
         cte = self.cte
         k = k_1 + cte * k_2
         nmo = self.nmo
-        k_da = self.da_from_array(k)
         with h5py.File(str(self.h5_file), "r") as f:
             eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+            k_da = da.from_array(k, chunks='auto')
             int_ = eri_mo[:nocc, nocc:, :nocc, nocc:]
-            A1 = da.einsum("jadb,iadb->ij", int_, k_da).compute()
-            A2 = da.einsum("dbpn,pmdb->mn", int_, k_da).compute()
-
-        mask_mn = np.eye(nvir)
-        mask_ab = np.eye(nocc)
-        A = np.einsum("mn,ij->minj", mask_mn, -0.5 * A1)
-        A += np.einsum("ij,mn->minj", mask_ab, -0.5 * A2)
-        A_ = np.einsum("aibj->bjai", A)
-        A = (A + A_) / 2
-        A = np.einsum("aibj->iajb", A)
-        return A
+            A1 = da.einsum("jadb,iadb->ij", int_, k_da)
+            A2 = da.einsum("dbpn,pmdb->mn", int_, k_da)
+            mask_mn = da.eye(nvir)
+            mask_ab = da.eye(nocc)
+            A = da.einsum("mn,ij->minj", mask_mn, -0.5 * A1)
+            A += da.einsum("ij,mn->minj", mask_ab, -0.5 * A2)
+            A_ = da.einsum("aibj->bjai", A)
+            A = (A + A_) / 2
+            A = da.einsum("aibj->iajb", A)
+            return A.compute()
 
     def part_b2(self, S):
         """Method for obtain B(2) matrix (eq. 14 in Oddershede Paper)
@@ -187,24 +177,26 @@ class HRPA:
         k_2 = self.k_2
         cte = self.cte
         cte2 = (-1) ** S
-        k_b1 = self.da_from_array(k_1 + cte * k_2)
-        k_b2 = self.da_from_array(k_1 + (cte / (1 - 4 * S)) * k_2)
         with h5py.File(str(self.h5_file), "r") as f:
             eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
 
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+            k_b1 = da.from_array(k_1 + cte * k_2,
+                                 chunks='auto')
+            k_b2 = da.from_array(k_1 + (cte / (1 - 4 * S)) * k_2,
+                                 chunks='auto')
+
             int1 = eri_mo[:nocc, nocc:, nocc:, :nocc]
             int2 = eri_mo[:nocc, :nocc, nocc:, nocc:]
             int3 = eri_mo[:nocc, :nocc, :nocc, :nocc]
             int4 = eri_mo[nocc:, nocc:, nocc:, nocc:]
-            B = da.einsum("anrp,bmpr->manb", int1, k_b1).compute()
-            B += da.einsum("bmrp,anpr->manb", int1, k_b1).compute()
-            B += cte2 * da.einsum("aprn,pmbr->manb", int2, k_b2).compute()
-            B += cte2 * da.einsum("bprm,pnar->manb", int2, k_b2).compute()
-            B -= cte2 * da.einsum("bpad,dmpn->manb", int3, k_b2).compute()
-            B -= cte2 * da.einsum("qmpn,bpaq->manb", int4, k_b2).compute()
-        B = np.einsum("aibj->iajb", B)
-        return 0.5 * B
+            B = da.einsum("anrp,bmpr->ambn", int1, .5*k_b1)
+            B += da.einsum("bmrp,anpr->ambn", int1, .5*k_b1)
+            B += cte2 * da.einsum("aprn,pmbr->ambn", int2, .5*k_b2)
+            B += cte2 * da.einsum("bprm,pnar->ambn", int2, .5*k_b2)
+            B -= cte2 * da.einsum("bpad,dmpn->ambn", int3, .5*k_b2)
+            B -= cte2 * da.einsum("qmpn,bpaq->ambn", int4, .5*k_b2)
+            return B.compute()
 
     @property
     def S2(self):
@@ -228,27 +220,20 @@ class HRPA:
         )
         k_1 = self.k_1
         k_2 = self.k_2
-        k = self.da_from_array(k_1 + self.cte * k_2)
         nmo = self.nmo
         with h5py.File(str(self.h5_file), "r") as f:
+            k = da.from_array(k_1 + self.cte * k_2, chunks='auto')
             eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
             int_ = eri_mo[:nocc, nocc:, :nocc, nocc:]
-            S2 = da.einsum("japb,iapb->ij", int_ / e_iajb, k).compute()
-            S2_ = da.einsum("dapn,pmda->mn", int_ / e_iajb, k).compute()
-        mask_mn = np.eye(nvir)
-        mask_ij = np.eye(nocc)
-        S2 = np.einsum("mn,ij->minj", mask_mn, -0.5 * S2)
-        S2 += np.einsum("ij,mn->minj", mask_ij, -0.5 * S2_)
-        E = lib.direct_sum(
-            "a+b-i-j->aibj",
-            mo_energy[viridx],
-            mo_energy[viridx],
-            mo_energy[occidx],
-            mo_energy[occidx],
-        )
-        S2 = np.einsum("aibj->iajb", 0.5 * S2 * E)
-        return S2
+            S2 = da.einsum("japb,iapb->ij", int_ / e_iajb, k)
+            S2_ = da.einsum("dapn,pmda->mn", int_ / e_iajb, k)
+            mask_mn = da.eye(nvir)
+            mask_ij = da.eye(nocc)
+            S2 = da.einsum("mn,ij->imjn", mask_mn, -0.5 * S2)
+            S2 += da.einsum("ij,mn->imjn", mask_ij, -0.5 * S2_)
+            S2 = -.5*S2*e_iajb
+            return S2.compute()
 
     @property
     def kappa_2(self):
@@ -265,15 +250,16 @@ class HRPA:
         k_1 = self.k_1
         k_2 = self.k_2
         e_ia = lib.direct_sum("i-a->ia", mo_energy[occidx], mo_energy[viridx])
-        k = k_1 + self.cte * k_2
         with h5py.File(str(self.h5_file), "r") as f:
+            k = da.from_array(k_1 + self.cte * k_2, chunks='auto')
             eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
             int1 = eri_mo[:nocc, nocc:, nocc:, nocc:]
             int2 = eri_mo[:nocc, nocc:, :nocc, :nocc]
-            kappa = da.einsum("pamb,paib->im", int1, k).compute()
-            kappa -= da.einsum("padi,padm->im", int2, k).compute()
-        return kappa / e_ia
+            kappa = da.einsum("pamb,paib->im", int1, k)
+            kappa -= da.einsum("padi,padm->im", int2, k)
+            kappa *= 1/e_ia
+            return kappa.compute()
 
     def correction_pert(self, FC=False, PSO=False, FCSD=False, atmlst=None):
         """Method with eq. C.25, which is the first correction to perturbator
@@ -285,31 +271,37 @@ class HRPA:
             np.ndarray: array with first correction to Perturbator (nocc,nvir)
         """
 
-        kappa = self.kappa_2
         nocc = self.nocc
         nvir = self.nvir
         ntot = nocc + nvir
+        kappa = da.from_array(self.kappa_2, chunks='auto')
         if FC:
             h1 = self.rpa_obj.pert_fc(atmlst)[0]
             p_virt = h1[nocc:, nocc:]
-            pert = np.einsum("an,mn->am", kappa, p_virt)
+            p_virt = da.from_array(p_virt, chunks='auto')
+            pert = da.einsum("an,mn->am", kappa, p_virt)
             p_occ = h1[:nocc, :nocc]
-            pert -= np.einsum("bm,ba->am", kappa, p_occ)
+            p_occ = da.from_array(p_occ, chunks='auto')
+            pert -= da.einsum("bm,ba->am", kappa, p_occ)
         if PSO:
             h1 = self.rpa_obj.pert_pso(atmlst)
             h1 = np.asarray(h1).reshape(1, 3, ntot, ntot)[0]
             p_virt = h1[:, nocc:, nocc:]
-            pert = np.einsum("an,xmn->xam", kappa, p_virt)
+            p_virt = da.from_array(p_virt, chunks='auto')
+            pert = da.einsum("an,xmn->xam", kappa, p_virt)
             p_occ = h1[:, :nocc, :nocc]
-            pert -= np.einsum("bm,xba->xam", kappa, p_occ)
+            p_occ = da.from_array(p_occ, chunks='auto')
+            pert -= da.einsum("bm,xba->xam", kappa, p_occ)
         elif FCSD:
             h1 = self.rpa_obj.pert_fcsd(atmlst)
             h1 = np.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0, :, :, :, :]
             p_virt = h1[:, :, nocc:, nocc:]
+            p_virt = da.from_array(p_virt, chunks='auto')
             p_occ = h1[:, :, :nocc, :nocc]
-            pert = np.einsum("an,wxmn->wxam", kappa, p_virt)
-            pert -= np.einsum("bm, wxba->wxam", kappa, p_occ)
-        return pert
+            p_occ = da.from_array(p_occ, chunks='auto')
+            pert = da.einsum("an,wxmn->wxam", kappa, p_virt)
+            pert -= da.einsum("bm, wxba->wxam", kappa, p_occ)
+        return pert.compute()
 
     def correction_pert_2(self, FC=False, PSO=False, FCSD=False, atmlst=None):
         """Method with C.26 correction, which is a correction to perturbator
@@ -326,8 +318,6 @@ class HRPA:
         nocc = self.nocc
         nvir = self.nvir
         ntot = nocc + nvir
-        k_1 = self.k_1
-        k_2 = self.k_2
         nmo = self.nmo
         e_iajb = lib.direct_sum(
             "i+j-a-b->iajb",
@@ -336,7 +326,8 @@ class HRPA:
             self.mo_energy[self.viridx],
             self.mo_energy[self.viridx],
         )
-        k = self.da_from_array(k_1 + self.cte * k_2)
+        k = da.from_array(self.k_1 + self.cte * self.k_2, 
+                          chunks='auto')
         if FC:
             h1 = self.rpa_obj.pert_fc(atmlst)[0]
             h1 = h1[nocc:, :nocc]
@@ -344,8 +335,9 @@ class HRPA:
                 eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
                 eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
                 int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
-                pert = -da.einsum("dapb,md,iapb->im", int_e, h1, k).compute()
-                pert -= da.einsum("dapb,bi,pmda->im", int_e, h1, k).compute()
+                pert = -da.einsum("dapb,md,iapb->im", int_e, h1, k)
+                pert -= da.einsum("dapb,bi,pmda->im", int_e, h1, k)
+                return pert.compute()
         if PSO:
             h1 = self.rpa_obj.pert_pso(atmlst)
             h1 = np.asarray(h1).reshape(1, 3, ntot, ntot)
@@ -357,8 +349,10 @@ class HRPA:
                 eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
                 eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
                 int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
-                pert = -da.einsum("dapb,xmd,iapb->xim", int_e, h1, k).compute()
-                pert -= da.einsum("dapb,xbi,pmda->xim", int_e, h1, k).compute()
+                pert = -da.einsum("dapb,xmd,iapb->xim", int_e, h1, k)
+                pert -= da.einsum("dapb,xbi,pmda->xim", int_e, h1, k)
+                return pert.compute()
+
         elif FCSD:
             h1 = self.rpa_obj.pert_fcsd(atmlst)
             h1 = np.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0, :, :, nocc:, :nocc]
@@ -367,9 +361,9 @@ class HRPA:
                 eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
                 eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
                 int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
-                pert = -da.einsum("dapb,wxmd,iapb->wxim", int_e, h1, k).compute()
-                pert -= da.einsum("dapb,wxbi,pmda->wxim", int_e, h1, k).compute()
-        return pert
+                pert = -da.einsum("dapb,wxmd,iapb->wxim", int_e, h1, k)
+                pert -= da.einsum("dapb,wxbi,pmda->wxim", int_e, h1, k)
+                return pert.compute()
 
     def Communicator(self, triplet):
         """Function for obtain Communicator matrix, i.e., the principal propagator
