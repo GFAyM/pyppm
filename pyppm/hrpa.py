@@ -6,8 +6,7 @@ from pyppm.rpa import RPA
 import numpy as np
 import dask.array as da
 import h5py
-from memory_profiler import profile
-#from line_profiler import profile
+
 
 @attr.s
 class HRPA:
@@ -127,7 +126,7 @@ class HRPA:
         array_da = da.from_array(array, chunks=chunk)
 
         return array_da
-    
+
     @property
     def part_a2(self):
         """Method for obtain A(2) matrix using einsum
@@ -183,7 +182,7 @@ class HRPA:
 
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
             k_b1 = da.from_array(k_1 + cte * k_2,
-                                 chunks= 'auto')
+                                 chunks='auto')
             k_b2 = da.from_array(k_1 + (cte / (1 - 4 * S)) * k_2,
                                  chunks='auto')
 
@@ -197,8 +196,8 @@ class HRPA:
             B += cte2 * da.einsum("bprm,pnar->ambn", int2, .5*k_b2)
             B -= cte2 * da.einsum("bpad,dmpn->ambn", int3, .5*k_b2)
             B -= cte2 * da.einsum("qmpn,bpaq->ambn", int4, .5*k_b2)
-            return  B.compute()
-        
+            return B.compute()
+
     @property
     def S2(self):
         """Property with S(2) matrix elements (eq. C.9 in Oddershede 1984)
@@ -235,7 +234,7 @@ class HRPA:
             S2 += da.einsum("ij,mn->imjn", mask_ij, -0.5 * S2_)
             S2 = -.5*S2*e_iajb
             return S2.compute()
-    
+
     @property
     def kappa_2(self):
         """property with kappa in equation C.24
@@ -365,8 +364,7 @@ class HRPA:
                 pert = -da.einsum("dapb,wxmd,iapb->wxim", int_e, h1, k)
                 pert -= da.einsum("dapb,wxbi,pmda->wxim", int_e, h1, k)
                 return pert.compute()
-            
-            
+
     def Communicator(self, triplet):
         """Function for obtain Communicator matrix, i.e., the principal propagator
         inverse without the A(0) matrix
