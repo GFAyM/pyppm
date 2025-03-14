@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyppm_quantum"
+version = "0.1.0"
+description = """
+Python based Polarization Propagator Methods is a software based in PySCF that calculates 
+molecular response properties at different levels of approach, using localized molecular 
+orbitals and explicit inverse or Principal Propagator matrix.
+"""
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Daniel F. E. Bajac", email = "danielbajac94@gmail.com" }]
+requires-python = ">=3.12"
+dependencies = [
+    "pyscf >=2.4.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "flake8",
+    "pytest",
+    "pytest-cov",
+    "tox",
+    "mypy",
+    "sphinx",
+    "sphinx_rtd_theme",
+    "pytest-mpl"
+]
+
+[tool.setuptools]
+packages = ["pyppm"]
+
+[tool.setuptools.dynamic]
+version = { attr = "pyppm.__version__" }
+
+[tool.pytest.ini_options]
+addopts = "-v --cov=pyppm --cov-report=term-missing --cov-fail-under=90"
+testpaths = ["tests"]

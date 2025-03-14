@@ -1,11 +1,10 @@
 import numpy as np
 from pyscf import scf
+
 from pyppm.hrpa import HRPA
 from pyppm.rpa import RPA
-import attr
 
 
-@attr.s
 class entropy:
     """Class to compute the entropy of systems formed by virtual excitations.
     Density matrix corresponding to those systems are formed by
@@ -14,7 +13,7 @@ class entropy:
     Is not taken into account the term A(0) (which contains molecular energies)
     Ref: Millan et. al Phys. Chem. Chem. Phys., 2018, DOI: 10.1039/C8CP03480J
     It can be use the single or the triplet inverse of principal propagator.
-    Ref: Aucar G.A., Concepts in Magnetic Resonance,2008,doi:10.1002/cmr.a.20108
+    Ref: Aucar G.A. Concepts in Magnetic Resonance,2008,doi:10.1002/cmr.a.20108
 
     mf = RHF object
     m = communicator matrix at any level of approach (RPA of HRPA). This matrix
@@ -33,30 +32,33 @@ class entropy:
     quantum entanglement
     between two virtual excitations that are in diferent bonds.
     In both list you must put the number order of LMOs centered in one bond,
-    and then in the other bond, in such a way that both list are divided in two,
+    and then in the other bond, in such a way that both list are divided in two
     with number orders that correspond to one bond, and another.
 
     Returns:
         numpy.ndarray: Communicator matrix of the chosen system
     """
 
-    occ = attr.ib(type=list)
-    vir = attr.ib(type=list)
-    mo_coeff_loc = attr.ib(type=np.ndarray)
-    elec_corr = attr.ib(
-        type=str, default="RPA", validator=attr.validators.instance_of(str)
-    )
-    mf = attr.ib(
-        default=None, type=scf.hf.RHF, validator=attr.validators.instance_of(scf.hf.RHF)
-    )
-    triplet = attr.ib(
-        default=True, type=bool, validator=attr.validators.instance_of(bool)
-    )
-    z_allexc = attr.ib(
-        default=True, type=bool, validator=attr.validators.instance_of(bool)
-    )
+    def __init__(
+        self,
+        occ,
+        vir,
+        mo_coeff_loc,
+        elec_corr="RPA",
+        mf=None,
+        triplet=True,
+        z_allexc=True,
+    ):
+        self.occ = occ
+        self.vir = vir
+        self.mo_coeff_loc = mo_coeff_loc
+        self.elec_corr = elec_corr
+        self.mf = mf if mf is not None else scf.hf.RHF()
+        self.triplet = triplet
+        self.z_allexc = z_allexc
+        self.__post_init__()
 
-    def __attrs_post_init__(self):
+    def __post_init__(self):
 
         occ = self.occ
         vir = self.vir
@@ -85,24 +87,32 @@ class entropy:
             for j, jj in enumerate(occ):
                 for a, aa in enumerate(vir):
                     for b, bb in enumerate(vir):
-                        m_loc_red[i, a, j, b] = m_loc[ii, aa - nocc, jj, bb - nocc]
-        m_loc_red = m_loc_red.reshape((nocc_loc * nvir_loc, nocc_loc * nvir_loc))
+                        m_loc_red[i, a, j, b] = m_loc[
+                            ii, aa - nocc, jj, bb - nocc
+                        ]
+        m_loc_red = m_loc_red.reshape(
+            (nocc_loc * nvir_loc, nocc_loc * nvir_loc)
+        )
         m_iajb = np.zeros((m_loc_red.shape[0] // 2, m_loc_red.shape[0] // 2))
         m_iajb[m_iajb.shape[0] // 2 :, : m_iajb.shape[0] // 2] += m_loc_red[
-            int(m_loc_red.shape[0] * 3 / 4) :, : int(m_loc_red.shape[0] * 1 / 4)
+            int(m_loc_red.shape[0] * 3 / 4) :,
+            : int(m_loc_red.shape[0] * 1 / 4),
         ]
         m_iajb[: m_iajb.shape[0] // 2, m_iajb.shape[0] // 2 :] += m_loc_red[
-            : int(m_loc_red.shape[0] * 1 / 4), int(m_loc_red.shape[0] * 3 / 4) :
+            : int(m_loc_red.shape[0] * 1 / 4),
+            int(m_loc_red.shape[0] * 3 / 4) :,
         ]
         m_iajb[: m_iajb.shape[0] // 2, : m_iajb.shape[0] // 2] += m_loc_red[
-            : int(m_loc_red.shape[0] * 1 / 4), : int(m_loc_red.shape[0] * 1 / 4)
+            : int(m_loc_red.shape[0] * 1 / 4),
+            : int(m_loc_red.shape[0] * 1 / 4),
         ]
         m_iajb[m_iajb.shape[0] // 2 :, m_iajb.shape[0] // 2 :] += m_loc_red[
-            int(m_loc_red.shape[0] * 3 / 4) :, int(m_loc_red.shape[0] * 3 / 4) :
+            int(m_loc_red.shape[0] * 3 / 4) :,
+            int(m_loc_red.shape[0] * 3 / 4) :,
         ]
 
         self.eigenvalues = np.linalg.eigvals(m_iajb)
-        m_loc = m_loc.reshape(nocc*nvir, nocc*nvir)
+        m_loc = m_loc.reshape(nocc * nvir, nocc * nvir)
         self.Z = 0
         if self.z_allexc is True:
             eig = np.linalg.eigvals(m_loc)
