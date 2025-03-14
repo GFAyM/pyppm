@@ -1,21 +1,37 @@
-name: Docs Build
+# Contenido de ci.yml
+
+name: PyPPM
+
 
 on:
-  push:
-    branches:
-      - main
+  - push
+  - pull_request
 
 jobs:
-  build-docs:
+  build:
+
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: pip install sphinx sphinx_rtd_theme
-
-      - name: Build documentation
+      - uses: actions/checkout@master
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version}}
+      - name: Install pandoc
+        run: sudo apt-get install pandoc
+      - name: Install tox
+        run: pip install tox tox-gh-actions
+      - name: Test with tox
+        run: tox -r
+      - name: Test Coverage
+        if: ${{ matrix.python-version == '3.12' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
         run: |
-          cd docs
-          make html
+          pip install coveralls
+          coveralls --service=github
+
