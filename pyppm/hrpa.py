@@ -1,33 +1,30 @@
-from pyscf import lib, ao2mo, scf
-import attr
+import h5py
+import numpy as np
+import scipy as sp
+from pyscf import ao2mo, lib, scf
 from pyscf.data import nist
 from pyscf.data.gyro import get_nuc_g_factor
+
 from pyppm.rpa import RPA
-import numpy as np
-import dask.array as da
-import h5py
 
 
-@attr.s
 class HRPA:
-    """Class to perform calculations of $J^{FC}$ mechanism at HRPA level of
-    of approach. This is the p-h part of SOPPA level of approah. The HRPA class
-    enherits from RPA of pyppm.rpa because they share several methods
+    """Class to perform calculations of Indirect J Coupling at HRPA level of
+    of approach. This is the p-h part of SOPPA.
     It follows Oddershede, J.; Jørgensen, P.; Yeager, D. L. Compt. Phys. Rep.
-    1984, 2, 33
-    and is inspired in Andy Danian Zapata HRPA program
+    1984, 2, 33 and is inspired in Andy D. Zapata HRPA program
 
     Returns:
         obj: hrpa object with methods and properties neccesaries to obtain the
         coupling using HRPA
     """
 
-    mf = attr.ib(
-        default=None, type=scf.hf.RHF, validator=attr.validators.instance_of(scf.hf.RHF)
-    )
-    h5_file = attr.ib(default=None)
+    def __init__(self, mf, h5_file=None):
+        if not isinstance(mf, scf.hf.RHF):
+            raise ValueError("mf must be a pyscf SCF RHF object")
 
-    def __attrs_post_init__(self):
+        self.mf = mf
+        self.h5_file = h5_file
         self.mo_occ = self.mf.mo_occ
         self.mo_energy = self.mf.mo_energy
         self.mo_coeff = self.mf.mo_coeff
@@ -72,7 +69,8 @@ class HRPA:
 
         for i noteq j, a noteq b
 
-        K_{ij}^{a,b}=1^{I-1}(2I-1)^.5 * [[(ab|bj) -(-1)^I (aj|bi)]/ [e_i+e_j-e_a-e_b]]
+        K_{ij}^{a,b}=1^{I-1}(2I-1)^.5 *
+        [[(ab|bj) -(-1)^I (aj|bi)]/ [e_i+e_j-e_a-e_b]]
 
         Oddershede 1984, eq C.7
 
@@ -98,34 +96,21 @@ class HRPA:
         self.eri_mo()
         c = np.sqrt((2 * I_) - 1)
         with h5py.File(str(self.h5_file), "r") as f:
-            eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+            eri_mo = np.array(f["eri_mo"])
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-            int1 = da.einsum("aibj->iajb", eri_mo[nocc:, :nocc, nocc:, :nocc])
-            int2 = da.einsum("ajbi->iajb", eri_mo[nocc:, :nocc, nocc:, :nocc])
-            K = c*(int1 - ((-1) ** I_) * int2) / e_iajb
-
+            int1 = np.transpose(
+                eri_mo[nocc:, :nocc, nocc:, :nocc], (1, 0, 3, 2)
+            )
+            int2 = np.transpose(
+                eri_mo[nocc:, :nocc, nocc:, :nocc], (3, 0, 1, 2)
+            )
+            K = c * (int1 - ((-1) ** I_) * int2) / e_iajb
             if I_ == 2:
                 delta_1 = 1 - np.eye(nocc)
                 delta_2 = 1 - np.eye(nvir)
-                deltas = np.einsum('ij,ab->iajb', delta_1, delta_2)
-                K = K*deltas
-            return K.compute()
-
-    def da_from_array(self, array):
-        """Method to convert np array to dask array
-        Args:
-            array (np.ndarray): array to convert
-        """
-        chunk = (
-            array.shape[0] // 2,
-            array.shape[1],
-            array.shape[2] // 2,
-            array.shape[3],
-        )
-
-        array_da = da.from_array(array, chunks=chunk)
-
-        return array_da
+                deltas = np.einsum("ij,ab->iajb", delta_1, delta_2)
+                K = K * deltas
+            return K
 
     @property
     def part_a2(self):
@@ -147,26 +132,25 @@ class HRPA:
         k = k_1 + cte * k_2
         nmo = self.nmo
         with h5py.File(str(self.h5_file), "r") as f:
-            eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+            eri_mo = np.array(f["eri_mo"])
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-            k_da = da.from_array(k, chunks='auto')
             int_ = eri_mo[:nocc, nocc:, :nocc, nocc:]
-            A1 = da.einsum("jadb,iadb->ij", int_, k_da)
-            A2 = da.einsum("dbpn,pmdb->mn", int_, k_da)
-            mask_mn = da.eye(nvir)
-            mask_ab = da.eye(nocc)
-            A = da.einsum("mn,ij->minj", mask_mn, -0.5 * A1)
-            A += da.einsum("ij,mn->minj", mask_ab, -0.5 * A2)
-            A_ = da.einsum("aibj->bjai", A)
-            A = (A + A_) / 2
-            A = da.einsum("aibj->iajb", A)
-            return A.compute()
+        A1 = np.tensordot(int_, k, axes=([1, 2, 3], [1, 2, 3])).transpose(1, 0)
+        A2 = np.tensordot(int_, k, axes=([0, 1, 2], [2, 3, 0])).transpose(1, 0)
+        mask_mn = np.eye(nvir)
+        mask_ab = np.eye(nocc)
+        A = np.einsum("mn,ij->minj", mask_mn, -0.5 * A1)
+        A += np.einsum("ij,mn->minj", mask_ab, -0.5 * A2)
+        A_ = np.transpose(A, (2, 3, 0, 1))
+        A = (A + A_) / 2
+        A = np.transpose(A, (1, 0, 3, 2))
+        return A
 
     def part_b2(self, S):
         """Method for obtain B(2) matrix (eq. 14 in Oddershede Paper)
         but using einsum function
         Args:
-            S (int): Multiplicity of the response, triplet (S=1) or singlet(S=0)
+            S (int): Multiplicity of the response, triplet (S=1) or single(S=0)
 
         Returns:
             np.array: (nvir,nocc,nvir,nocc) array with B(2) matrix
@@ -178,25 +162,33 @@ class HRPA:
         cte = self.cte
         cte2 = (-1) ** S
         with h5py.File(str(self.h5_file), "r") as f:
-            eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
-
+            eri_mo = np.array(f["eri_mo"])
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-            k_b1 = da.from_array(k_1 + cte * k_2,
-                                 chunks='auto')
-            k_b2 = da.from_array(k_1 + (cte / (1 - 4 * S)) * k_2,
-                                 chunks='auto')
-
+            k_b1 = (k_1 + cte * k_2) * 0.5
+            k_b2 = (k_1 + (cte / (1 - 4 * S)) * k_2) * 0.5 * cte2
             int1 = eri_mo[:nocc, nocc:, nocc:, :nocc]
             int2 = eri_mo[:nocc, :nocc, nocc:, nocc:]
             int3 = eri_mo[:nocc, :nocc, :nocc, :nocc]
             int4 = eri_mo[nocc:, nocc:, nocc:, nocc:]
-            B = da.einsum("anrp,bmpr->ambn", int1, .5*k_b1)
-            B += da.einsum("bmrp,anpr->ambn", int1, .5*k_b1)
-            B += cte2 * da.einsum("aprn,pmbr->ambn", int2, .5*k_b2)
-            B += cte2 * da.einsum("bprm,pnar->ambn", int2, .5*k_b2)
-            B -= cte2 * da.einsum("bpad,dmpn->ambn", int3, .5*k_b2)
-            B -= cte2 * da.einsum("qmpn,bpaq->ambn", int4, .5*k_b2)
-            return B.compute()
+        B = np.tensordot(int1, k_b1, axes=([2, 3], [3, 2])).transpose(
+            0, 3, 2, 1
+        )
+        B += np.tensordot(int1, k_b1, axes=([2, 3], [3, 2])).transpose(
+            2, 1, 0, 3
+        )
+        B += np.tensordot(int2, k_b2, axes=([1, 2], [0, 3])).transpose(
+            0, 2, 3, 1
+        )
+        B += np.tensordot(int2, k_b2, axes=([1, 2], [0, 3])).transpose(
+            3, 1, 0, 2
+        )
+        B -= np.tensordot(int3, k_b2, axes=([1, 3], [2, 0])).transpose(
+            1, 2, 0, 3
+        )
+        B -= np.tensordot(int4, k_b2, axes=([0, 2], [3, 1])).transpose(
+            3, 0, 2, 1
+        )
+        return B
 
     @property
     def S2(self):
@@ -222,18 +214,22 @@ class HRPA:
         k_2 = self.k_2
         nmo = self.nmo
         with h5py.File(str(self.h5_file), "r") as f:
-            k = da.from_array(k_1 + self.cte * k_2, chunks='auto')
-            eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+            k = k_1 + self.cte * k_2
+            eri_mo = np.array(f["eri_mo"])
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
             int_ = eri_mo[:nocc, nocc:, :nocc, nocc:]
-            S2 = da.einsum("japb,iapb->ij", int_ / e_iajb, k)
-            S2_ = da.einsum("dapn,pmda->mn", int_ / e_iajb, k)
-            mask_mn = da.eye(nvir)
-            mask_ij = da.eye(nocc)
-            S2 = da.einsum("mn,ij->imjn", mask_mn, -0.5 * S2)
-            S2 += da.einsum("ij,mn->imjn", mask_ij, -0.5 * S2_)
-            S2 = -.5*S2*e_iajb
-            return S2.compute()
+        S2 = np.tensordot(
+            int_ / e_iajb, k, axes=([1, 2, 3], [1, 2, 3])
+        ).transpose(1, 0)
+        S_ = np.tensordot(
+            int_ / e_iajb, k, axes=([0, 1, 2], [2, 3, 0])
+        ).transpose(1, 0)
+        mask_mn = np.eye(nvir)
+        mask_ij = np.eye(nocc)
+        S2 = np.einsum("mn,ij->imjn", mask_mn, -0.5 * S2)
+        S2 += np.einsum("ij,mn->imjn", mask_ij, -0.5 * S_)
+        S2 = -0.5 * S2 * e_iajb
+        return S2
 
     @property
     def kappa_2(self):
@@ -251,15 +247,18 @@ class HRPA:
         k_2 = self.k_2
         e_ia = lib.direct_sum("i-a->ia", mo_energy[occidx], mo_energy[viridx])
         with h5py.File(str(self.h5_file), "r") as f:
-            k = da.from_array(k_1 + self.cte * k_2, chunks='auto')
-            eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+            # k = da.from_array(k_1 + self.cte * k_2, chunks='auto')
+            k = k_1 + self.cte * k_2
+            eri_mo = np.array(f["eri_mo"])
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-            int1 = eri_mo[:nocc, nocc:, nocc:, nocc:]
-            int2 = eri_mo[:nocc, nocc:, :nocc, :nocc]
-            kappa = da.einsum("pamb,paib->im", int1, k)
-            kappa -= da.einsum("padi,padm->im", int2, k)
-            kappa *= 1/e_ia
-            return kappa.compute()
+        int1 = eri_mo[:nocc, nocc:, nocc:, nocc:]
+        int2 = eri_mo[:nocc, nocc:, :nocc, :nocc]
+        kappa = np.tensordot(int1, k, axes=([0, 1, 3], [0, 1, 3])).transpose(
+            1, 0
+        )
+        kappa -= np.tensordot(int2, k, axes=([0, 1, 2], [0, 1, 2]))
+        kappa *= 1 / e_ia
+        return kappa
 
     def correction_pert(self, FC=False, PSO=False, FCSD=False, atmlst=None):
         """Method with eq. C.25, which is the first correction to perturbator
@@ -274,34 +273,36 @@ class HRPA:
         nocc = self.nocc
         nvir = self.nvir
         ntot = nocc + nvir
-        kappa = da.from_array(self.kappa_2, chunks='auto')
+        kappa = self.kappa_2
         if FC:
             h1 = self.rpa_obj.pert_fc(atmlst)[0]
             p_virt = h1[nocc:, nocc:]
-            p_virt = da.from_array(p_virt, chunks='auto')
-            pert = da.einsum("an,mn->am", kappa, p_virt)
+            pert = np.tensordot(kappa, p_virt, axes=([1], [1]))
             p_occ = h1[:nocc, :nocc]
-            p_occ = da.from_array(p_occ, chunks='auto')
-            pert -= da.einsum("bm,ba->am", kappa, p_occ)
+            pert -= np.tensordot(kappa, p_occ, axes=([0], [0])).transpose(1, 0)
         if PSO:
             h1 = self.rpa_obj.pert_pso(atmlst)
             h1 = np.asarray(h1).reshape(1, 3, ntot, ntot)[0]
             p_virt = h1[:, nocc:, nocc:]
-            p_virt = da.from_array(p_virt, chunks='auto')
-            pert = da.einsum("an,xmn->xam", kappa, p_virt)
+            pert = np.tensordot(kappa, p_virt, axes=([1], [2])).transpose(
+                1, 0, 2
+            )
             p_occ = h1[:, :nocc, :nocc]
-            p_occ = da.from_array(p_occ, chunks='auto')
-            pert -= da.einsum("bm,xba->xam", kappa, p_occ)
+            pert -= np.tensordot(kappa, p_occ, axes=([0], [1])).transpose(
+                1, 2, 0
+            )
         elif FCSD:
             h1 = self.rpa_obj.pert_fcsd(atmlst)
             h1 = np.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0, :, :, :, :]
             p_virt = h1[:, :, nocc:, nocc:]
-            p_virt = da.from_array(p_virt, chunks='auto')
             p_occ = h1[:, :, :nocc, :nocc]
-            p_occ = da.from_array(p_occ, chunks='auto')
-            pert = da.einsum("an,wxmn->wxam", kappa, p_virt)
-            pert -= da.einsum("bm, wxba->wxam", kappa, p_occ)
-        return pert.compute()
+            pert = np.tensordot(kappa, p_virt, axes=([1], [3])).transpose(
+                1, 2, 0, 3
+            )
+            pert -= np.tensordot(kappa, p_occ, axes=([0], [2])).transpose(
+                1, 2, 3, 0
+            )
+        return pert
 
     def correction_pert_2(self, FC=False, PSO=False, FCSD=False, atmlst=None):
         """Method with C.26 correction, which is a correction to perturbator
@@ -326,51 +327,59 @@ class HRPA:
             self.mo_energy[self.viridx],
             self.mo_energy[self.viridx],
         )
-        k = da.from_array(self.k_1 + self.cte * self.k_2, 
-                          chunks='auto')
+        k = self.k_1 + self.cte * self.k_2
         if FC:
             h1 = self.rpa_obj.pert_fc(atmlst)[0]
             h1 = h1[nocc:, :nocc]
             with h5py.File(str(self.h5_file), "r") as f:
-                eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+                eri_mo = np.array(f["eri_mo"])
                 eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
                 int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
-                pert = -da.einsum("dapb,md,iapb->im", int_e, h1, k)
-                pert -= da.einsum("dapb,bi,pmda->im", int_e, h1, k)
-                return pert.compute()
+            pert_ = np.tensordot(int_e, k, axes=([1, 2, 3], [1, 2, 3]))
+            pert = -np.tensordot(pert_, h1, axes=([0], [1]))
+            pert_ = np.tensordot(int_e, k, axes=([0, 1, 2], [2, 3, 0]))
+            pert -= np.tensordot(pert_, h1, axes=([0], [0])).transpose(1, 0)
+            return pert
         if PSO:
             h1 = self.rpa_obj.pert_pso(atmlst)
             h1 = np.asarray(h1).reshape(1, 3, ntot, ntot)
             h1 = h1[0][:, nocc:, :nocc]
-            h1 = da.from_array(
-                h1, chunks=(h1[0].shape[0], h1[1].shape[1] // 2, h1[2].shape[0] // 2)
-            )
             with h5py.File(str(self.h5_file), "r") as f:
-                eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+                eri_mo = np.array(f["eri_mo"])
                 eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
                 int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
-                pert = -da.einsum("dapb,xmd,iapb->xim", int_e, h1, k)
-                pert -= da.einsum("dapb,xbi,pmda->xim", int_e, h1, k)
-                return pert.compute()
+            pert_ = np.tensordot(int_e, k, axes=([1, 2, 3], [1, 2, 3]))
+            pert = -np.tensordot(pert_, h1, axes=([0], [2])).transpose(1, 0, 2)
+            pert_ = np.tensordot(int_e, k, axes=([0, 1, 2], [2, 3, 0]))
+            pert -= np.tensordot(pert_, h1, axes=([0], [1])).transpose(1, 2, 0)
+            return pert
 
         elif FCSD:
             h1 = self.rpa_obj.pert_fcsd(atmlst)
-            h1 = np.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0, :, :, nocc:, :nocc]
-            h1 = self.da_from_array(h1)
+            h1 = np.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[
+                0, :, :, nocc:, :nocc
+            ]
             with h5py.File(str(self.h5_file), "r") as f:
-                eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
+                eri_mo = np.array(f["eri_mo"])
                 eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
                 int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
-                pert = -da.einsum("dapb,wxmd,iapb->wxim", int_e, h1, k)
-                pert -= da.einsum("dapb,wxbi,pmda->wxim", int_e, h1, k)
-                return pert.compute()
+                pert_ = np.tensordot(int_e, k, axes=([1, 2, 3], [1, 2, 3]))
+                pert = -np.tensordot(pert_, h1, axes=([0], [3])).transpose(
+                    1, 2, 0, 3
+                )
+                pert_ = np.tensordot(int_e, k, axes=([0, 1, 2], [2, 3, 0]))
+                pert -= np.tensordot(pert_, h1, axes=([0], [2])).transpose(
+                    1, 2, 3, 0
+                )
+                return pert
 
     def Communicator(self, triplet):
-        """Function for obtain Communicator matrix, i.e., the principal propagator
-        inverse without the A(0) matrix
+        """Function for obtain Communicator matrix, i.e., the principal
+        propagatorinverse without the A(0) matrix
 
         Args:
-            triplet (bool, optional): Triplet or singlet quantum communicator matrix.
+            triplet (bool, optional): Triplet or singlet quantum communicator
+            matrix.
             Defaults to True.
 
         Returns:
@@ -389,9 +398,50 @@ class HRPA:
         m = m.reshape(nocc * nvir, nocc * nvir)
         return m
 
+    def M_rpa(self, triplet, communicator=False):
+        """Principal Propagator Inverse at RPA, defined as M = A+B
+
+        A[i,a,j,b] = delta_{ab}delta_{ij}(E_a - E_i) + (ia||bj)
+        B[i,a,j,b] = (ia||jb)
+
+        ref: G.A Aucar  https://doi.org/10.1002/cmr.a.20108
+
+        Args:
+                triplet (bool, optional): defines if the response is triplet
+                or singlet (FALSE), that changes the Matrix M. Defaults is True
+
+        Returns:
+                numpy.ndarray: M matrix
+        """
+        nmo = self.nmo
+        nocc = self.nocc
+        e_ia = lib.direct_sum(
+            "a-i->ia", self.mo_energy[self.viridx], self.mo_energy[self.occidx]
+        )
+        nocc = self.nocc
+        nvir = self.nvir
+        if communicator is False:
+            a = np.diag(e_ia.ravel()).reshape(
+                self.nocc, self.nvir, self.nocc, self.nvir
+            )
+        else:
+            a = np.zeros((nocc, nvir, nocc, nvir))
+        b = np.zeros_like(a)
+        with h5py.File(str(self.h5_file), "r") as f:
+            eri_mo = np.array(f["eri_mo"])
+            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
+        a -= np.transpose(eri_mo[:nocc, :nocc, nocc:, nocc:], (0, 3, 1, 2))
+        if triplet:
+            b -= np.transpose(eri_mo[:nocc, nocc:, :nocc, nocc:], (2, 1, 0, 3))
+        elif not triplet:
+            b += np.transpose(eri_mo[:nocc, nocc:, :nocc, nocc:], (2, 1, 0, 3))
+        m = a + b
+        m = m.reshape(self.nocc * self.nvir, self.nocc * self.nvir, order="C")
+        return m
+
     def pp_ssc_fc(self, atm1lst, atm2lst, elements=False):
-        """Method that obtain the linear response between two FC perturbation at
-        HRPA level of approach between two nuclei
+        """Method that obtain the linear response between two FC perturbation
+        at HRPA level of approach between two nuclei
         Args:
             atm1lst (list): First nuclei
             atm2lst (list): Second nuclei
@@ -419,61 +469,14 @@ class HRPA:
         if elements:
             return h1, m, h2
         else:
-            p = -np.linalg.inv(m)
+            p = -sp.linalg.inv(m)
             p = p.reshape(nocc, nvir, nocc, nvir)
             para = []
-            e = np.einsum("ia,iajb,jb", h1, p, h2)
+            e_ = np.tensordot(h1, p, axes=([0, 1], [0, 1]))
+            e = np.tensordot(e_, h2, axes=([0, 1], [0, 1]))
             para.append(e / 4)
             fc = np.einsum(",k,xy->kxy", nist.ALPHA**4, para, np.eye(3))
             return fc
-
-    def M_rpa(self, triplet, communicator=False):
-        """Principal Propagator Inverse at RPA, defined as M = A+B
-
-        A[i,a,j,b] = delta_{ab}delta_{ij}(E_a - E_i) + (ia||bj)
-        B[i,a,j,b] = (ia||jb)
-
-        ref: G.A Aucar  https://doi.org/10.1002/cmr.a.20108
-
-        Args:
-                triplet (bool, optional): defines if the response is triplet (TRUE)
-                or singlet (FALSE), that changes the Matrix M. Defaults is True.
-
-        Returns:
-                numpy.ndarray: M matrix
-        """
-        nmo = self.nmo
-        e_ia = lib.direct_sum(
-            "a-i->ia", self.mo_energy[self.viridx], self.mo_energy[self.occidx]
-        )
-        nocc = self.nocc
-        nvir = self.nvir
-        if communicator is False:
-            a = np.diag(e_ia.ravel()).reshape(
-                self.nocc, self.nvir, self.nocc, self.nvir
-            )
-        else:
-            a = np.zeros((nocc, nvir, nocc, nvir))
-        b = np.zeros_like(a)
-        with h5py.File(str(self.h5_file), "r") as f:
-            eri_mo = da.from_array((f["eri_mo"]), chunks="auto")
-            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-            a -= da.einsum(
-                "ijba->iajb", eri_mo[: self.nocc, : self.nocc, self.nocc :, self.nocc :]
-            ).compute()
-            if triplet:
-                b -= da.einsum(
-                    "jaib->iajb",
-                    eri_mo[: self.nocc, self.nocc :, : self.nocc, self.nocc :],
-                ).compute()
-            elif not triplet:
-                b += da.einsum(
-                    "jaib->iajb",
-                    eri_mo[: self.nocc, self.nocc :, : self.nocc, self.nocc :],
-                ).compute()
-        m = a + b
-        m = m.reshape(self.nocc * self.nvir, self.nocc * self.nvir, order="C")
-        return m
 
     def pp_ssc_pso(self, atm1lst, atm2lst, elements=False):
         """Method that obtain the linear response between PSO perturbation at
@@ -511,17 +514,18 @@ class HRPA:
         if elements:
             return h1, m, h2
         else:
-            p = np.linalg.inv(m)
+            p = sp.linalg.inv(m)
             p = -p.reshape(nocc, nvir, nocc, nvir)
             para = []
-            e = np.einsum("xia,iajb,yjb->xy", h1, p, h2)
+            e_ = np.tensordot(h1, p, axes=([1, 2], [0, 1]))
+            e = np.tensordot(e_, h2, axes=([1, 2], [1, 2]))
             para.append(e)
             pso = np.asarray(para) * nist.ALPHA**4
             return pso
 
     def pp_ssc_fcsd(self, atm1lst, atm2lst, elements=False):
-        """Method that obtain the linear response between two FC+SD perturbation at
-        HRPA level of approach between two nuclei
+        """Method that obtain the linear response between two FC+SD
+        perturbation  at HRPA level of approach between two nuclei
         Args:
             atm1lst (list): First nuclei
             atm2lst (list): Second nuclei
@@ -533,9 +537,13 @@ class HRPA:
         nocc = self.nocc
         ntot = nocc + nvir
         h1 = self.rpa_obj.pert_fcsd(atm1lst)
-        h1 = np.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[0, :, :, :nocc, nocc:]
+        h1 = np.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[
+            0, :, :, :nocc, nocc:
+        ]
         h2 = self.rpa_obj.pert_fcsd(atm2lst)
-        h2 = np.asarray(h2).reshape(-1, 3, 3, ntot, ntot)[0, :, :, :nocc, nocc:]
+        h2 = np.asarray(h2).reshape(-1, 3, 3, ntot, ntot)[
+            0, :, :, :nocc, nocc:
+        ]
         h1_corr1 = self.correction_pert(atmlst=atm1lst, FCSD=True)
         h1_corr2 = self.correction_pert_2(atmlst=atm1lst, FCSD=True)
         h2_corr1 = self.correction_pert(atmlst=atm2lst, FCSD=True)
@@ -552,11 +560,11 @@ class HRPA:
         if elements:
             return h1, m, h2
         else:
-            p = -np.linalg.inv(m)
+            p = -sp.linalg.inv(m)
             p = p.reshape(nocc, nvir, nocc, nvir)
             para = []
-            e = np.einsum("wxia,iajb,wyjb->xy", h1, p, h2)
-
+            e_ = np.tensordot(h1, p, axes=([2, 3], [0, 1]))
+            e = np.tensordot(e_, h2, axes=([0, 2, 3], [0, 2, 3]))
             para.append(e)
             fcsd = np.asarray(para) * nist.ALPHA**4
             return fcsd

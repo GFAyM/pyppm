@@ -1,16 +1,14 @@
 import numpy as np
 from pyscf import tools
 from pyscf.tools import mo_mapping
-import attr
 
 
-@attr.s
 class extra_functions:
-    molden_file = attr.ib(
-        default=None, type=str, validator=attr.validators.instance_of(str)
-    )
+    def __init__(self, molden_file=None):
+        self.molden_file = molden_file
+        self.__post_init__()
 
-    def __attrs_post_init__(self):
+    def __post_init__(self):
         (
             self.mol,
             mo_energy,

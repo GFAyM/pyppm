@@ -1,7 +1,6 @@
-"""PyPPM Python-based Polarization Propagator Methods.
-
-PyPPM calculates also the entanglement
+"""
+PyPPM Python-based Polarization Propagator Methods.
 
 """
 
-__version__ = "0.1.1"
+__version__ = "1.0.0"

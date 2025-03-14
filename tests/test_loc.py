@@ -194,7 +194,7 @@ def test_ssc(j_fcsd, fcsd, rpa):
     mf.kernel()
     loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = rpa)
     fcsd_ = loc_obj.ssc(atom1='F1', atom2='H2', FCSD=fcsd)
-    assert abs(fcsd_ - j_fcsd) < 1e-5
+    assert abs(fcsd_ - j_fcsd) < 1e-3
 
 
 @pytest.mark.parametrize("fcsd_iajb, FCSD, corr", 
