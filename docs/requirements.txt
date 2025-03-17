@@ -3,5 +3,3 @@ sphinx_rtd_theme
 myst-parser
 docutils
 sphinxcontrib-bibtex
-sphinx.ext.autodoc
-sphinx.ext.napoleon
