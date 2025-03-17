@@ -13,9 +13,9 @@ orbitals and explicit inverse or Principal Propagator matrix.
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Daniel F. E. Bajac", email = "danielbajac94@gmail.com" }]
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
-    "pyscf >=2.4.0"
+    "pyscf >=2.4.0, <2.8.0"
 ]
 
 [project.optional-dependencies]
