@@ -14,10 +14,11 @@ class Loc:
     """Class to perform calculations of $J^{FC}$ mechanism at at RPA and HRPA
     level of of approach using previously localized molecular orbitals.
     Inspired in Andy Danian Zapata HRPA program
-    attributes:
-    mf = RHF object
-    mo_coeff_loc = localized molecular orbitals
-    elec_corr = str with RPA or HRPA. This defines if the correlation
+
+    Attributes:
+        mf = RHF object
+        mo_coeff_loc = localized molecular orbitals
+        elec_corr = str with RPA or HRPA. This defines if the correlation
                 level is RPA or HRPA.
     """
 

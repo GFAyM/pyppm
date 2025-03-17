@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyppm_quantum"
-version = "0.1.0"
+version = "1.0.0"
 description = """
 Python based Polarization Propagator Methods is a software based in PySCF that calculates 
 molecular response properties at different levels of approach, using localized molecular 

@@ -62,16 +62,9 @@ class HRPA:
             self.h5_file = f"{mol.nao}.h5"
 
     def kappa(self, I_):
-        """
-        Method for obtain kappa_{\alpha \beta}^{m n} in a matrix form
+        """Method for obtain kappa_{\alpha \beta}^{m n} in a matrix form
         K_{ij}^{a,b} = [(1-delta_{ij})(1-delta_ab]^{I-1}(2I-1)^.5
-                        * [[(ab|bj) -(-1)^I (aj|bi)]/ [e_i+e_j-e_a-e_b]]
-
-        for i noteq j, a noteq b
-
-        K_{ij}^{a,b}=1^{I-1}(2I-1)^.5 *
-        [[(ab|bj) -(-1)^I (aj|bi)]/ [e_i+e_j-e_a-e_b]]
-
+        * [[(ab|bj) -(-1)^I (aj|bi)]/ [e_i+e_j-e_a-e_b]]
         Oddershede 1984, eq C.7
 
         Args:
@@ -114,15 +107,11 @@ class HRPA:
 
     @property
     def part_a2(self):
-        """Method for obtain A(2) matrix using einsum
-        equation C.13 in Oddershede 1984
-        The A = (A + A_)/2 term is because of c.13a equation
+        """Method for obtain A(2) matrix, C.13 in Oddershede 1984
+        The A = (A + A _ )/2 term is because of C13 equation
 
         Returns:
-            np.ndarray: (nocc,nvir,nocc,nvir) array with A(2) contribution
-                #A = np.einsum('mn,ij->minj', mask_mn, A)
-        #A = -.5*np.einsum('jadb,iadb->ij',int_,k)
-
+            np.ndarray: (nocc,nvir,nocc,nvir)
         """
         nocc = self.nocc
         nvir = self.nvir

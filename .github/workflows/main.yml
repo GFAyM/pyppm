@@ -1,37 +1,44 @@
 name: PyPPM
 
-
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
 
     steps:
-      - uses: actions/checkout@master
+      - name: Check out the code
+        uses: actions/checkout@v2
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python-version}}
-      - name: Install pandoc
-        run: sudo apt-get install pandoc
-      - name: Install tox
-        run: pip install tox tox-gh-actions
-      - name: Test with tox
-        run: tox -r
-      - name: Install documentation tools
-        run: pip install sphinx
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get install pandoc
+          python -m pip install --upgrade pip
+          pip install tox tox-gh-actions sphinx sphinx_rtd_theme
+
+      - name: Run tests with tox
+        run: tox
+
       - name: Build documentation
         run: sphinx-build -b html docs/ docs/_build/html
+
       - name: Upload to codecov
         uses: codecov/codecov-action@v1.0.13
         with:
-          token: ${{secrets.CODECOV_TOKEN}}
+          token: ${{ secrets.CODECOV_TOKEN }}
 
 
