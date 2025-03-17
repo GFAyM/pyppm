@@ -26,7 +26,7 @@ jobs:
       - name: Test with tox
         run: tox -r
       - name: Install documentation tools
-        run: pip install sphinx
+        run: pip install sphinx sphinx_rtd_theme
       - name: Build documentation
         run: sphinx-build -b html docs/source docs/_build/html
       - name: Upload to codecov
