@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/GFAyM/pyppm/branch/main/graph/badge.svg)](https://codecov.io/gh/GFAyM/pyppm)
+
 # Python based Polarization Propagator Methods
 
 PyPPM is an open-source Python package based on PySCF for the calculation of response properties using the Polarization Propagator formalism at different levels of approach and frameworks. Currently, it supports RPA and Higher-RPA calculations of non-relativistic spin-spin couplings. In the next version, we plan to extend it to the Second Order Polarization Propagator Approach (SOPPA) and include relativistic calculations of J-coupling and shielding. 
