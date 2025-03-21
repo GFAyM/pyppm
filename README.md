@@ -1,4 +1,5 @@
 [![codecov](https://codecov.io/gh/GFAyM/pyppm/branch/main/graph/badge.svg)](https://codecov.io/gh/GFAyM/pyppm)
+[![DOI](https://zenodo.org/badge/654602334.svg)](https://doi.org/10.5281/zenodo.15066679)
 
 # PyPPM: Python-based Polarization Propagator Methods
 
