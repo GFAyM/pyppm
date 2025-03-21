@@ -9,15 +9,15 @@ PyPPM is an open-source Python package built on PySCF for calculating response p
 
 In the non-relativistic framework, PyPPM can perform calculations using localized molecular orbitals for both occupied and virtual sets, and analyze individual coupling pathway contributions. Additionally, this software can compute quantum entanglement between virtual excitations based on the Principal Propagator, a key element of the Polarization Propagator formalism.
 
-## Motivation
+**Motivation**
 
 Molecular properties within the PP formalism are calculated as a product of two components: Perturbators and the Principal Propagator. Perturbators describe how a perturbation is applied around each nucleus, generating virtual excitations. The Principal Propagator, dependent on the overall system, represents how these virtual excitations interact throughout the molecule.
 
-## Features
+**Features**
 
 PyPPM performs the explicit inversion of the Principal Propagator for a response property and calculates the response as a product of Perturbators and the Principal Propagator. While most quantum chemistry software uses the more efficient CPHF method, which avoids inverse calculations, PyPPM's approach allows for the observation and analysis of Principal Propagator matrix elements, revealing insights into how virtual excitations communicate within the molecular system.
 
-## Installation
+**Installation**
 
 To install PyPPM, use pip directly from the GitHub repository:
 
