@@ -21,7 +21,7 @@ PyPPM performs the explicit inversion of the Principal Propagator for a response
 
 To install PyPPM, use pip directly from the GitHub repository:
 
-```bash
+```
 pip install git+https://github.com/GFAyM/pyppm.git
 ```
 
