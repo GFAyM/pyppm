@@ -2,7 +2,7 @@ from functools import reduce
 
 import numpy as np
 import scipy as sp
-from pyscf import ao2mo, lib, scf
+from pyscf import ao2mo, lib
 from pyscf.data import nist
 from pyscf.data.gyro import get_nuc_g_factor
 from pyscf.dft import numint
@@ -13,15 +13,12 @@ class RPA:
     Spin-Spin coupling mechanisms at RPA level of approach
     """
 
-    def __init__(self, mf=None):
-        if not isinstance(mf, scf.hf.RHF):
-            raise TypeError("mf must be an instance of scf.hf.RHF")
-
-        self.mf = mf
-        self.mo_occ = self.mf.mo_occ
-        self.mo_energy = self.mf.mo_energy
-        self.mo_coeff = self.mf.mo_coeff
-        self.mol = self.mf.mol
+    def __init__(self, mol=None, chkfile=None):
+        self.chkfile = chkfile
+        self.mol = mol
+        self.mo_coeff = lib.chkfile.load(self.chkfile, "scf/mo_coeff")
+        self.mo_occ = lib.chkfile.load(self.chkfile, "scf/mo_occ")
+        self.mo_energy = lib.chkfile.load(self.chkfile, "scf/mo_energy")
         self.occidx = np.where(self.mo_occ > 0)[0]
         self.viridx = np.where(self.mo_occ == 0)[0]
         self.orbv = self.mo_coeff[:, self.viridx]

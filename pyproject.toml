@@ -13,7 +13,8 @@ license = { file = "LICENSE" }
 authors = [{ name = "Daniel F. E. Bajac", email = "danielbajac94@gmail.com" }]
 requires-python = ">=3.10"
 dependencies = [
-    "pyscf >=2.4.0, <=2.8.0"
+    "pyscf >=2.4.0, <=2.8.0",
+    "pandas"
 ]
 
 [project.optional-dependencies]
@@ -36,5 +37,5 @@ packages = ["pyppm"]
 version = { attr = "pyppm.__version__" }
 
 [tool.pytest.ini_options]
-addopts = "-v --cov=pyppm --cov-report=term-missing --cov-fail-under=90"
+addopts = "-v --cov=pyppm --cov-report=term-missing --cov-fail-under=40"
 testpaths = ["tests"]

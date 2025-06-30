@@ -125,3 +125,68 @@ class extra_functions:
             if lim1 < c < lim2:
                 orbital = np.append(orbital, c)
         return orbital[0]
+
+    def mo_hibridization_fixed_2(self, fixed_orbital, threeshold):
+        """Evaluate the 'mo_label' composition of a fixed orbital of the molden
+          file between two limits
+
+        Args:
+            mo_label (str): In terms of wich AO want to know the composition
+            fixed_orbital (int): in which MO wan to know the composition
+            lim1 (real): inferior limit of the hibridization range
+            lim2 (real): superior limit of the hibridization range
+
+        Returns:
+            real: composition of 'mo_label' in a definite fixed_orbital
+        """
+        self.mol, self.mo_coeff, self.mo_occ = self.extraer_coeff
+        labels = self.mol.ao_labels()
+        for i in range(len(labels)):
+            comp = mo_mapping.mo_comps(
+                labels[i], self.mol, self.mo_coeff[:, [fixed_orbital]]
+            )
+            if comp > threeshold:
+                print(labels[i], comp)
+
+    def mo_hibridization_2_double_filter(
+        self, mo_label1, lim1_1, lim2_1, mo_label2, lim1_2, lim2_2, vir
+    ):
+        """This function gives a list with a set of orbital indices that 
+            satisfy two hybridization range conditions.
+
+        Args:
+            mo_label1 (str): First AO label for composition filtering
+            lim1_1 (int): Inferior limit of the first hybridization range
+            lim2_1 (int): Superior limit of the first hybridization range
+            mo_label2 (str): Second AO label for additional filtering
+            lim1_2 (int): Inferior limit of the second hybridization range
+            lim2_2 (int): Superior limit of the second hybridization range
+            vir (bool): If True, analyze virtual orbitals; if False, analyze 
+                        occupied orbitals.
+
+        Returns:
+            list: List of orbital indices that satisfy both conditions.
+        """
+        orbital = []
+        if vir:
+            mo_coeff = self.mo_coeff[:, self.nocc :]
+        else:
+            mo_coeff = self.mo_coeff[:, : self.nocc]
+
+        # First filter
+        comp1 = mo_mapping.mo_comps(
+            mo_label1, self.mol, mo_coeff, orth_method="meta_lowdin"
+        )
+        first_filtered = [
+            i for i, c in enumerate(comp1) if lim1_1 < c < lim2_1
+        ]
+
+        # Second filter applied to the already filtered orbitals
+        comp2 = mo_mapping.mo_comps(
+            mo_label2, self.mol, mo_coeff, orth_method="meta_lowdin"
+        )
+        for i in first_filtered:
+            if lim1_2 < comp2[i] < lim2_2:
+                orbital.append(i + self.nocc if vir else i)
+
+        return orbital

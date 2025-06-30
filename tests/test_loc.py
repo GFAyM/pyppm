@@ -6,21 +6,21 @@ import os
 
 main_directory=os.path.realpath(os.path.dirname(__file__))+'/../'
 
-@pytest.mark.parametrize("level",[('HRPA')])
-def test__attrs_post_init__(level):
-    molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
+@pytest.fixture(scope="module")
+def hf_data():
+    """
+    Fixture that returns the molecule and RHF wavefunction for the HF molecule.
+    The SCF result is saved to a checkpoint file.
+    """
+    molden = main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
     mf = scf.RHF(mol)
+    mf.chkfile = 'HF_test_loc.chk'
     mf.kernel()
-    loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = f'{level}')
-
-    with pytest.raises(Exception) as exc_info:    
-        loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = f'{level}')
-        assert str(exc_info.value
-                   ) == "SOPPA or other method are not avaible yet. Only RPA and HRPA"
+    return mol, mf.chkfile
 
 @pytest.mark.parametrize("c_occ, v, c_vir",[(4.999999999999936, 69.99999999999824, 13.999999999999826)])
-def test_inv_mat(c_occ, v, c_vir):
+def test_inv_mat(c_occ, v, c_vir, hf_data):
     """testing inv_mat property
 
     Args:
@@ -31,9 +31,10 @@ def test_inv_mat(c_occ, v, c_vir):
 
     molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
-    mf = scf.RHF(mol)
-    mf.kernel()
-    loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = 'RPA')
+    mol, chkfile = hf_data
+    loc_obj = Loc(mol=mol, chkfile=chkfile, mo_coeff_loc=mo_coeff, 
+                 mole_name=None, calc_int=False,
+                 elec_corr = 'RPA')
     c_occ_, v_, c_vir_ = loc_obj.inv_mat
     c_occ_ = (c_occ_**2).sum()
     c_vir_ = (c_vir_**2).sum()
@@ -48,7 +49,7 @@ def test_inv_mat(c_occ, v, c_vir):
                                             -70.94801320523182,
                                             -0.6653255733645091, 
                                             True, 'RPA')])
-def test_pp(h1, p, h2, fc, corr):
+def test_pp(h1, p, h2, fc, corr, hf_data):
     """testing pp function.
 
     Args:
@@ -59,10 +60,11 @@ def test_pp(h1, p, h2, fc, corr):
 
     molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
-    mf = scf.RHF(mol)
-    mf.kernel()
-    loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = str(corr))
-    h1_loc, p_loc, h2_loc = loc_obj.pp(atom1='F1', atom2='H2', FC=fc)
+    mol, chkfile = hf_data
+    loc_obj = Loc(mol=mol, chkfile=chkfile, mo_coeff_loc=mo_coeff, 
+                 mole_name=None, calc_int=False,
+                 elec_corr = str(corr))
+    h1_loc, p_loc, h2_loc, m = loc_obj.pp(atom1='F1', atom2='H2', FC=fc)
     assert abs(h1_loc.sum() - h1) < 1e-5
     assert abs(h2_loc.sum() - h2) < 1e-5
     assert abs(p_loc.sum() - p) < 1e-5    
@@ -71,7 +73,7 @@ def test_pp(h1, p, h2, fc, corr):
                                                   -76.45375105907738, 
                                                   -0.5742839919486595,
                                                   True, 'HRPA')])
-def test_pp(h1, p, h2, fc, corr):
+def test_pp(h1, p, h2, fc, corr, hf_data):
     """testing pp function.
 
     Args:
@@ -82,10 +84,11 @@ def test_pp(h1, p, h2, fc, corr):
 
     molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
-    mf = scf.RHF(mol)
-    mf.kernel()
-    loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = str(corr))
-    h1_loc, p_loc, h2_loc = loc_obj.pp(atom1='F1', atom2='H2', FC=fc)
+    mol, chkfile = hf_data
+    loc_obj = Loc(mol=mol, chkfile=chkfile, mo_coeff_loc=mo_coeff, 
+                 mole_name=None, calc_int=False,
+                 elec_corr = str(corr))
+    h1_loc, p_loc, h2_loc, m = loc_obj.pp(atom1='F1', atom2='H2', FC=fc)
     assert abs(h1_loc.sum() - h1) < 1e-5
     assert abs(h2_loc.sum() - h2) < 1e-5
     assert abs(p_loc.sum() - p) < 1e-5   
@@ -94,7 +97,7 @@ def test_pp(h1, p, h2, fc, corr):
                                                    -59.235248661161435, 
                                                    -0.32408736243866565,
                                                    True, 'RPA')])
-def test_pp(h1, p, h2, pso, corr):
+def test_pp(h1, p, h2, pso, corr, hf_data):
     """testing pp function.
 
     Args:
@@ -105,10 +108,11 @@ def test_pp(h1, p, h2, pso, corr):
 
     molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
-    mf = scf.RHF(mol)
-    mf.kernel()
-    loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = str(corr))
-    h1_loc, p_loc, h2_loc = loc_obj.pp(atom1='F1', atom2='H2', PSO=pso)
+    mol, chkfile = hf_data
+    loc_obj = Loc(mol=mol, chkfile=chkfile, mo_coeff_loc=mo_coeff, 
+                 mole_name=None, calc_int=False,
+                 elec_corr = str(corr))
+    h1_loc, p_loc, h2_loc, m = loc_obj.pp(atom1='F1', atom2='H2', PSO=pso)
     assert abs(h1_loc.sum() - h1) < 1e-5
     assert abs(h2_loc.sum() - h2) < 1e-5
     assert abs(p_loc.sum() - p) < 1e-5   
@@ -117,7 +121,7 @@ def test_pp(h1, p, h2, pso, corr):
                                                     -70.94801320520783, 
                                                     -1.0177345128964537,
                                                     True, 'RPA')])
-def test_pp(h1, p, h2, fcsd, corr):
+def test_pp(h1, p, h2, fcsd, corr, hf_data):
     """testing pp function.
 
     Args:
@@ -128,10 +132,11 @@ def test_pp(h1, p, h2, fcsd, corr):
 
     molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
-    mf = scf.RHF(mol)
-    mf.kernel()
-    loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = str(corr))
-    h1_loc, p_loc, h2_loc = loc_obj.pp(atom1='F1', atom2='H2', FCSD=fcsd)
+    mol, chkfile = hf_data
+    loc_obj = Loc(mol=mol, chkfile=chkfile, mo_coeff_loc=mo_coeff, 
+                 mole_name=None, calc_int=False,
+                 elec_corr = str(corr))
+    h1_loc, p_loc, h2_loc, m = loc_obj.pp(atom1='F1', atom2='H2', FCSD=fcsd)
     assert abs(h1_loc.sum() - h1) < 1e-5
     assert abs(h2_loc.sum() - h2) < 1e-5
     assert abs(p_loc.sum() - p) < 1e-5 
@@ -139,7 +144,7 @@ def test_pp(h1, p, h2, fcsd, corr):
 @pytest.mark.parametrize("j_pso, pso, hrpa", [(40.2215594660588, 
                                                True,
                                                'HRPA')])
-def test_ssc(j_pso, pso, hrpa):
+def test_ssc(j_pso, pso, hrpa, hf_data):
     """testing ssc function for pso and hrpa.
 
     Args:
@@ -150,16 +155,17 @@ def test_ssc(j_pso, pso, hrpa):
 
     molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
-    mf = scf.RHF(mol)
-    mf.kernel()
-    loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = hrpa)
+    mol, chkfile = hf_data
+    loc_obj = Loc(mol=mol, chkfile=chkfile, mo_coeff_loc=mo_coeff, 
+                 mole_name=None, calc_int=False,
+                 elec_corr = str(hrpa))
     pso_ = loc_obj.ssc(atom1='F1', atom2='H2', PSO=pso)
     assert abs(pso_ - j_pso) < 1e-5
 
 @pytest.mark.parametrize("j_pso, pso, rpa", [(98.95020755285924, 
                                                True,
                                                'RPA')])
-def test_ssc(j_pso, pso, rpa):
+def test_ssc(j_pso, pso, rpa, hf_data):
     """testing ssc function for pso and hrpa.
 
     Args:
@@ -170,16 +176,17 @@ def test_ssc(j_pso, pso, rpa):
 
     molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
-    mf = scf.RHF(mol)
-    mf.kernel()
-    loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = rpa)
+    mol, chkfile = hf_data
+    loc_obj = Loc(mol=mol, chkfile=chkfile, mo_coeff_loc=mo_coeff, 
+                 mole_name=None, calc_int=False,
+                 elec_corr = str(rpa))
     pso_ = loc_obj.ssc(atom1='F1', atom2='H2', PSO=pso)
     assert abs(pso_ - j_pso) < 1e-5
 
 @pytest.mark.parametrize("j_fcsd, fcsd, rpa", [(-102.22320818916083, 
                                                True,
                                                'RPA')])
-def test_ssc(j_fcsd, fcsd, rpa):
+def test_ssc(j_fcsd, fcsd, rpa, hf_data):
     """testing ssc function for pso and hrpa.
 
     Args:
@@ -190,9 +197,10 @@ def test_ssc(j_fcsd, fcsd, rpa):
 
     molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
-    mf = scf.RHF(mol)
-    mf.kernel()
-    loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = rpa)
+    mol, chkfile = hf_data
+    loc_obj = Loc(mol=mol, chkfile=chkfile, mo_coeff_loc=mo_coeff, 
+                 mole_name=None, calc_int=False,
+                 elec_corr = str(rpa))
     fcsd_ = loc_obj.ssc(atom1='F1', atom2='H2', FCSD=fcsd)
     assert abs(fcsd_ - j_fcsd) < 1e-3
 
@@ -200,7 +208,7 @@ def test_ssc(j_fcsd, fcsd, rpa):
 @pytest.mark.parametrize("fcsd_iajb, FCSD, corr", 
                             [(-102.22320818915543, True,
                               'RPA')])
-def test_ssc_pathways(fcsd, FCSD, corr):
+def test_ssc_pathways(fcsd, FCSD, corr, hf_data):
     """testing ssc_pathways function for fcsd and hrpa 
 
     Args:
@@ -210,9 +218,10 @@ def test_ssc_pathways(fcsd, FCSD, corr):
     """
     molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
-    mf = scf.RHF(mol)
-    mf.kernel()
-    loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = corr)
+    mol, chkfile = hf_data
+    loc_obj = Loc(mol=mol, chkfile=chkfile, mo_coeff_loc=mo_coeff, 
+                 mole_name=None, calc_int=False,
+                 elec_corr = str(corr))
     occ = loc_obj.occidx
     fcsd_ij = loc_obj.ssc_pathways(atom1='F1', atom2='H2',
                                     FCSD=FCSD,
@@ -222,7 +231,7 @@ def test_ssc_pathways(fcsd, FCSD, corr):
 
 @pytest.mark.parametrize("PSO, corr", 
                             [(True, 'RPA')])
-def test_ssc_pathways(PSO, corr):
+def test_ssc_pathways(PSO, corr, hf_data):
     """testing ssc_pathways function for fcsd and hrpa 
 
     Args:
@@ -232,9 +241,10 @@ def test_ssc_pathways(PSO, corr):
     """
     molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
-    mf = scf.RHF(mol)
-    mf.kernel()
-    loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = corr)
+    mol, chkfile = hf_data
+    loc_obj = Loc(mol=mol, chkfile=chkfile, mo_coeff_loc=mo_coeff, 
+                 mole_name=None, calc_int=False,
+                 elec_corr = str(corr))
     ssc = loc_obj.ssc(atom1='F1', atom2='H2', PSO=PSO)
     occ = loc_obj.occidx
     vir = loc_obj.viridx
@@ -248,7 +258,7 @@ def test_ssc_pathways(PSO, corr):
                             [(0.002397787579269773, True,
                               [3,4], [10,12,13],
                               [0,1], [9,11,14])])
-def test_ssc_pathways(fcsd_iajb, FCSD, occ1, vir1, occ2, vir2):
+def test_ssc_pathways(fcsd_iajb, FCSD, occ1, vir1, occ2, vir2, hf_data):
     """testing ssc_pathways function for fcsd and hrpa 
 
     Args:
@@ -260,9 +270,10 @@ def test_ssc_pathways(fcsd_iajb, FCSD, occ1, vir1, occ2, vir2):
     """
     molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
-    mf = scf.RHF(mol)
-    mf.kernel()
-    loc_obj = Loc(mf=mf, mo_coeff_loc = mo_coeff, elec_corr = 'RPA')
+    mol, chkfile = hf_data
+    loc_obj = Loc(mol=mol, chkfile=chkfile, mo_coeff_loc=mo_coeff, 
+                 mole_name=None, calc_int=False,
+                 elec_corr = 'RPA')
     fcsd_iajb_ = loc_obj.ssc_pathways(atom1='F1', atom2='H2',
                                     FCSD=FCSD,
                                     occ_atom1=occ1, vir_atom1=vir1,

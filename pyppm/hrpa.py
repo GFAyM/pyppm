@@ -1,7 +1,9 @@
+import os
+
 import h5py
 import numpy as np
 import scipy as sp
-from pyscf import ao2mo, lib, scf
+from pyscf import ao2mo, lib
 from pyscf.data import nist
 from pyscf.data.gyro import get_nuc_g_factor
 
@@ -19,16 +21,14 @@ class HRPA:
         coupling using HRPA
     """
 
-    def __init__(self, mf, h5_file=None):
-        if not isinstance(mf, scf.hf.RHF):
-            raise ValueError("mf must be a pyscf SCF RHF object")
-
-        self.mf = mf
-        self.h5_file = h5_file
-        self.mo_occ = self.mf.mo_occ
-        self.mo_energy = self.mf.mo_energy
-        self.mo_coeff = self.mf.mo_coeff
-        self.mol = self.mf.mol
+    def __init__(self, mol=None, chkfile=None, mole_name=None, calc_int=False):
+        self.mol = mol
+        self.chkfile = chkfile
+        self.calc_int = calc_int
+        self.mole_name = mole_name
+        self.mo_coeff = lib.chkfile.load(self.chkfile, "scf/mo_coeff")
+        self.mo_occ = lib.chkfile.load(self.chkfile, "scf/mo_occ")
+        self.mo_energy = lib.chkfile.load(self.chkfile, "scf/mo_energy")
         self.occidx = np.where(self.mo_occ > 0)[0]
         self.viridx = np.where(self.mo_occ == 0)[0]
 
@@ -40,8 +40,14 @@ class HRPA:
         self.nmo = self.nocc + self.nvir
         self.occ = [i for i in range(self.nocc)]
         self.vir = [i for i in range(self.nvir)]
-        self.rpa_obj = RPA(mf=self.mf)
-        self.eri_mo()
+        self.rpa_obj = RPA(mol=mol, chkfile=self.chkfile)
+        self.scratch_dir = os.getenv("SCRATCH", os.getcwd())
+        erifile = os.path.join(
+            self.scratch_dir, f"full_eri_{self.mole_name}.h5"
+        )
+        self.erifile = erifile
+        if calc_int:
+            self.eri_mo()
         self.cte = np.sqrt(3)
         self.k_1 = self.kappa(1)
         self.k_2 = self.kappa(2)
@@ -52,14 +58,16 @@ class HRPA:
         Then, loaded in a dask array
         """
         mol = self.mol
-        if self.h5_file is None:
+        erifile = self.erifile
+        if self.calc_int:
             ao2mo.general(
                 mol,
                 (self.mo, self.mo, self.mo, self.mo),
-                f"{mol.nao}.h5",
+                erifile,
                 compact=False,
             )
-            self.h5_file = f"{mol.nao}.h5"
+            self.mole_name = erifile
+        print(erifile)
 
     def kappa(self, I_):
         """Method for obtain kappa_{\alpha \beta}^{m n} in a matrix form
@@ -86,9 +94,8 @@ class HRPA:
             mo_energy[viridx],
             mo_energy[viridx],
         )
-        self.eri_mo()
         c = np.sqrt((2 * I_) - 1)
-        with h5py.File(str(self.h5_file), "r") as f:
+        with h5py.File(str(self.erifile), "r") as f:
             eri_mo = np.array(f["eri_mo"])
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
             int1 = np.transpose(
@@ -120,7 +127,7 @@ class HRPA:
         cte = self.cte
         k = k_1 + cte * k_2
         nmo = self.nmo
-        with h5py.File(str(self.h5_file), "r") as f:
+        with h5py.File(str(self.erifile), "r") as f:
             eri_mo = np.array(f["eri_mo"])
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
             int_ = eri_mo[:nocc, nocc:, :nocc, nocc:]
@@ -150,7 +157,7 @@ class HRPA:
         k_2 = self.k_2
         cte = self.cte
         cte2 = (-1) ** S
-        with h5py.File(str(self.h5_file), "r") as f:
+        with h5py.File(str(self.erifile), "r") as f:
             eri_mo = np.array(f["eri_mo"])
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
             k_b1 = (k_1 + cte * k_2) * 0.5
@@ -202,7 +209,7 @@ class HRPA:
         k_1 = self.k_1
         k_2 = self.k_2
         nmo = self.nmo
-        with h5py.File(str(self.h5_file), "r") as f:
+        with h5py.File(str(self.erifile), "r") as f:
             k = k_1 + self.cte * k_2
             eri_mo = np.array(f["eri_mo"])
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
@@ -235,8 +242,7 @@ class HRPA:
         k_1 = self.k_1
         k_2 = self.k_2
         e_ia = lib.direct_sum("i-a->ia", mo_energy[occidx], mo_energy[viridx])
-        with h5py.File(str(self.h5_file), "r") as f:
-            # k = da.from_array(k_1 + self.cte * k_2, chunks='auto')
+        with h5py.File(str(self.erifile), "r") as f:
             k = k_1 + self.cte * k_2
             eri_mo = np.array(f["eri_mo"])
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
@@ -320,7 +326,7 @@ class HRPA:
         if FC:
             h1 = self.rpa_obj.pert_fc(atmlst)[0]
             h1 = h1[nocc:, :nocc]
-            with h5py.File(str(self.h5_file), "r") as f:
+            with h5py.File(str(self.erifile), "r") as f:
                 eri_mo = np.array(f["eri_mo"])
                 eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
                 int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
@@ -333,7 +339,7 @@ class HRPA:
             h1 = self.rpa_obj.pert_pso(atmlst)
             h1 = np.asarray(h1).reshape(1, 3, ntot, ntot)
             h1 = h1[0][:, nocc:, :nocc]
-            with h5py.File(str(self.h5_file), "r") as f:
+            with h5py.File(str(self.erifile), "r") as f:
                 eri_mo = np.array(f["eri_mo"])
                 eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
                 int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
@@ -348,7 +354,7 @@ class HRPA:
             h1 = np.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[
                 0, :, :, nocc:, :nocc
             ]
-            with h5py.File(str(self.h5_file), "r") as f:
+            with h5py.File(str(self.erifile), "r") as f:
                 eri_mo = np.array(f["eri_mo"])
                 eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
                 int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
@@ -416,7 +422,7 @@ class HRPA:
         else:
             a = np.zeros((nocc, nvir, nocc, nvir))
         b = np.zeros_like(a)
-        with h5py.File(str(self.h5_file), "r") as f:
+        with h5py.File(str(self.erifile), "r") as f:
             eri_mo = np.array(f["eri_mo"])
             eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
         a -= np.transpose(eri_mo[:nocc, :nocc, nocc:, nocc:], (0, 3, 1, 2))
@@ -557,6 +563,10 @@ class HRPA:
             para.append(e)
             fcsd = np.asarray(para) * nist.ALPHA**4
             return fcsd
+
+    def obtain_atom_order(self, atom):
+        atom_ = self.rpa_obj.obtain_atom_order(atom)
+        return atom_
 
     def ssc(self, atom1, atom2, FC=False, FCSD=False, PSO=False):
         """Function for Spin-Spin Coupling calculation at HRPA level of
