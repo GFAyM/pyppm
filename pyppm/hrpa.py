@@ -42,32 +42,32 @@ class HRPA:
         self.vir = [i for i in range(self.nvir)]
         self.rpa_obj = RPA(mol=mol, chkfile=self.chkfile)
         self.scratch_dir = os.getenv("SCRATCH", os.getcwd())
-        erifile = os.path.join(
-            self.scratch_dir, f"full_eri_{self.mole_name}.h5"
-        )
-        self.erifile = erifile
-        if calc_int:
-            self.eri_mo()
+        # erifile = os.path.join(
+        #    self.scratch_dir, f"full_eri_{self.mole_name}.h5"
+        # )
+        # self.erifile = erifile
+        # if calc_int:
+        #   self.eri_mo()
         self.cte = np.sqrt(3)
         self.k_1 = self.kappa(1)
         self.k_2 = self.kappa(2)
 
-    def eri_mo(self):
+    def eri_mo(self, eri_key=None, orbs=None, compact=False):
         """Method to obtain the ERI in MO basis, and saved it
         in a h5py file, if it doesn't exist.
         Then, loaded in a dask array
         """
         mol = self.mol
-        erifile = self.erifile
+        erifile = f"{eri_key}_{self.mole_name}.h5"
         if self.calc_int:
             ao2mo.general(
                 mol,
-                (self.mo, self.mo, self.mo, self.mo),
+                # (self.mo, self.mo, self.mo, self.mo),
+                orbs,
                 erifile,
-                compact=False,
+                compact=compact,
             )
-            self.mole_name = erifile
-        print(erifile)
+            # self.mole_name = erifile
 
     def kappa(self, I_):
         """Method for obtain kappa_{\alpha \beta}^{m n} in a matrix form
@@ -85,7 +85,6 @@ class HRPA:
         nvir = self.nvir
         occidx = self.occidx
         viridx = self.viridx
-        nmo = self.nmo
         mo_energy = self.mo_energy
         e_iajb = lib.direct_sum(
             "i+j-b-a->iajb",
@@ -95,14 +94,24 @@ class HRPA:
             mo_energy[viridx],
         )
         c = np.sqrt((2 * I_) - 1)
-        with h5py.File(str(self.erifile), "r") as f:
-            eri_mo = np.array(f["eri_mo"])
-            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-            int1 = np.transpose(
-                eri_mo[nocc:, :nocc, nocc:, :nocc], (1, 0, 3, 2)
-            )
+        eri_k = "ovov"
+        orbo = self.orbo
+        orbv = self.orbv
+        if self.calc_int is True:
+            self.eri_mo(eri_key=eri_k, orbs=(orbo, orbv, orbo, orbv))
+        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+            eri_mo = f["eri_mo"][:]
+            eri_mo = eri_mo.reshape(nocc, nvir, nocc, nvir)
+            int1 = eri_mo  # np.transpose(
+            # eri_mo[nocc:, :nocc, nocc:, :nocc], (1, 0, 3, 2)
+            # eri_mo.transpose(1,0,3,2), (1, 0, 3, 2)
+            # )
+
             int2 = np.transpose(
-                eri_mo[nocc:, :nocc, nocc:, :nocc], (3, 0, 1, 2)
+                # eri_mo[nocc:, :nocc, nocc:, :nocc], (3, 0, 1, 2)
+                # eri_mo.transpose(1,0,3,2), (3, 0, 1, 2)
+                eri_mo,
+                (0, 3, 2, 1),
             )
             K = c * (int1 - ((-1) ** I_) * int2) / e_iajb
             if I_ == 2:
@@ -126,11 +135,10 @@ class HRPA:
         k_2 = self.k_2
         cte = self.cte
         k = k_1 + cte * k_2
-        nmo = self.nmo
-        with h5py.File(str(self.erifile), "r") as f:
-            eri_mo = np.array(f["eri_mo"])
-            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-            int_ = eri_mo[:nocc, nocc:, :nocc, nocc:]
+        eri_k = "ovov"
+        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+            int_ = f["eri_mo"][:]
+            int_ = int_.reshape(nocc, nvir, nocc, nvir)
         A1 = np.tensordot(int_, k, axes=([1, 2, 3], [1, 2, 3])).transpose(1, 0)
         A2 = np.tensordot(int_, k, axes=([0, 1, 2], [2, 3, 0])).transpose(1, 0)
         mask_mn = np.eye(nvir)
@@ -152,20 +160,40 @@ class HRPA:
             np.array: (nvir,nocc,nvir,nocc) array with B(2) matrix
         """
         nocc = self.nocc
-        nmo = self.nmo
+        nvir = self.nvir
+        orbo = self.orbo
+        orbv = self.orbv
         k_1 = self.k_1
         k_2 = self.k_2
         cte = self.cte
         cte2 = (-1) ** S
-        with h5py.File(str(self.erifile), "r") as f:
-            eri_mo = np.array(f["eri_mo"])
-            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-            k_b1 = (k_1 + cte * k_2) * 0.5
-            k_b2 = (k_1 + (cte / (1 - 4 * S)) * k_2) * 0.5 * cte2
-            int1 = eri_mo[:nocc, nocc:, nocc:, :nocc]
-            int2 = eri_mo[:nocc, :nocc, nocc:, nocc:]
-            int3 = eri_mo[:nocc, :nocc, :nocc, :nocc]
-            int4 = eri_mo[nocc:, nocc:, nocc:, nocc:]
+        eri_k = "ovov"
+        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+            int1 = f["eri_mo"][:]
+            int1 = int1.reshape(nocc, nvir, nocc, nvir)
+            int1 = int1.transpose(0, 1, 3, 2)
+        eri_k = "oovv"
+        if self.calc_int is True:
+            self.eri_mo(eri_key=eri_k, orbs=(orbo, orbo, orbv, orbv))
+        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+            int2 = f["eri_mo"][:]
+            int2 = int2.reshape(nocc, nocc, nvir, nvir)
+        eri_k = "oooo"
+        if self.calc_int is True:
+            self.eri_mo(eri_key=eri_k, orbs=(orbo, orbo, orbo, orbo))
+        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+            int3 = f["eri_mo"][:]
+            int3 = int3.reshape(nocc, nocc, nocc, nocc)
+        eri_k = "vvvv"
+        if self.calc_int is True:
+            self.eri_mo(
+                eri_key=eri_k, orbs=(orbv, orbv, orbv, orbv), compact=True
+            )
+        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+            int4 = f["eri_mo"][:]
+            int4 = ao2mo.restore(1, int4, nvir)
+        k_b1 = (k_1 + cte * k_2) * 0.5
+        k_b2 = (k_1 + (cte / (1 - 4 * S)) * k_2) * 0.5 * cte2
         B = np.tensordot(int1, k_b1, axes=([2, 3], [3, 2])).transpose(
             0, 3, 2, 1
         )
@@ -178,6 +206,7 @@ class HRPA:
         B += np.tensordot(int2, k_b2, axes=([1, 2], [0, 3])).transpose(
             3, 1, 0, 2
         )
+
         B -= np.tensordot(int3, k_b2, axes=([1, 3], [2, 0])).transpose(
             1, 2, 0, 3
         )
@@ -208,12 +237,12 @@ class HRPA:
         )
         k_1 = self.k_1
         k_2 = self.k_2
-        nmo = self.nmo
-        with h5py.File(str(self.erifile), "r") as f:
-            k = k_1 + self.cte * k_2
-            eri_mo = np.array(f["eri_mo"])
-            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-            int_ = eri_mo[:nocc, nocc:, :nocc, nocc:]
+
+        eri_k = "ovov"
+        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+            int_ = f["eri_mo"][:]
+            int_ = int_.reshape(nocc, nvir, nocc, nvir)
+        k = k_1 + self.cte * k_2
         S2 = np.tensordot(
             int_ / e_iajb, k, axes=([1, 2, 3], [1, 2, 3])
         ).transpose(1, 0)
@@ -235,19 +264,28 @@ class HRPA:
             np.narray: (nocc,nvir) array
         """
         nocc = self.nocc
+        nvir = self.nvir
+        orbo = self.orbo
+        orbv = self.orbv
         mo_energy = self.mo_energy
         occidx = self.occidx
         viridx = self.viridx
-        nmo = self.nmo
         k_1 = self.k_1
         k_2 = self.k_2
         e_ia = lib.direct_sum("i-a->ia", mo_energy[occidx], mo_energy[viridx])
-        with h5py.File(str(self.erifile), "r") as f:
-            k = k_1 + self.cte * k_2
-            eri_mo = np.array(f["eri_mo"])
-            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-        int1 = eri_mo[:nocc, nocc:, nocc:, nocc:]
-        int2 = eri_mo[:nocc, nocc:, :nocc, :nocc]
+        eri_k = "ovvv"
+        if self.calc_int is True:
+            self.eri_mo(eri_key=eri_k, orbs=(orbo, orbv, orbv, orbv))
+        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+            int1 = f["eri_mo"][:]
+            int1 = int1.reshape(nocc, nvir, nvir, nvir)
+        k = k_1 + self.cte * k_2
+        eri_k = "ovoo"
+        if self.calc_int is True:
+            self.eri_mo(eri_key=eri_k, orbs=(orbo, orbv, orbo, orbo))
+        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+            int2 = f["eri_mo"][:]
+            int2 = int2.reshape(nocc, nvir, nocc, nocc)
         kappa = np.tensordot(int1, k, axes=([0, 1, 3], [0, 1, 3])).transpose(
             1, 0
         )
@@ -310,11 +348,9 @@ class HRPA:
             np.ndarray: array with second correction to Perturbator
             (nocc,nvir)
         """
-        nmo = self.nocc + self.nvir
         nocc = self.nocc
         nvir = self.nvir
         ntot = nocc + nvir
-        nmo = self.nmo
         e_iajb = lib.direct_sum(
             "i+j-a-b->iajb",
             self.mo_energy[self.occidx],
@@ -323,13 +359,14 @@ class HRPA:
             self.mo_energy[self.viridx],
         )
         k = self.k_1 + self.cte * self.k_2
+        eri_k = "ovov"
+        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+            int_ = f["eri_mo"][:]
+            int_ = int_.reshape(nocc, nvir, nocc, nvir)
+            int_e = int_ / e_iajb
         if FC:
             h1 = self.rpa_obj.pert_fc(atmlst)[0]
             h1 = h1[nocc:, :nocc]
-            with h5py.File(str(self.erifile), "r") as f:
-                eri_mo = np.array(f["eri_mo"])
-                eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-                int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
             pert_ = np.tensordot(int_e, k, axes=([1, 2, 3], [1, 2, 3]))
             pert = -np.tensordot(pert_, h1, axes=([0], [1]))
             pert_ = np.tensordot(int_e, k, axes=([0, 1, 2], [2, 3, 0]))
@@ -339,10 +376,6 @@ class HRPA:
             h1 = self.rpa_obj.pert_pso(atmlst)
             h1 = np.asarray(h1).reshape(1, 3, ntot, ntot)
             h1 = h1[0][:, nocc:, :nocc]
-            with h5py.File(str(self.erifile), "r") as f:
-                eri_mo = np.array(f["eri_mo"])
-                eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-                int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
             pert_ = np.tensordot(int_e, k, axes=([1, 2, 3], [1, 2, 3]))
             pert = -np.tensordot(pert_, h1, axes=([0], [2])).transpose(1, 0, 2)
             pert_ = np.tensordot(int_e, k, axes=([0, 1, 2], [2, 3, 0]))
@@ -354,19 +387,15 @@ class HRPA:
             h1 = np.asarray(h1).reshape(-1, 3, 3, ntot, ntot)[
                 0, :, :, nocc:, :nocc
             ]
-            with h5py.File(str(self.erifile), "r") as f:
-                eri_mo = np.array(f["eri_mo"])
-                eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-                int_e = eri_mo[:nocc, nocc:, :nocc, nocc:] / e_iajb
-                pert_ = np.tensordot(int_e, k, axes=([1, 2, 3], [1, 2, 3]))
-                pert = -np.tensordot(pert_, h1, axes=([0], [3])).transpose(
-                    1, 2, 0, 3
-                )
-                pert_ = np.tensordot(int_e, k, axes=([0, 1, 2], [2, 3, 0]))
-                pert -= np.tensordot(pert_, h1, axes=([0], [2])).transpose(
-                    1, 2, 3, 0
-                )
-                return pert
+            pert_ = np.tensordot(int_e, k, axes=([1, 2, 3], [1, 2, 3]))
+            pert = -np.tensordot(pert_, h1, axes=([0], [3])).transpose(
+                1, 2, 0, 3
+            )
+            pert_ = np.tensordot(int_e, k, axes=([0, 1, 2], [2, 3, 0]))
+            pert -= np.tensordot(pert_, h1, axes=([0], [2])).transpose(
+                1, 2, 3, 0
+            )
+            return pert
 
     def Communicator(self, triplet):
         """Function for obtain Communicator matrix, i.e., the principal
@@ -408,7 +437,6 @@ class HRPA:
         Returns:
                 numpy.ndarray: M matrix
         """
-        nmo = self.nmo
         nocc = self.nocc
         e_ia = lib.direct_sum(
             "a-i->ia", self.mo_energy[self.viridx], self.mo_energy[self.occidx]
@@ -422,14 +450,19 @@ class HRPA:
         else:
             a = np.zeros((nocc, nvir, nocc, nvir))
         b = np.zeros_like(a)
-        with h5py.File(str(self.erifile), "r") as f:
-            eri_mo = np.array(f["eri_mo"])
-            eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-        a -= np.transpose(eri_mo[:nocc, :nocc, nocc:, nocc:], (0, 3, 1, 2))
+        eri_k = "oovv"
+        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+            int1 = f["eri_mo"][:]
+            int1 = int1.reshape(nocc, nocc, nvir, nvir)
+        a -= np.transpose(int1, (0, 3, 1, 2))
+        eri_k = "ovov"
+        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+            int2 = f["eri_mo"][:]
+            int2 = int2.reshape(nocc, nvir, nocc, nvir)
         if triplet:
-            b -= np.transpose(eri_mo[:nocc, nocc:, :nocc, nocc:], (2, 1, 0, 3))
+            b -= np.transpose(int2, (2, 1, 0, 3))
         elif not triplet:
-            b += np.transpose(eri_mo[:nocc, nocc:, :nocc, nocc:], (2, 1, 0, 3))
+            b += np.transpose(int2, (2, 1, 0, 3))
         m = a + b
         m = m.reshape(self.nocc * self.nvir, self.nocc * self.nvir, order="C")
         return m
