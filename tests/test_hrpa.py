@@ -39,7 +39,7 @@ def test_part_a2(a2, hf_data):
         a2 (real): full A(2) matrix sum
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     a2_ = pp.part_a2.sum()
     assert abs(a2_ - a2) < 1e-5
 
@@ -52,7 +52,7 @@ def test_part_b2(multiplicity, b2, hf_data):
         b2 (real): sum of B(2)**2
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     b2_ = (pp.part_b2(multiplicity)**2).sum()
     assert abs(b2_ - b2) < 1e-5
 
@@ -66,7 +66,7 @@ def test_part_b2(multiplicity, b2, hf_data):
         b2 (real): sum of B(2)(0)**2
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     b2_ = (pp.part_b2(multiplicity)**2).sum()
     assert abs(b2_ - b2) < 1e-5
 
@@ -78,7 +78,7 @@ def test_s2(s2, hf_data):
         s2 (real): full S(2) matrix sum
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     s2_ = pp.S2.sum()
     assert abs(s2_ - s2) < 1e-5
 
@@ -90,7 +90,7 @@ def test_kappa_2(kappa2, hf_data):
         kappa2 (real): full kappa_2**2 matrix sum
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     kappa2_ = (pp.kappa_2**2).sum()
     assert abs(kappa2_ - kappa2) < 1e-5
 
@@ -103,7 +103,7 @@ def test_correction_pert(atmlst,pert, correction, hf_data):
         correction (real): sum of correction
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     if pert == 'FC':
         correction_ = pp.correction_pert(atmlst=atmlst,FC=True).sum()
     assert abs(correction_ - correction) < 1e-5
@@ -117,7 +117,7 @@ def test_correction_pert(atmlst, pert, correction, hf_data):
         correction (real): sum of correction
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     if pert =='PSO':
         correction_ = (pp.correction_pert(atmlst=atmlst, PSO=True)[0]**2).sum()
     assert abs(correction_ - correction) < 1e-5
@@ -131,7 +131,7 @@ def test_correction_pert(atmlst, pert, correction, hf_data):
         correction (real): sum of correction
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     if pert =='FCSD':
         correction_ = (pp.correction_pert(atmlst=atmlst, FCSD=True)[0]**2).sum()
     assert abs(correction_ - correction) < 1e-5
@@ -145,7 +145,7 @@ def test_correction_pert_2(atmlst, pert, correction, hf_data):
         correction (real): sum of correction
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     if pert:
         correction_ = pp.correction_pert_2(atmlst=atmlst, FC=True).sum()
     assert abs(correction_ - correction) < 1e-5
@@ -159,7 +159,7 @@ def test_correction_pert_2(atmlst, pert, correction, hf_data):
         correction (real): sum of correction
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     if pert:
         correction_ = pp.correction_pert_2(atmlst=atmlst, PSO=True).sum()
     assert abs(correction_ - correction) < 1e-5
@@ -173,7 +173,7 @@ def test_correction_pert_2(atmlst, pert, correction, hf_data):
         correction (real): sum of correction
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     if pert == 'FCSD':
         correction_ = (pp.correction_pert_2(atmlst=atmlst, FCSD=True)[0]**2).sum()
     assert abs(correction_ - correction) < 1e-5
@@ -188,7 +188,7 @@ def test_pp_ssc_fc(atm1lst,atm2lst,fc_response, hf_data):
         correction (real): FC response value
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     fc_ = pp.pp_ssc_fc(atm1lst,atm2lst)[0][0][0]
     assert abs(fc_ - fc_response) < 1e-5
 
@@ -202,7 +202,7 @@ def test_pp_ssc_pso(atm1lst,atm2lst,pso_response, hf_data):
         correction (real): PSO response value
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     pso_ = pp.pp_ssc_pso(atm1lst,atm2lst)[0][0][0]
     assert abs(pso_ - pso_response) < 1e-5
 
@@ -216,7 +216,7 @@ def test_pp_ssc_fcsd(atm1lst,atm2lst,fcsd_response, hf_data):
         correction (real): PSO response value
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     fcsd = pp.pp_ssc_fcsd(atm1lst,atm2lst)[0][0][0]
     assert abs(fcsd - fcsd_response) < 1e-5
 
@@ -231,7 +231,7 @@ def test_ssc(atom1, atom2, ssc, fc, hf_data):
         fc (bool): fc mechanism
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     ssc_fc = pp.ssc(atom1=atom1, atom2=atom2, FC=fc)
     assert abs(ssc_fc - ssc) < 1e-5
 
@@ -246,7 +246,7 @@ def test_ssc(atom1, atom2, ssc, fcsd, hf_data):
         fcsd (bool): fc mechanism
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     ssc_fc = pp.ssc(atom1=atom1, atom2=atom2, FCSD=fcsd)
     assert abs(ssc_fc - ssc) < 1e-5
 
@@ -261,7 +261,7 @@ def test_ssc(atom1, atom2, ssc, pso, hf_data):
         pso (bool): pso mechanism
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     ssc_pso = pp.ssc(atom1=atom1, atom2=atom2, PSO=pso)
     assert abs(ssc_pso - ssc) < 1e-3
 
@@ -279,7 +279,7 @@ def test_elements(atm1lst, atm2lst, fc, h1, m2, h2, hf_data):
         h2 (numpy.ndarray): perturbator centered in atm1, the sum
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     h1_, m_, h2_ = pp.elements(atm1lst=atm1lst, atom2lst=atm2lst, 
                                   FC=fc)
     assert abs(h1_.sum() - h1) < 1e-5
@@ -301,7 +301,7 @@ def test_elements(atm1lst, atm2lst, fcsd, h1, m2, h2, hf_data):
         h2 (numpy.ndarray): perturbator centered in atm1, the sum
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     h1_, m_, h2_ = pp.elements(atm1lst=atm1lst, atom2lst=atm2lst, 
                                   FCSD=fcsd)
     assert abs((h1_**2).sum() - h1) < 1e-5
@@ -325,7 +325,7 @@ def test_elements(atm1lst, atm2lst, pso, h1, m2, h2, hf_data):
         h2 (numpy.ndarray): perturbator centered in atm1, the sum
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     h1_, m_, h2_ = pp.elements(atm1lst=atm1lst, atom2lst=atm2lst, 
                                   PSO=pso)
     assert abs((h1_**2).sum() - h1) < 1e-3
@@ -340,7 +340,7 @@ def test_Communicator(triplet, q_2_sum, hf_data):
         triplet (bool): triplet
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     q = pp.Communicator(triplet=triplet)
     assert abs(q_2_sum - (q**2).sum()) < 1e-5
 
@@ -352,6 +352,6 @@ def test_Communicator(triplet, q_2_sum, hf_data):
         triplet (bool): triplet
     """
     mol, chkfile = hf_data
-    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=False)
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
     q = pp.Communicator(triplet=triplet)
     assert abs(q_2_sum - (q**2).sum()) < 1e-5

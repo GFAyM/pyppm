@@ -113,7 +113,6 @@ class entropy:
                     mol=self.mol,
                     chkfile=self.chkfile,
                     calc_int=True,
-                    mole_name=self.label,
                 ).Communicator(triplet=self.triplet)
                 with h5py.File(
                     f"m_HRPA_{self.label}_{self.triplet}.h5", "w"

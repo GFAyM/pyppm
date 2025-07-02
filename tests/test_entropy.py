@@ -2,6 +2,7 @@ import pytest
 from pyscf import scf
 from pyppm.help_functions import extra_functions
 from pyppm.entropy import entropy
+from pyppm.hrpa import HRPA
 import os
 
 main_directory=os.path.realpath(os.path.dirname(__file__))+'/../'
@@ -81,6 +82,12 @@ def test_entropy_ab(ent_ab, elec_corr, hf_data):
     molden= main_directory + "tests/HF_cc-pvdz_loc.molden"
     mol, chkfile = hf_data
     mol, mo_coeff, mo_occ = extra_functions(molden_file=molden).extraer_coeff
+    pp = HRPA(mol=mol, chkfile=chkfile, mole_name=None, calc_int=True)
+    pp.kappa(1)
+    pp.S2
+    pp.part_a2
+    pp.part_b2(0)
+    pp.part_b2(0)
     ent_obj = entropy(occ1=[2], occ2=[4], vir1=[8], vir2=[9], 
                       mo_coeff_loc=mo_coeff, mol=mol, elec_corr=str(elec_corr),
                      chkfile=chkfile, z_allexc=True)
