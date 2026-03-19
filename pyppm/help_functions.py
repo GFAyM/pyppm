@@ -151,7 +151,7 @@ class extra_functions:
     def mo_hibridization_2_double_filter(
         self, mo_label1, lim1_1, lim2_1, mo_label2, lim1_2, lim2_2, vir
     ):
-        """This function gives a list with a set of orbital indices that 
+        """This function gives a list with a set of orbital indices that
             satisfy two hybridization range conditions.
 
         Args:
@@ -161,7 +161,7 @@ class extra_functions:
             mo_label2 (str): Second AO label for additional filtering
             lim1_2 (int): Inferior limit of the second hybridization range
             lim2_2 (int): Superior limit of the second hybridization range
-            vir (bool): If True, analyze virtual orbitals; if False, analyze 
+            vir (bool): If True, analyze virtual orbitals; if False, analyze
                         occupied orbitals.
 
         Returns:

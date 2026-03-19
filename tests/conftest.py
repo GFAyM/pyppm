@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 def pytest_sessionfinish(session, exitstatus):
     # File extensions to delete
     extensions = ["*.h5", "*.chk", "*.xlsx"]

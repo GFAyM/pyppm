@@ -8,12 +8,12 @@ from pyscf.data.gyro import get_nuc_g_factor
 
 from pyppm.hrpa import HRPA
 from pyppm.rpa import RPA
+from pyppm.soppa import SOPPA
 
 
 class Loc:
-    """Class to perform calculations of $J^{FC}$ mechanism at at RPA and HRPA
-    level of of approach using previously localized molecular orbitals.
-    Inspired in Andy Danian Zapata HRPA program
+    """Class to perform calculations of $J^{FC}$ mechanism at at RPA,  HRPA
+    and SOPPA level of of approach using previously LMOs.
 
     Attributes:
         mf = RHF object
@@ -52,7 +52,12 @@ class Loc:
         self.occ = [i for i in range(self.nocc)]
         self.vir = [i for i in range(self.nvir)]
         if self.elec_corr == "RPA":
-            self.obj = RPA(mol=self.mol, chkfile=self.chkfile)
+            self.obj = RPA(
+                mol=self.mol,
+                chkfile=self.chkfile,
+                mole_name=self.mole_name,
+                calc_int=self.calc_int,
+            )
         elif self.elec_corr == "HRPA":
             self.obj = HRPA(
                 mol=self.mol,
@@ -60,9 +65,12 @@ class Loc:
                 mole_name=self.mole_name,
                 calc_int=self.calc_int,
             )
-        else:
-            raise Exception(
-                "SOPPA or other method are not available yet. Only RPA & HRPA"
+        elif self.elec_corr == "SOPPA":
+            self.obj = SOPPA(
+                mol=self.mol,
+                chkfile=self.chkfile,
+                mole_name=self.mole_name,
+                calc_int=self.calc_int,
             )
 
     @property
@@ -126,7 +134,7 @@ class Loc:
         FCSD=False,
         IPPP=False,
     ):
-        """Function that obtains ssc mechanism for two chosen atoms in the 
+        """Function that obtains ssc mechanism for two chosen atoms in the
         localized basis
 
         Args:
@@ -147,16 +155,16 @@ class Loc:
             )
             p = p.reshape(nocc, nvir, nocc, nvir)
             para = []
-            e = lib.einsum("ia,iajb,jb", h1, p, h2)
+            e = np.einsum("ia,iajb,jb", h1, p, h2)
             para.append(e / 4)
-            prop = lib.einsum(",k,xy->kxy", nist.ALPHA**4, para, np.eye(3))
+            prop = np.einsum(",k,xy->kxy", nist.ALPHA**4, para, np.eye(3))
         if PSO:
             h1, p, h2, m = self.pp(
                 atom1=atom1, atom2=atom2, PSO=True, IPPP=IPPP
             )
             p = p.reshape(nocc, nvir, nocc, nvir)
             para = []
-            e = lib.einsum("xia,iajb,yjb->xy", h1, p, h2)
+            e = np.einsum("xia,iajb,yjb->xy", h1, p, h2)
             para.append(e)
             prop = np.asarray(para) * nist.ALPHA**4
         elif FCSD:
@@ -170,12 +178,12 @@ class Loc:
         nuc_magneton = 0.5 * (nist.E_MASS / nist.PROTON_MASS)  # e*hbar/2m
         au2Hz = nist.HARTREE2J / nist.PLANCK
         unit = au2Hz * nuc_magneton**2
-        iso_ssc = unit * lib.einsum("kii->k", prop) / 3
+        iso_ssc = unit * np.einsum("kii->k", prop) / 3
         atom1_ = [self.obj.obtain_atom_order(atom1)]
         atom2_ = [self.obj.obtain_atom_order(atom2)]
         gyro1 = [get_nuc_g_factor(self.mol.atom_symbol(atom1_[0]))]
         gyro2 = [get_nuc_g_factor(self.mol.atom_symbol(atom2_[0]))]
-        jtensor = lib.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)
+        jtensor = np.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)
         return jtensor[0]
 
     def ssc_pathways(
@@ -191,11 +199,11 @@ class Loc:
         vir_atom2=None,
         IPPP=False,
     ):
-        """Function that obtains coupling pathways between two couple of 
-        exitations or a set of them. The shape of perturbator claims which 
+        """Function that obtains coupling pathways between two couple of
+        exitations or a set of them. The shape of perturbator claims which
         mechanism is.
         For this function, you must introduce the perturbators and principal
-        propagators previously calculated with "pp_loc" function, in order to 
+        propagators previously calculated with "pp_loc" function, in order to
         only calculate it once, and then evaluate each coupling pathway.
 
         Args:
@@ -235,9 +243,9 @@ class Loc:
                     h1_pathway[i, a] += h1[i, a]
                 for j, b in list(product(occ_atom2, vir_atom2)):
                     h2_pathway[j, b] += h2[j, b]
-            e = lib.einsum("ia,iajb,jb", h1_pathway, p, h2_pathway)
+            e = np.einsum("ia,iajb,jb", h1_pathway, p, h2_pathway)
             para.append(e / 4)
-            prop = lib.einsum(",k,xy->kxy", nist.ALPHA**4, para, np.eye(3))
+            prop = np.einsum(",k,xy->kxy", nist.ALPHA**4, para, np.eye(3))
         if PSO:
             h1_pathway = np.zeros(h1.shape)
             h2_pathway = np.zeros(h1.shape)
@@ -254,7 +262,7 @@ class Loc:
                 for j, b in list(product(occ_atom2, vir_atom2)):
                     h2_pathway[:, j, b] += h2[:, j, b]
 
-            e = lib.einsum("xia,iajb,yjb->xy", h1_pathway, p, h2_pathway)
+            e = np.einsum("xia,iajb,yjb->xy", h1_pathway, p, h2_pathway)
             para.append(e)
             prop = np.asarray(para) * nist.ALPHA**4
         if FCSD:
@@ -273,17 +281,17 @@ class Loc:
                     h1_pathway[:, :, i, a] += h1[:, :, i, a]
                 for j, b in list(product(occ_atom2, vir_atom2)):
                     h2_pathway[:, :, j, b] += h2[:, :, j, b]
-            e = lib.einsum("wxia,iajb,wyjb->xy", h1_pathway, p, h2_pathway)
+            e = np.einsum("wxia,iajb,wyjb->xy", h1_pathway, p, h2_pathway)
             para.append(e)
             prop = np.asarray(para) * nist.ALPHA**4
 
-        nuc_magneton = 0.5 * (nist.E_MASS / nist.PROTON_MASS) 
+        nuc_magneton = 0.5 * (nist.E_MASS / nist.PROTON_MASS)
         au2Hz = nist.HARTREE2J / nist.PLANCK
         unit = au2Hz * nuc_magneton**2
-        iso_ssc = unit * lib.einsum("kii->k", prop) / 3
+        iso_ssc = unit * np.einsum("kii->k", prop) / 3
         gyro1 = [get_nuc_g_factor(self.mol.atom_symbol(atom1_[0]))]
         gyro2 = [get_nuc_g_factor(self.mol.atom_symbol(atom2_[0]))]
-        jtensor = lib.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)
+        jtensor = np.einsum("i,i,j->i", iso_ssc, gyro1, gyro2)
         return jtensor[0]
 
     def ssc_pathways_occ_xlsx(
@@ -298,11 +306,11 @@ class Loc:
         IPPP=False,
         file_name=None,
     ):
-        """Function that obtains coupling pathways between two couple of 
+        """Function that obtains coupling pathways between two couple of
         exitations
         or a set of them. The shape of perturbator claims which mechanism is.
         For this function, you must introduce the perturbators and principal
-        propagators previously calculated with "pp_loc" function, in order to 
+        propagators previously calculated with "pp_loc" function, in order to
         only calculate it once, and then evaluate each coupling pathway.
 
         Args:
@@ -398,11 +406,11 @@ class Loc:
         IPPP=False,
         file_name=False,
     ):
-        """Function that obtains coupling pathways between two couple of 
+        """Function that obtains coupling pathways between two couple of
         exitations
         or a set of them. The shape of perturbator claims which mechanism is.
         For this function, you must introduce the perturbators and principal
-        propagators previously calculated with "pp_loc" function, in order to 
+        propagators previously calculated with "pp_loc" function, in order to
         only calculate it once, and then evaluate each coupling pathway.
 
         Args:
