@@ -1,10 +1,10 @@
-
 import h5py
 import numpy as np
 from pyscf import lib
 
 from pyppm.hrpa import HRPA
 from pyppm.rpa import RPA
+from pyppm.soppa import SOPPA
 
 
 class entropy:
@@ -63,7 +63,8 @@ class entropy:
         triplet=True,
         z_allexc=True,
         h5_m=None,
-        label=None,
+        mole_name=None,
+        calc_int=False,
     ):
         self.occ1 = occ1
         self.occ2 = occ2
@@ -75,8 +76,9 @@ class entropy:
         self.chkfile = chkfile
         self.triplet = triplet
         self.z_allexc = z_allexc
-        self.label = label
+        self.mole_name = mole_name
         self.h5_m = h5_m
+        self.calc_int = calc_int
         self.__post_init__()
 
     def __post_init__(self):
@@ -99,10 +101,15 @@ class entropy:
         nvir = np.count_nonzero(self.mo_occ == 0)
         if self.elec_corr == "RPA":
             if self.h5_m is None:
-                m = RPA(mol=self.mol, chkfile=self.chkfile).Communicator(
-                    triplet=self.triplet
-                )
-                with h5py.File(f"m_RPA_{self.label}.h5", "w") as f:
+                m = RPA(
+                    mol=self.mol,
+                    chkfile=self.chkfile,
+                    mole_name=self.mole_name,
+                    calc_int=self.calc_int,
+                ).M(triplet=self.triplet, communicator=True)
+                with h5py.File(
+                    f"m_RPA_{self.mole_name}_{self.triplet}.h5", "w"
+                ) as f:
                     f.create_dataset("m", data=m)
             else:
                 with h5py.File(self.h5_m, "r") as f:
@@ -112,17 +119,31 @@ class entropy:
                 m = HRPA(
                     mol=self.mol,
                     chkfile=self.chkfile,
-                    calc_int=True,
+                    mole_name=self.mole_name,
+                    calc_int=self.calc_int,
                 ).Communicator(triplet=self.triplet)
                 with h5py.File(
-                    f"m_HRPA_{self.label}_{self.triplet}.h5", "w"
+                    f"m_HRPA_{self.mole_name}_{self.triplet}.h5", "w"
                 ) as f:
                     f.create_dataset("m", data=m)
             else:
                 with h5py.File(self.h5_m, "r") as f:
                     m = f["m"][()]
-        else:
-            raise Exception("Only RPA and HRPA are implemented in this code")
+        elif self.elec_corr == "SOPPA":
+            if self.h5_m is None:
+                m = SOPPA(
+                    mol=self.mol,
+                    chkfile=self.chkfile,
+                    mole_name=self.mole_name,
+                    calc_int=self.calc_int,
+                ).Communicator(triplet=self.triplet)
+                with h5py.File(
+                    f"m_SOPPA_{self.mole_name}_{self.triplet}.h5", "w"
+                ) as f:
+                    f.create_dataset("m", data=m)
+            else:
+                with h5py.File(self.h5_m, "r") as f:
+                    m = f["m"][()]
         can_inv = np.linalg.inv(self.mo_coeff.T)
         c_occ = (mo_coeff_loc[:, :nocc].T.dot(can_inv[:, :nocc])).T
         c_vir = (mo_coeff_loc[:, nocc:].T.dot(can_inv[:, nocc:])).T

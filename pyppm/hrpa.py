@@ -42,32 +42,41 @@ class HRPA:
         self.vir = [i for i in range(self.nvir)]
         self.rpa_obj = RPA(mol=mol, chkfile=self.chkfile)
         self.scratch_dir = os.getenv("SCRATCH", os.getcwd())
-        # erifile = os.path.join(
-        #    self.scratch_dir, f"full_eri_{self.mole_name}.h5"
-        # )
-        # self.erifile = erifile
-        # if calc_int:
-        #   self.eri_mo()
+        if calc_int:
+            self.integrals
         self.cte = np.sqrt(3)
         self.k_1 = self.kappa(1)
         self.k_2 = self.kappa(2)
 
     def eri_mo(self, eri_key=None, orbs=None, compact=False):
-        """Method to obtain the ERI in MO basis, and saved it
-        in a h5py file, if it doesn't exist.
-        Then, loaded in a dask array
-        """
+        """Method to obtain the ERI in MO basis, and saved it in a h5py file"""
         mol = self.mol
         erifile = f"{eri_key}_{self.mole_name}.h5"
-        if self.calc_int:
-            ao2mo.general(
-                mol,
-                # (self.mo, self.mo, self.mo, self.mo),
-                orbs,
-                erifile,
-                compact=compact,
-            )
-            # self.mole_name = erifile
+        erifile = os.path.join(self.scratch_dir, erifile)
+        ao2mo.general(
+            mol,
+            orbs,
+            erifile,
+            compact=compact,
+        )
+
+    @property
+    def integrals(self):
+        """Property to obtain all integrals needed in the HRPA approach."""
+        orbo = self.orbo
+        orbv = self.orbv
+        eri_k = "ovov"
+        self.eri_mo(eri_key=eri_k, orbs=(orbo, orbv, orbo, orbv))
+        eri_k = "oovv"
+        self.eri_mo(eri_key=eri_k, orbs=(orbo, orbo, orbv, orbv))
+        eri_k = "oooo"
+        self.eri_mo(eri_key=eri_k, orbs=(orbo, orbo, orbo, orbo))
+        eri_k = "vvvv"
+        self.eri_mo(eri_key=eri_k, orbs=(orbv, orbv, orbv, orbv), compact=True)
+        eri_k = "ovvv"
+        self.eri_mo(eri_key=eri_k, orbs=(orbo, orbv, orbv, orbv))
+        eri_k = "ovoo"
+        self.eri_mo(eri_key=eri_k, orbs=(orbo, orbv, orbo, orbo))
 
     def kappa(self, I_):
         """Method for obtain kappa_{\alpha \beta}^{m n} in a matrix form
@@ -95,21 +104,13 @@ class HRPA:
         )
         c = np.sqrt((2 * I_) - 1)
         eri_k = "ovov"
-        orbo = self.orbo
-        orbv = self.orbv
-        if self.calc_int is True:
-            self.eri_mo(eri_key=eri_k, orbs=(orbo, orbv, orbo, orbv))
-        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+        erifile = f"{eri_k}_{self.mole_name}.h5"
+        erifile = os.path.join(self.scratch_dir, erifile)
+        with h5py.File(erifile, "r") as f:
             eri_mo = f["eri_mo"][:]
             eri_mo = eri_mo.reshape(nocc, nvir, nocc, nvir)
-            int1 = eri_mo  # np.transpose(
-            # eri_mo[nocc:, :nocc, nocc:, :nocc], (1, 0, 3, 2)
-            # eri_mo.transpose(1,0,3,2), (1, 0, 3, 2)
-            # )
-
+            int1 = eri_mo
             int2 = np.transpose(
-                # eri_mo[nocc:, :nocc, nocc:, :nocc], (3, 0, 1, 2)
-                # eri_mo.transpose(1,0,3,2), (3, 0, 1, 2)
                 eri_mo,
                 (0, 3, 2, 1),
             )
@@ -136,7 +137,9 @@ class HRPA:
         cte = self.cte
         k = k_1 + cte * k_2
         eri_k = "ovov"
-        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+        erifile = f"{eri_k}_{self.mole_name}.h5"
+        erifile = os.path.join(self.scratch_dir, erifile)
+        with h5py.File(erifile, "r") as f:
             int_ = f["eri_mo"][:]
             int_ = int_.reshape(nocc, nvir, nocc, nvir)
         A1 = np.tensordot(int_, k, axes=([1, 2, 3], [1, 2, 3])).transpose(1, 0)
@@ -161,35 +164,33 @@ class HRPA:
         """
         nocc = self.nocc
         nvir = self.nvir
-        orbo = self.orbo
-        orbv = self.orbv
         k_1 = self.k_1
         k_2 = self.k_2
         cte = self.cte
         cte2 = (-1) ** S
         eri_k = "ovov"
-        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+        erifile = f"{eri_k}_{self.mole_name}.h5"
+        erifile = os.path.join(self.scratch_dir, erifile)
+        with h5py.File(erifile, "r") as f:
             int1 = f["eri_mo"][:]
             int1 = int1.reshape(nocc, nvir, nocc, nvir)
             int1 = int1.transpose(0, 1, 3, 2)
         eri_k = "oovv"
-        if self.calc_int is True:
-            self.eri_mo(eri_key=eri_k, orbs=(orbo, orbo, orbv, orbv))
-        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+        erifile = f"{eri_k}_{self.mole_name}.h5"
+        erifile = os.path.join(self.scratch_dir, erifile)
+        with h5py.File(erifile, "r") as f:
             int2 = f["eri_mo"][:]
             int2 = int2.reshape(nocc, nocc, nvir, nvir)
         eri_k = "oooo"
-        if self.calc_int is True:
-            self.eri_mo(eri_key=eri_k, orbs=(orbo, orbo, orbo, orbo))
-        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+        erifile = f"{eri_k}_{self.mole_name}.h5"
+        erifile = os.path.join(self.scratch_dir, erifile)
+        with h5py.File(erifile, "r") as f:
             int3 = f["eri_mo"][:]
             int3 = int3.reshape(nocc, nocc, nocc, nocc)
         eri_k = "vvvv"
-        if self.calc_int is True:
-            self.eri_mo(
-                eri_key=eri_k, orbs=(orbv, orbv, orbv, orbv), compact=True
-            )
-        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+        erifile = f"{eri_k}_{self.mole_name}.h5"
+        erifile = os.path.join(self.scratch_dir, erifile)
+        with h5py.File(erifile, "r") as f:
             int4 = f["eri_mo"][:]
             int4 = ao2mo.restore(1, int4, nvir)
         k_b1 = (k_1 + cte * k_2) * 0.5
@@ -239,7 +240,9 @@ class HRPA:
         k_2 = self.k_2
 
         eri_k = "ovov"
-        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+        erifile = f"{eri_k}_{self.mole_name}.h5"
+        erifile = os.path.join(self.scratch_dir, erifile)
+        with h5py.File(erifile, "r") as f:
             int_ = f["eri_mo"][:]
             int_ = int_.reshape(nocc, nvir, nocc, nvir)
         k = k_1 + self.cte * k_2
@@ -265,8 +268,6 @@ class HRPA:
         """
         nocc = self.nocc
         nvir = self.nvir
-        orbo = self.orbo
-        orbv = self.orbv
         mo_energy = self.mo_energy
         occidx = self.occidx
         viridx = self.viridx
@@ -274,16 +275,16 @@ class HRPA:
         k_2 = self.k_2
         e_ia = lib.direct_sum("i-a->ia", mo_energy[occidx], mo_energy[viridx])
         eri_k = "ovvv"
-        if self.calc_int is True:
-            self.eri_mo(eri_key=eri_k, orbs=(orbo, orbv, orbv, orbv))
-        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+        erifile = f"{eri_k}_{self.mole_name}.h5"
+        erifile = os.path.join(self.scratch_dir, erifile)
+        with h5py.File(erifile, "r") as f:
             int1 = f["eri_mo"][:]
             int1 = int1.reshape(nocc, nvir, nvir, nvir)
         k = k_1 + self.cte * k_2
         eri_k = "ovoo"
-        if self.calc_int is True:
-            self.eri_mo(eri_key=eri_k, orbs=(orbo, orbv, orbo, orbo))
-        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+        erifile = f"{eri_k}_{self.mole_name}.h5"
+        erifile = os.path.join(self.scratch_dir, erifile)
+        with h5py.File(erifile, "r") as f:
             int2 = f["eri_mo"][:]
             int2 = int2.reshape(nocc, nvir, nocc, nocc)
         kappa = np.tensordot(int1, k, axes=([0, 1, 3], [0, 1, 3])).transpose(
@@ -360,7 +361,9 @@ class HRPA:
         )
         k = self.k_1 + self.cte * self.k_2
         eri_k = "ovov"
-        with h5py.File(f"{eri_k}_{self.mole_name}.h5", "r") as f:
+        erifile = f"{eri_k}_{self.mole_name}.h5"
+        erifile = os.path.join(self.scratch_dir, erifile)
+        with h5py.File(erifile, "r") as f:
             int_ = f["eri_mo"][:]
             int_ = int_.reshape(nocc, nvir, nocc, nvir)
             int_e = int_ / e_iajb

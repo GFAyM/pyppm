@@ -1,5 +1,7 @@
+import os
 from functools import reduce
 
+import h5py
 import numpy as np
 import scipy as sp
 from pyscf import ao2mo, lib
@@ -13,9 +15,11 @@ class RPA:
     Spin-Spin coupling mechanisms at RPA level of approach
     """
 
-    def __init__(self, mol=None, chkfile=None):
+    def __init__(self, mol=None, chkfile=None, mole_name=None, calc_int=False):
         self.chkfile = chkfile
         self.mol = mol
+        self.calc_int = calc_int
+        self.mole_name = mole_name
         self.mo_coeff = lib.chkfile.load(self.chkfile, "scf/mo_coeff")
         self.mo_occ = lib.chkfile.load(self.chkfile, "scf/mo_occ")
         self.mo_energy = lib.chkfile.load(self.chkfile, "scf/mo_energy")
@@ -27,20 +31,29 @@ class RPA:
         self.nocc = self.orbo.shape[1]
         self.mo = np.hstack((self.orbo, self.orbv))
         self.nmo = self.nocc + self.nvir
+        self.scratch_dir = os.getenv("SCRATCH", os.getcwd())
+        if self.calc_int:
+            self.eri_mo
 
+    @property
     def eri_mo(self):
-        """Property with all 2-electron Molecular orbital integrals
+        """Property with 2-electron Molecular orbital integrals needed for 
+        RPA"""
+        erifile = f"ovov_{self.mole_name}.h5"
+        erifile = os.path.join(self.scratch_dir, erifile)
+        orbo = self.orbo
+        orbv = self.orbv
+        ao2mo.general(
+            self.mol, (orbo, orbv, orbo, orbv), erifile=erifile, compact=False
+        )
 
-        Returns:
-            np.array: eri_mo, (nmo,nmo,nmo,nmo) shape
-        """
-        mo = self.mo
-        nmo = self.nmo
-        eri_mo = ao2mo.general(self.mol, [mo, mo, mo, mo], compact=False)
-        eri_mo = eri_mo.reshape(nmo, nmo, nmo, nmo)
-        return eri_mo
+        erifile = f"oovv_{self.mole_name}.h5"
+        erifile = os.path.join(self.scratch_dir, erifile)
+        ao2mo.general(
+            self.mol, (orbo, orbo, orbv, orbv), erifile=erifile, compact=False
+        )
 
-    def M(self, triplet=True):
+    def M(self, triplet=True, communicator=False):
         """Principal Propagator Inverse, defined as M = A+B
 
         A[i,a,j,b] = delta_{ab}delta_{ij}(E_a - E_i) + (ia||bj)
@@ -56,74 +69,39 @@ class RPA:
         Returns:
                 np.ndarray: M matrix
         """
-        eri_mo = self.eri_mo()
         e_ia = lib.direct_sum(
             "a-i->ia", self.mo_energy[self.viridx], self.mo_energy[self.occidx]
         )
-        a = np.diag(e_ia.ravel()).reshape(
+        a_0 = np.diag(e_ia.ravel()).reshape(
             self.nocc, self.nvir, self.nocc, self.nvir
         )
-        b = np.zeros_like(a)
-        a -= eri_mo[
-            : self.nocc, : self.nocc, self.nocc :, self.nocc :
-        ].transpose(0, 3, 1, 2)
+        erifile = f"oovv_{self.mole_name}.h5"
+        erifile = os.path.join(self.scratch_dir, erifile)
+        with h5py.File(erifile, "r") as f:
+            eri_mo = f["eri_mo"][:]
+            a = eri_mo.reshape(self.nocc, self.nocc, self.nvir, self.nvir)
+        a = -a.transpose(0, 3, 1, 2)
+
+        erifile = f"ovov_{self.mole_name}.h5"
+        erifile = os.path.join(self.scratch_dir, erifile)
+        with h5py.File(erifile, "r") as f:
+            eri_mo = f["eri_mo"][:]
+            b_int = eri_mo.reshape(self.nocc, self.nvir, self.nocc, self.nvir)
+        b_int = b_int.transpose(2, 1, 0, 3)
+
         if triplet:
-            b -= eri_mo[
-                : self.nocc, self.nocc :, : self.nocc, self.nocc :
-            ].transpose(2, 1, 0, 3)
+            b = -b_int
         elif not triplet:
-            b += eri_mo[
-                : self.nocc, self.nocc :, : self.nocc, self.nocc :
-            ].transpose(2, 1, 0, 3)
-        m = a + b
-        m = m.reshape(self.nocc * self.nvir, self.nocc * self.nvir, order="C")
+            b = b_int
 
-        return m
+        if communicator:
+            m = a + b
+        elif not communicator:
+            m = a_0 + a + b
 
-    def Communicator(self, triplet=True):
-        """Principal Propagator Inverse, defined as M = A+B without A(0) matrix
-
-        A[i,a,j,b] = (ia||bj)
-        B[i,a,j,b] = (ia||jb)
-
-        ref: G.A Aucar  https://doi.org/10.1002/cmr.a.20108
-
-
-        Args:
-                triplet (bool, optional): defines if the response is triplet
-                or singlet (FALSE), that changes the Matrix M. Defaults is True
-
-        Returns:
-                np.ndarray: M matrix
-        """
-        orbo = self.orbo
-        orbv = self.orbv
-        mo = np.hstack((orbo, orbv))
-        nmo = self.nocc + self.nvir
-        nocc = self.nocc
-        nvir = self.nvir
-        a = np.zeros((nocc, nvir, nocc, nvir))
-        b = np.zeros_like(a)
-        eri_mo = ao2mo.general(
-            self.mol, [self.orbo, mo, mo, mo], compact=False
+        return m.reshape(
+            self.nocc * self.nvir, self.nocc * self.nvir, order="C"
         )
-        eri_mo = eri_mo.reshape(self.nocc, nmo, nmo, nmo)
-        a -= eri_mo[
-            : self.nocc, : self.nocc, self.nocc :, self.nocc :
-        ].transpose(0, 3, 1, 2)
-        if triplet:
-            b -= eri_mo[
-                : self.nocc, self.nocc :, : self.nocc, self.nocc :
-            ].transpose(2, 1, 0, 3)
-
-        elif not triplet:
-            b += eri_mo[
-                : self.nocc, self.nocc :, : self.nocc, self.nocc :
-            ].transpose(2, 1, 0, 3)
-
-        m = a + b
-        m = m.reshape(self.nocc * self.nvir, self.nocc * self.nvir, order="C")
-        return m
 
     def pert_fc(self, atmlst):
         """Perturbator for the response Fermi-Contact
