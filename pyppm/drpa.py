@@ -93,8 +93,7 @@ class DRPA:
         mo1 = mo_coeff[:, [mo_order]]
         dm1 = np.dot(mo1, mo1.conj().T)
         pop = np.einsum("ij,ji->i", dm1, s).real
-        report = f"Energy: {round(mo_energy[mo_order
-                                            ], 6)}, Occ: {mo_occ[mo_order]}\n"
+        report = f"Energy: {mo_energy[mo_order]}, Occ: {mo_occ[mo_order]}\n"
         p = 0
         for i, s in enumerate(self.mol.spinor_labels()):
             if abs(pop[i]) > perc:
@@ -107,7 +106,7 @@ class DRPA:
         return report
 
     def eri_mo(self, with_ssss=False, mole_name=None):
-        """Function that generates two electron integrals for A and B matrices,
+        """Function that generates two electron integrals for A and B matrices
         including LLLL, LLSS and SSSS integrals, if with_sss is True.
         The integrals are stored in a h5 file saved in the scratch directory
         Args:
