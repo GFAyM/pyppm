@@ -15,7 +15,8 @@ requires-python = ">=3.10"
 dependencies = [
     "pyscf >=2.4.0, <=2.8.0",
     "pandas",
-    "opt_einsum"
+    "opt_einsum",
+    "dask",
 ]
 
 [project.optional-dependencies]
