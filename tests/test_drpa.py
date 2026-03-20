@@ -43,19 +43,12 @@ def test_mulliken_pop(energy_ref, occ_ref, pop1_ref, pop2_ref, hf_data):
         mole_name="h2o_test",
         calc_int=False,
     )
-
     output = drpa_obj.mulliken_pop(60, 0.1)
-
     lines = output.splitlines()
-
-    # --- Energy & Occupation ---
     header = lines[0]
     parts = header.replace(",", "").split()
-
     energy = float(parts[1])
     occ = float(parts[3])
-
-    # --- Populations ---
     pop1 = float(lines[1].split(",")[-1])
     pop2 = float(lines[2].split(",")[-1])
 
