@@ -4,13 +4,13 @@
 
 # PyPPM: Python-based Polarization Propagator Methods
 
-PyPPM is an open-source Python package built on PySCF for calculating response properties using the Polarization Propagator formalism at various levels of approximation and frameworks. It currently supports RPA and Higher-RPA calculations of non-relativistic spin-spin couplings. Future versions aim to extend this to the Second-Order Polarization Propagator Approach (SOPPA) and include relativistic calculations of J-coupling and shielding.
+PyPPM is an open-source Python package built on PySCF for calculating response properties using the Polarization Propagator formalism at various levels of approximation and frameworks. It currently supports RPA, Higher-RPA (HRPA) and SOPPA level of approach in calculations of non-relativistic spin-spin couplings. In the relativistic framework, the coupling, NMR shielding and polarizabilities are implemented at TDA and RPA level of approach.
 
 In the non-relativistic framework, PyPPM can perform calculations using localized molecular orbitals for both occupied and virtual sets, and analyze individual coupling pathway contributions. Additionally, this software can compute quantum entanglement between virtual excitations based on the Principal Propagator, a key element of the Polarization Propagator formalism.
 
 ## Motivation
 
-Molecular properties within the PP formalism are calculated as a product of two components: Perturbators and the Principal Propagator. Perturbators describe how a perturbation is applied around each nucleus, generating virtual excitations. The Principal Propagator, dependent on the overall system, represents how these virtual excitations interact throughout the molecule.
+Molecular properties within the PP formalism are calculated as a product of two components: Perturbators and the Principal Propagator. Perturbators describe how a perturbation is applied yo the unperturbed system, generating a disturbance. The Principal Propagator matrix, dependent on the overall system, represents how those disturbance interact throughout the molecular system.
 
 ## Features
 
@@ -29,8 +29,8 @@ pip install git+https://github.com/GFAyM/pyppm.git
 
 ## Future Features
 
-* SOPPA Support: Implementation of the Second-Order Polarization Propagator Approach for enhanced calculation accuracy.
-* Relativistic Calculations: Extension to include relativistic calculations of J-coupling and shielding.
+* 4C-SOPPA: Implementation of the Second-Order Polarization Propagator Approach for including relativistic effects.
+* DFT in polarization propagator calculations: also known as DFTTDF, both for 1C and 4C frameworks.
 
 ## Authors and Acknowledgment
 
